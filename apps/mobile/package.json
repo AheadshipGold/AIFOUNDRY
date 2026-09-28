@@ -1,0 +1,27 @@
+{
+  "name": "@aifoundry/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "build": "echo 'No build step for mobile workspace alone yet'"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "^57.0.16",
+    "expo": "~51.0.28",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-web": "^0.21.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.2.45",
+    "typescript": "^5.1.3"
+  }
+}

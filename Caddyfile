@@ -1,0 +1,19 @@
+{
+    # Global options
+    auto_https off
+}
+
+# Web App
+http://web.aifoundry.local {
+    reverse_proxy host.docker.internal:3000
+}
+
+# API
+http://api.aifoundry.local {
+    reverse_proxy host.docker.internal:3001
+}
+
+# Minio
+http://minio.aifoundry.local {
+    reverse_proxy minio:9000
+}

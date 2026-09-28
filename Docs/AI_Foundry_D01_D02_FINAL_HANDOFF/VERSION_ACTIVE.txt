@@ -1,0 +1,4 @@
+D01 + D02 V3 IMPLEMENTATION READY
+Date: 2026-09-28
+Active: decisions V3 / PRD 0.8 / Payments+FinOps 1.0 / Stack 1.0 / Architecture 0.6 / Admin 1.2 / Design 1.3 / UX 1.3 / Backlog 1.3 / Tests 1.3
+Historical V2/V1.1 do not override V3.

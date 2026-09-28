@@ -1,0 +1,9 @@
+D01+D02 ACTIVE HANDOFF = V2 Merchant-Owned Commerce Network
+PRD = 0.7
+Architecture = 0.5
+Admin = 1.1 Merchant-Owned
+Design = 1.2
+UX = 1.2
+Backlog = 1.2
+Tests = 1.2
+Date = 2026-09-28
