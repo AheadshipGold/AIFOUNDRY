@@ -32,23 +32,22 @@ const Context = createContext({
 });
 export function DesignProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>("fr");
-  const [mode, setMode] = useState<ThemeMode>("system");
+  const [mode, setMode] = useState<ThemeMode>("light");
   const [system, setSystem] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setSystem(media.matches ? "dark" : "light");
-    update();
-    media.addEventListener("change", update);
     try {
       const p = parsePreferences(localStorage.getItem("aifoundry.ui-gallery"));
       setLocale(p.locale);
-      setMode(p.mode);
+      if (p.mode === "dark") {
+        setMode("dark");
+      } else {
+        setMode("light");
+      }
     } catch {
       /* Storage may be disabled. */
     }
     setReady(true);
-    return () => media.removeEventListener("change", update);
   }, []);
   useEffect(() => {
     if (ready) {

@@ -29,11 +29,11 @@
 
 [data-theme="dark"],
 .theme-dark {
-  --canvas: #0B132B;
-  --surface: #111B38;
-  --surface-alt: #162244;
-  --subtle: #1C2B54;
-  --border: #233462;
+  --canvas: #0B141A;
+  --surface: #132129;
+  --surface-alt: #182830;
+  --subtle: #1B2D34;
+  --border: #24363E;
   --text: #F3F4F6;
   --text-muted: #9CA3AF;
   --action: #10B981;
@@ -75,7 +75,7 @@
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .theme-dark .oj-header {
-  background: rgba(11, 19, 43, 0.92);
+  background: rgba(11, 20, 26, 0.94);
 }
 
 .oj-header-container {
@@ -282,7 +282,7 @@
   padding: 0 24px;
 }
 .oj-hero-card {
-  background: linear-gradient(135deg, #15222E 0%, #0F1720 100%);
+  background: linear-gradient(135deg, #022B22 0%, #075D49 60%, #03362A 100%);
   color: #FFFFFF;
   border-radius: var(--radius-lg);
   padding: clamp(32px, 5vw, 64px);
@@ -292,6 +292,7 @@
   gap: 40px;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(212, 180, 131, 0.28);
   box-shadow: var(--shadow-lg);
 }
 .oj-hero-title {
@@ -367,7 +368,7 @@
   position: absolute;
   bottom: -10px;
   left: 10px;
-  background: rgba(17, 27, 56, 0.95);
+  background: rgba(11, 20, 26, 0.92);
   border: 1px solid rgba(212, 180, 131, 0.4);
   padding: 12px 18px;
   border-radius: var(--radius-sm);
