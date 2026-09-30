@@ -1,19 +1,29 @@
-import React from 'react';
-import { View, Text, useColorScheme } from 'react-native';
-import { colors } from './src/constants/theme';
-import { fr } from './src/locales/fr'; // Note: In a real app we'd use i18n-js or similar, just importing to show structure.
-import { en as enDict } from './src/locales/en';
+import React from "react";
+import { View, Text } from "react-native";
+import { DesignProvider, useDesign } from "./src/design-system/provider";
+import ComponentGallery from "./src/design-system/gallery";
 
-export default function App() {
-  const scheme = useColorScheme() ?? 'light';
-  const theme = colors[scheme];
-  const lang = 'fr'; // Hardcoded for demo of structure
-  const t = lang === 'fr' ? fr : enDict;
-
+function Content() {
+  const { colors, t } = useDesign();
+  if (__DEV__) return <ComponentGallery />;
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
-      <Text style={{ color: theme.text }}>{t.welcome}</Text>
-      <Text style={{ color: theme.text }}>{t.foundation_ready}</Text>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.canvas,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text style={{ color: colors.text }}>AI Foundry</Text>
+      <Text style={{ color: colors.muted }}>{t.subtitle}</Text>
     </View>
+  );
+}
+export default function App() {
+  return (
+    <DesignProvider>
+      <Content />
+    </DesignProvider>
   );
 }
