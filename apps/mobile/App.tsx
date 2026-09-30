@@ -17,7 +17,7 @@ import SellerDashboardScreen from "./src/screens/seller/SellerDashboardScreen";
 import SellerCashbookScreen from "./src/screens/seller/SellerCashbookScreen";
 
 function MainNavigator() {
-  const { colors, mode, locale } = useDesign();
+  const { colors, mode, locale, setMode } = useDesign();
   const isEn = locale === "en";
 
   // App Navigation State
@@ -110,7 +110,7 @@ function MainNavigator() {
             {/* Tab 1: Découvrir */}
             <Pressable
               onPress={() => setCurrentScreen("home")}
-              style={{ alignItems: "center", gap: 3 }}
+              style={{ alignItems: "center", gap: 3, minWidth: 54 }}
             >
               <Text
                 style={{
@@ -131,10 +131,65 @@ function MainNavigator() {
               </Text>
             </Pressable>
 
-            {/* Tab 2: Besoin D02 */}
+            {/* Tab 2: Rechercher */}
+            <Pressable
+              onPress={() => setCurrentScreen("home")}
+              style={{ alignItems: "center", gap: 3, minWidth: 54 }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.muted,
+                }}
+              >
+                🔍
+              </Text>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "500",
+                  color: colors.muted,
+                }}
+              >
+                {isEn ? "Search" : "Rechercher"}
+              </Text>
+            </Pressable>
+
+            {/* Tab 3: Vendre (Bascule Vendeur Pro) */}
+            <Pressable
+              onPress={() => {
+                setUniverse("seller");
+                setCurrentScreen("dashboard");
+              }}
+              style={{ alignItems: "center", gap: 3, minWidth: 54 }}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: colors.action,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 16, color: "#FFFFFF", fontWeight: "700" }}>+</Text>
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "600",
+                  color: colors.action,
+                }}
+              >
+                {isEn ? "Sell" : "Vendre"}
+              </Text>
+            </Pressable>
+
+            {/* Tab 4: Messages */}
             <Pressable
               onPress={() => setCurrentScreen("need")}
-              style={{ alignItems: "center", gap: 3 }}
+              style={{ alignItems: "center", gap: 3, minWidth: 54 }}
             >
               <Text
                 style={{
@@ -142,7 +197,7 @@ function MainNavigator() {
                   color: currentScreen === "need" ? colors.action : colors.muted,
                 }}
               >
-                ✦
+                💬
               </Text>
               <Text
                 style={{
@@ -151,21 +206,31 @@ function MainNavigator() {
                   color: currentScreen === "need" ? colors.action : colors.muted,
                 }}
               >
-                {isEn ? "Custom Need" : "Sur-mesure"}
+                {isEn ? "Messages" : "Messages"}
               </Text>
             </Pressable>
 
-            {/* Tab 3: Bascule Vendeur */}
+            {/* Tab 5: Profil */}
             <Pressable
-              onPress={() => {
-                setUniverse("seller");
-                setCurrentScreen("dashboard");
-              }}
-              style={{ alignItems: "center", gap: 3 }}
+              onPress={() => setMode(mode === "dark" ? "light" : "dark")}
+              style={{ alignItems: "center", gap: 3, minWidth: 54 }}
             >
-              <Text style={{ fontSize: 16, color: colors.accent }}>◈</Text>
-              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.accent }}>
-                {isEn ? "Seller OS" : "Espace Vendeur"}
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.muted,
+                }}
+              >
+                👤
+              </Text>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "500",
+                  color: colors.muted,
+                }}
+              >
+                {isEn ? "Profile" : "Profil"}
               </Text>
             </Pressable>
           </>
@@ -174,7 +239,7 @@ function MainNavigator() {
             {/* Tab 1: Dashboard Vendeur */}
             <Pressable
               onPress={() => setCurrentScreen("dashboard")}
-              style={{ alignItems: "center", gap: 3 }}
+              style={{ alignItems: "center", gap: 3, minWidth: 64 }}
             >
               <Text
                 style={{
@@ -182,7 +247,7 @@ function MainNavigator() {
                   color: currentScreen === "dashboard" ? colors.action : colors.muted,
                 }}
               >
-                ◫
+                📊
               </Text>
               <Text
                 style={{
@@ -198,7 +263,7 @@ function MainNavigator() {
             {/* Tab 2: Caisse & FinOps */}
             <Pressable
               onPress={() => setCurrentScreen("cashbook")}
-              style={{ alignItems: "center", gap: 3 }}
+              style={{ alignItems: "center", gap: 3, minWidth: 64 }}
             >
               <Text
                 style={{
@@ -206,7 +271,7 @@ function MainNavigator() {
                   color: currentScreen === "cashbook" ? colors.action : colors.muted,
                 }}
               >
-                ◈
+                💰
               </Text>
               <Text
                 style={{
@@ -215,7 +280,7 @@ function MainNavigator() {
                   color: currentScreen === "cashbook" ? colors.action : colors.muted,
                 }}
               >
-                {isEn ? "Cashbook" : "Caisse FinOps"}
+                {isEn ? "Cashbook" : "Caisse"}
               </Text>
             </Pressable>
 
@@ -225,10 +290,10 @@ function MainNavigator() {
                 setUniverse("buyer");
                 setCurrentScreen("home");
               }}
-              style={{ alignItems: "center", gap: 3 }}
+              style={{ alignItems: "center", gap: 3, minWidth: 64 }}
             >
-              <Text style={{ fontSize: 16, color: colors.text }}>⌂</Text>
-              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.text }}>
+              <Text style={{ fontSize: 16, color: colors.accent }}>🛍</Text>
+              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.accent }}>
                 {isEn ? "Buyer Mode" : "Mode Acheteur"}
               </Text>
             </Pressable>
