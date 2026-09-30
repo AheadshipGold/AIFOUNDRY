@@ -1,0 +1,563 @@
+/* Ojarket Master Landing Page Styles */
+
+.oj-landing {
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition: background-color var(--motion, 180ms) ease, color var(--motion, 180ms) ease;
+}
+
+/* 1. TOP ANNOUNCEMENT BAR */
+.oj-banner {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--muted);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-weight: 500;
+}
+.oj-banner strong {
+  color: var(--action);
+  font-weight: 700;
+}
+.oj-banner a {
+  color: var(--action);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+/* 2. NAVIGATION BAR */
+.oj-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(250, 249, 246, 0.88);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--motion, 180ms) ease;
+}
+[data-theme="dark"] .oj-nav {
+  background: rgba(11, 20, 26, 0.88);
+}
+.oj-nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.oj-nav-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+.oj-nav-logo img {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+.oj-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.oj-nav-link {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: color var(--motion, 180ms) ease;
+}
+.oj-nav-link:hover {
+  color: var(--action);
+}
+.oj-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.oj-ctrl-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--motion, 180ms) ease;
+}
+.oj-ctrl-btn:hover {
+  border-color: var(--action);
+  color: var(--action);
+}
+.oj-cta-btn {
+  background: var(--action);
+  color: var(--onAction, #ffffff);
+  border: none;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(7, 93, 73, 0.22);
+  transition: transform var(--motion, 180ms) ease, box-shadow var(--motion, 180ms) ease;
+}
+.oj-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(7, 93, 73, 0.32);
+}
+
+/* 3. HERO SECTION */
+.oj-hero {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 24px 70px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: center;
+  gap: 60px;
+}
+.oj-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 24px;
+}
+.oj-hero-badge span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--action);
+  display: inline-block;
+}
+.oj-hero-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 58px;
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 0 0 24px 0;
+  color: var(--text);
+}
+.oj-hero-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+}
+.oj-hero-desc {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 0 0 36px 0;
+  max-width: 580px;
+}
+.oj-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.oj-btn-primary {
+  background: var(--action);
+  color: var(--onAction, #ffffff);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--motion, 180ms) ease;
+}
+.oj-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(7, 93, 73, 0.28);
+}
+.oj-btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--motion, 180ms) ease;
+}
+.oj-btn-secondary:hover {
+  border-color: var(--text);
+  background: var(--subtle);
+}
+
+/* HERO SPOTLIGHT CARD */
+.oj-spotlight {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"] .oj-spotlight {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.oj-spotlight-photo {
+  width: 100%;
+  aspect-ratio: 4 / 4.8;
+  object-fit: cover;
+  border-radius: 20px;
+  display: block;
+  background: var(--subtle);
+}
+.oj-spotlight-meta {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.oj-spotlight-tag {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.oj-spotlight-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.oj-spotlight-price {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--action);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+.oj-spotlight-pill {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #151E1C;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* 4. VALUE PROPOSITION : DOUBLE UNIVERSE */
+.oj-section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+.oj-section-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 56px;
+}
+.oj-section-tag {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.oj-section-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 38px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px 0;
+  color: var(--text);
+}
+.oj-section-desc {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.oj-universe-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.oj-universe-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform var(--motion, 180ms) ease, box-shadow var(--motion, 180ms) ease;
+}
+.oj-universe-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+}
+.oj-universe-icon {
+  font-size: 36px;
+  margin-bottom: 20px;
+}
+.oj-universe-heading {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: var(--text);
+}
+.oj-universe-text {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+.oj-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.oj-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+.oj-feature-bullet {
+  color: var(--action);
+  font-weight: 700;
+}
+
+/* 5. LIVE DIRECTORY / 8 REFERENCE SCREENS */
+.oj-screens-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.oj-screen-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all var(--motion, 180ms) ease;
+}
+.oj-screen-card:hover {
+  border-color: var(--action);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+.oj-screen-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.oj-screen-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px 0;
+}
+.oj-screen-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+.oj-screen-cta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--action);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 6. FINANCIAL RECONCILIATION HIGHLIGHT */
+.oj-finance-banner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 40px;
+  margin-top: 40px;
+}
+.oj-finance-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.oj-metric-box {
+  background: var(--subtle);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+}
+.oj-metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.oj-metric-value {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.oj-metric-value.highlight {
+  color: var(--action);
+}
+
+/* 7. FOOTER */
+.oj-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 60px 24px 40px;
+  margin-top: 60px;
+}
+.oj-footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+.oj-footer-logo img {
+  height: 44px;
+  width: auto;
+}
+.oj-footer-tagline {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 600px;
+  margin: 0;
+}
+.oj-footer-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.oj-footer-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: color var(--motion, 180ms) ease;
+}
+.oj-footer-link:hover {
+  color: var(--text);
+}
+.oj-footer-copy {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.75;
+  margin: 0;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1024px) {
+  .oj-hero {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 50px 24px;
+  }
+  .oj-universe-grid {
+    grid-template-columns: 1fr;
+  }
+  .oj-screens-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .oj-finance-banner {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .oj-nav-links {
+    display: none;
+  }
+  .oj-nav-controls .oj-cta-btn {
+    display: none;
+  }
+  .oj-hero-title {
+    font-size: 38px;
+  }
+  .oj-screens-grid {
+    grid-template-columns: 1fr;
+  }
+  .oj-finance-metrics {
+    grid-template-columns: 1fr;
+  }
+  .oj-spotlight-price {
+    font-size: 20px;
+    white-space: nowrap;
+  }
+}
