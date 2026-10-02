@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, View, Text, Pressable, Platform, Alert, ActivityIndicator } from "react-native";
+import {
+  ScrollView,
+  View,
+  Text,
+  Pressable,
+  Image,
+  Platform,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useDesign } from "../../design-system/provider";
 import { OrdersApi, OrderRecord } from "../../services/api";
+
+const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
+const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
+const imgArmchair = require("../../../assets/products/armchair.jpg");
 
 interface SellerOrdersScreenProps {
   onBack: () => void;
 }
 
 export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) {
-  const { colors, locale } = useDesign();
+  const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
+  const isDark = mode === "dark";
+
   const [activeFilter, setActiveFilter] = useState("all");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +48,10 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
   const updateOrderStatus = async (id: string, fulfillmentStatus: string) => {
     try {
       await OrdersApi.updateStatus(id, { fulfillmentStatus });
-      Alert.alert(isEn ? "Success" : "Succès", isEn ? "Order status updated" : "Statut de la commande mis à jour");
+      Alert.alert(
+        isEn ? "Success" : "Succès",
+        isEn ? "Order status updated" : "Statut de la commande mis à jour"
+      );
       loadOrders();
     } catch (err) {
       console.warn("Failed to update status", err);
@@ -46,60 +64,72 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
       id: "mock1",
       orderNumber: "CMD-2847",
       buyerName: "Marcelle Houngbo",
-      deliveryAddress: "Porto-Novo",
-      items: [{ itemTitle: "Sac de voyage weekend (Cuir pleine fleur patiné)" }],
+      deliveryAddress: "Porto-Novo, Avakpa",
+      items: [{ itemTitle: "Sac de voyage weekend en cuir tanné végétal" }],
       totalAmountMinor: 19000000,
+      currency: "XOF",
       paymentChannel: "MTN_MOMO",
       paymentStatus: "SETTLED_TO_MERCHANT",
-      fulfillmentStatus: "PENDING"
+      fulfillmentStatus: "PREPARING",
+      image: imgLeatherTote,
     },
     {
       id: "mock2",
       orderNumber: "CMD-2846",
       buyerName: "Didier Agossa",
-      deliveryAddress: "Cotonou",
-      items: [{ itemTitle: "Parure royale en bronze ciselé" }],
-      totalAmountMinor: 28000000,
+      deliveryAddress: "Cotonou, Haie Vive",
+      items: [{ itemTitle: "Chronographe Héritage Automatique Or & Acier" }],
+      totalAmountMinor: 28500000,
+      currency: "XOF",
       paymentChannel: "CARD",
       paymentStatus: "PENDING",
-      fulfillmentStatus: "PREPARING"
+      fulfillmentStatus: "PENDING",
+      image: imgWatchChrono,
     },
     {
       id: "mock3",
       orderNumber: "CMD-2840",
       buyerName: "Kodjo Mensah",
-      deliveryAddress: "Cotonou",
-      items: [{ itemTitle: "Cabas Studio Cuir Cognac" }],
-      totalAmountMinor: 4800000,
+      deliveryAddress: "Cotonou, Ganhi",
+      items: [{ itemTitle: "Fauteuil Club Travertin & Lin Brut" }],
+      totalAmountMinor: 14500000,
+      currency: "XOF",
       paymentChannel: "CASH_ON_DELIVERY",
       paymentStatus: "SETTLED_TO_MERCHANT",
-      fulfillmentStatus: "DELIVERED"
-    }
+      fulfillmentStatus: "DELIVERED",
+      image: imgArmchair,
+    },
   ] as any as OrderRecord[];
 
   const displayOrders = orders.length > 0 ? orders : defaultOrders;
 
   const filters = [
     { id: "all", labelFr: `Toutes (${displayOrders.length})`, labelEn: `All (${displayOrders.length})` },
-    { id: "prepare", labelFr: `À préparer (${displayOrders.filter(o => o.fulfillmentStatus === 'PENDING').length})`, labelEn: `To Prepare (${displayOrders.filter(o => o.fulfillmentStatus === 'PENDING').length})` },
-    { id: "awaiting", labelFr: `Paiement en attente (${displayOrders.filter(o => o.paymentStatus === 'PENDING').length})`, labelEn: `Awaiting Payment (${displayOrders.filter(o => o.paymentStatus === 'PENDING').length})` },
-    { id: "fulfilled", labelFr: "Livrées", labelEn: "Fulfilled" },
+    {
+      id: "active",
+      labelFr: `En cours (${displayOrders.filter((o) => o.fulfillmentStatus !== "DELIVERED").length})`,
+      labelEn: `Active (${displayOrders.filter((o) => o.fulfillmentStatus !== "DELIVERED").length})`,
+    },
+    {
+      id: "delivered",
+      labelFr: `Livrées (${displayOrders.filter((o) => o.fulfillmentStatus === "DELIVERED").length})`,
+      labelEn: `Delivered (${displayOrders.filter((o) => o.fulfillmentStatus === "DELIVERED").length})`,
+    },
   ];
 
-  const filteredOrders = displayOrders.filter(o => {
+  const filteredOrders = displayOrders.filter((o) => {
     if (activeFilter === "all") return true;
-    if (activeFilter === "prepare") return o.fulfillmentStatus === "PENDING";
-    if (activeFilter === "awaiting") return o.paymentStatus === "PENDING";
-    if (activeFilter === "fulfilled") return o.fulfillmentStatus === "DELIVERED";
+    if (activeFilter === "active") return o.fulfillmentStatus !== "DELIVERED";
+    if (activeFilter === "delivered") return o.fulfillmentStatus === "DELIVERED";
     return true;
   });
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {/* Pinned Fixed Header */}
+      {/* ==================== PINNED FIXED TOP BAR ==================== */}
       <View
         style={{
-          paddingHorizontal: 20,
+          paddingHorizontal: 18,
           paddingTop: Platform.OS === "android" ? 14 : 10,
           paddingBottom: 12,
           borderBottomWidth: 1,
@@ -112,19 +142,31 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
           <Pressable
             onPress={onBack}
             style={({ pressed }) => [{
-              padding: 6,
-              borderRadius: 8,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
               backgroundColor: colors.canvas,
               borderWidth: 1,
               borderColor: colors.border,
-              opacity: pressed ? 0.7 : 1,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed ? 0.75 : 1,
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
             <Text style={{ fontSize: 16, color: colors.action, fontWeight: "700" }}>←</Text>
           </Pressable>
+
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: colors.muted, fontWeight: "700" }}>
+            <Text
+              style={{
+                fontSize: 9,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                color: colors.accent,
+                fontWeight: "800",
+              }}
+            >
               {isEn ? "MERCHANT ORDERS" : "COMMANDES BOUTIQUE"}
             </Text>
             <Text
@@ -140,39 +182,48 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
           </View>
         </View>
 
-        {/* Filters */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {filters.map(f => (
-            <Pressable 
-              key={f.id}
-              onPress={() => setActiveFilter(f.id)}
-              style={({ pressed }) => [{
-                paddingHorizontal: 14,
-                paddingVertical: 7,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: activeFilter === f.id ? colors.action : colors.border,
-                backgroundColor: activeFilter === f.id ? colors.action : colors.canvas,
-                opacity: pressed ? 0.8 : 1,
-                transform: [{ scale: pressed ? 0.96 : 1 }],
-              }]}
-            >
-              <Text style={{
-                fontSize: 12,
-                fontWeight: "700",
-                color: activeFilter === f.id ? "#FFFFFF" : colors.text
-              }}>
-                {isEn ? f.labelEn : f.labelFr}
-              </Text>
-            </Pressable>
-          ))}
+        {/* Filter Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingBottom: 2 }}
+        >
+          {filters.map((f) => {
+            const isSelected = activeFilter === f.id;
+            return (
+              <Pressable
+                key={f.id}
+                onPress={() => setActiveFilter(f.id)}
+                style={({ pressed }) => [{
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: isSelected ? colors.action : colors.border,
+                  backgroundColor: isSelected ? colors.action : colors.canvas,
+                  opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                }]}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "800",
+                    color: isSelected ? "#FFFFFF" : colors.text,
+                  }}
+                >
+                  {isEn ? f.labelEn : f.labelFr}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 
-      {/* Scrollable Order List */}
+      {/* ==================== SCROLLABLE ORDER LIST ==================== */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 18, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
         {loading ? (
@@ -180,101 +231,168 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
             <ActivityIndicator size="large" color={colors.action} />
           </View>
         ) : (
-          <View style={{ gap: 16 }}>
-            {filteredOrders.map(order => (
-              <View key={order.id} style={{
-                backgroundColor: colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 14,
-                padding: 16
-              }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>#{order.orderNumber}</Text>
-                  <View style={{ backgroundColor: colors.subtle, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text }}>
-                      {order.fulfillmentStatus}
+          <View style={{ gap: 14 }}>
+            {filteredOrders.map((order: any) => {
+              const itemTitle = order.lines
+                ? order.lines.map((l: any) => l.itemTitle).join(", ")
+                : order.items?.map((i: any) => i.itemTitle).join(", ") || "Création Artisanale";
+
+              let orderImg = order.image || imgWatchChrono;
+              if (itemTitle.toLowerCase().includes("cuir") || itemTitle.toLowerCase().includes("sac")) {
+                orderImg = imgLeatherTote;
+              } else if (itemTitle.toLowerCase().includes("fauteuil") || itemTitle.toLowerCase().includes("mobilier")) {
+                orderImg = imgArmchair;
+              }
+
+              const isPreparing = order.fulfillmentStatus === "PREPARING";
+              const isDelivered = order.fulfillmentStatus === "DELIVERED";
+              const isPending = order.fulfillmentStatus === "PENDING";
+
+              return (
+                <View
+                  key={order.id}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 18,
+                    padding: 16,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0 : 0.04,
+                    shadowRadius: 6,
+                    elevation: 1,
+                  }}
+                >
+                  {/* Top Order Row with Thumbnail + ID + Status */}
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                    <Image
+                      source={orderImg}
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    />
+
+                    <View style={{ flex: 1, justifyContent: "center" }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>
+                          #{order.orderNumber}
+                        </Text>
+                        <View
+                          style={{
+                            backgroundColor: isDelivered ? colors.successBg : (isPreparing ? "#FEF3C7" : colors.subtle),
+                            paddingHorizontal: 8,
+                            paddingVertical: 3,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: "800",
+                              color: isDelivered ? colors.action : (isPreparing ? "#D97706" : colors.text),
+                            }}
+                          >
+                            {isDelivered
+                              ? (isEn ? "Delivered" : "Livrée")
+                              : (isPreparing
+                                  ? (isEn ? "Preparing" : "En préparation")
+                                  : (isEn ? "Awaiting" : "En attente"))}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                        {order.buyerName} · {order.deliveryAddress}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Creation Title */}
+                  <Text
+                    style={{
+                      fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                      fontSize: 14,
+                      color: colors.text,
+                      fontWeight: "700",
+                      marginBottom: 8,
+                    }}
+                    numberOfLines={2}
+                  >
+                    {itemTitle}
+                  </Text>
+
+                  {/* Price & Payment Row */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      backgroundColor: colors.canvas,
+                      padding: 10,
+                      borderRadius: 10,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View>
+                      <Text style={{ fontSize: 10, color: colors.muted }}>
+                        {order.paymentChannel === "MTN_MOMO" ? "🟡 MTN MoMo" : (order.paymentChannel === "MOOV_MONEY" ? "🔵 Moov Money" : "💵 Espèces")}
+                      </Text>
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: order.paymentStatus === "SETTLED_TO_MERCHANT" ? colors.action : "#D97706" }}>
+                        {order.paymentStatus === "SETTLED_TO_MERCHANT" ? (isEn ? "✓ Paid" : "✓ Encaissé") : (isEn ? "Pending" : "En attente")}
+                      </Text>
+                    </View>
+
+                    <Text style={{ fontSize: 15, fontWeight: "800", color: colors.action }}>
+                      {Math.round(order.totalAmountMinor / 100).toLocaleString("fr-FR")} FCFA
                     </Text>
                   </View>
-                </View>
-                
-                <Text style={{ fontSize: 13, color: colors.text, marginBottom: 4 }}>
-                  {isEn ? `Buyer: ${order.buyerName} · ${order.deliveryAddress}` : `Acheteur : ${order.buyerName} · ${order.deliveryAddress}`}
-                </Text>
-                <Text style={{ fontSize: 14, color: colors.text, fontWeight: "600", marginBottom: 8 }}>
-                  {order.lines ? order.lines.map(l => l.itemTitle).join(", ") : (order as any).items?.map((i: any) => i.itemTitle).join(", ")}
-                </Text>
-                
-                <Text style={{ fontSize: 16, fontWeight: "700", color: colors.action, marginBottom: 12 }}>
-                  {Math.round(order.totalAmountMinor / 100).toLocaleString("fr-FR")} FCFA
-                </Text>
 
-                <View style={{ backgroundColor: colors.canvas, padding: 12, borderRadius: 8, marginBottom: 14 }}>
-                  <Text style={{ fontSize: 12, color: colors.text, marginBottom: 2 }}>
-                    <Text style={{ fontWeight: "700" }}>{order.paymentChannel}</Text>
-                  </Text>
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: order.paymentStatus === 'SETTLED_TO_MERCHANT' ? colors.successFg : colors.accent }}>
-                    {order.paymentStatus}
-                  </Text>
-                </View>
+                  {/* Actions depending on fulfillment */}
+                  {isPending && (
+                    <Pressable
+                      style={({ pressed }) => [{
+                        backgroundColor: colors.action,
+                        paddingVertical: 11,
+                        borderRadius: 20,
+                        alignItems: "center",
+                        opacity: pressed ? 0.85 : 1,
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                      }]}
+                      onPress={() => updateOrderStatus(order.id, "PREPARING")}
+                    >
+                      <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 12 }}>
+                        {isEn ? "Start Preparation →" : "Démarrer la préparation →"}
+                      </Text>
+                    </Pressable>
+                  )}
 
-                {order.fulfillmentStatus === 'PENDING' && (
-                  <Pressable 
-                    style={({ pressed }) => [{
-                      backgroundColor: colors.action,
-                      padding: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      opacity: pressed ? 0.8 : 1,
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                    }]}
-                    onPress={() => updateOrderStatus(order.id, 'PREPARING')}
-                  >
-                    <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13 }}>
-                      {isEn ? "Mark as Preparing →" : "Marquer en préparation →"}
-                    </Text>
-                  </Pressable>
-                )}
-                {order.fulfillmentStatus === 'PREPARING' && (
-                  <Pressable 
-                    style={({ pressed }) => [{
-                      backgroundColor: colors.surface,
-                      borderWidth: 1,
-                      borderColor: colors.action,
-                      padding: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      opacity: pressed ? 0.8 : 1,
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                    }]}
-                    onPress={() => updateOrderStatus(order.id, 'SHIPPED')}
-                  >
-                    <Text style={{ color: colors.action, fontWeight: "700", fontSize: 13 }}>
-                      {isEn ? "Mark as Shipped →" : "Marquer comme expédiée →"}
-                    </Text>
-                  </Pressable>
-                )}
-                {order.fulfillmentStatus === 'SHIPPED' && (
-                  <Pressable 
-                    style={({ pressed }) => [{
-                      backgroundColor: colors.surface,
-                      borderWidth: 1,
-                      borderColor: colors.action,
-                      padding: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      opacity: pressed ? 0.8 : 1,
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                    }]}
-                    onPress={() => updateOrderStatus(order.id, 'DELIVERED')}
-                  >
-                    <Text style={{ color: colors.action, fontWeight: "700", fontSize: 13 }}>
-                      {isEn ? "Mark as Delivered →" : "Marquer comme livrée →"}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            ))}
+                  {isPreparing && (
+                    <Pressable
+                      style={({ pressed }) => [{
+                        backgroundColor: colors.canvas,
+                        borderWidth: 1.5,
+                        borderColor: colors.action,
+                        paddingVertical: 10,
+                        borderRadius: 20,
+                        alignItems: "center",
+                        opacity: pressed ? 0.85 : 1,
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                      }]}
+                      onPress={() => updateOrderStatus(order.id, "DELIVERED")}
+                    >
+                      <Text style={{ color: colors.action, fontWeight: "800", fontSize: 12 }}>
+                        {isEn ? "Mark as Delivered ✓" : "Marquer comme Livrée ✓"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>

@@ -23,8 +23,6 @@ interface BuyerHomeScreenProps {
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
 const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
 const imgArmchair = require("../../../assets/products/armchair.jpg");
-const imgBrandLight = require("../../../assets/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Transparent.png");
-const imgBrandDark = require("../../../assets/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Dark_Transparent.png");
 
 const CATALOG = [
   {
@@ -101,15 +99,15 @@ const CATALOG = [
   },
 ];
 
-function formatXOF(price: number, currency = "XOF") {
+function formatXOF(price: number, currency = "FCFA") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
 
 function mapApiProduct(prod: ProductItem) {
   let image = imgLeatherTote;
   const cat = (prod.category || "").toLowerCase();
-  if (cat.includes("joaillerie") || cat.includes("watches") || cat.includes("bijoux")) image = imgWatchChrono;
-  else if (cat.includes("mobilier") || cat.includes("home") || cat.includes("deco")) image = imgArmchair;
+  if (cat.includes("joaillerie") || cat.includes("watches") || cat.includes("bijoux") || cat.includes("horlogerie")) image = imgWatchChrono;
+  else if (cat.includes("mobilier") || cat.includes("home") || cat.includes("deco") || cat.includes("fauteuil")) image = imgArmchair;
   else if (cat.includes("mode") || cat.includes("fashion") || cat.includes("art")) image = imgLeatherTote;
   else if (cat.includes("maroquinerie") || cat.includes("leather")) image = imgLeatherTote;
   
@@ -117,11 +115,11 @@ function mapApiProduct(prod: ProductItem) {
     id: prod.id,
     title: prod.title,
     subtitle: prod.description,
-    seller: prod.artisanShop?.name || "Artisan",
+    seller: prod.artisanShop?.name || "Artisan d'Excellence",
     price: Math.round(prod.priceMinor / 100),
-    currency: prod.currency || "XOF",
-    rating: 4.8,
-    reviews: 12,
+    currency: "FCFA",
+    rating: 4.9,
+    reviews: 24,
     image,
     category: prod.category,
   };
@@ -152,11 +150,19 @@ export default function BuyerHomeScreen({
         if (apiProds && apiProds.length > 0) {
           setProducts(apiProds.map(mapApiProduct));
         } else {
-          setProducts([]);
+          // Fallback to rich curated catalog
+          const filtered = CATALOG.filter((p) => {
+            const matchCat = activeCat === "all" || p.category === activeCat;
+            const matchSearch =
+              !search ||
+              p.title.toLowerCase().includes(search.toLowerCase()) ||
+              p.seller.toLowerCase().includes(search.toLowerCase());
+            return matchCat && matchSearch;
+          });
+          setProducts(filtered);
         }
       } catch (err) {
-        console.warn("API failed, falling back to CATALOG", err);
-        // Fallback filter
+        console.warn("API fallback to CATALOG", err);
         const filtered = CATALOG.filter((p) => {
           const matchCat = activeCat === "all" || p.category === activeCat;
           const matchSearch =
@@ -173,7 +179,7 @@ export default function BuyerHomeScreen({
     
     const timeout = setTimeout(() => {
       fetchProducts();
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timeout);
   }, [search, activeCat]);
@@ -184,24 +190,24 @@ export default function BuyerHomeScreen({
 
   const categories = [
     { id: "all", label: isEn ? "All" : "Tout", icon: "❖" },
-    { id: "leather", label: isEn ? "Bags" : "Sacs", icon: "⌗" },
     { id: "watches", label: isEn ? "Watches" : "Montres", icon: "◷" },
-    { id: "fashion", label: isEn ? "Art" : "Art", icon: "✦" },
+    { id: "leather", label: isEn ? "Bags" : "Sacs", icon: "⌗" },
+    { id: "fashion", label: isEn ? "Jewels" : "Bijoux", icon: "💎" },
     { id: "home", label: isEn ? "Home" : "Maison", icon: "⌂" },
-    { id: "digital", label: isEn ? "Digital" : "Numérique", icon: "▤" },
+    { id: "digital", label: isEn ? "Art" : "Art", icon: "✦" },
   ];
 
   const filtered = products;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {/* ==================== PINNED FIXED TOP BAR ==================== */}
+      {/* ==================== PINNED FIXED LUXURY TOP BAR ==================== */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          paddingHorizontal: 20,
+          paddingHorizontal: 18,
           paddingTop: Platform.OS === "android" ? 14 : 10,
           paddingBottom: 12,
           borderBottomWidth: 1,
@@ -210,815 +216,979 @@ export default function BuyerHomeScreen({
           zIndex: 10,
         }}
       >
-        <Image
-          source={isDark ? imgBrandDark : imgBrandLight}
-          style={{ width: 110, height: 26, resizeMode: "contain" }}
-        />
+        {/* Brand Geometric Crest + Name */}
+        <View style={{ flexDirection: "column" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                backgroundColor: colors.action,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: colors.accent,
+              }}
+            >
+              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>✦</Text>
+            </View>
+            <Text
+              style={{
+                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                fontSize: 18,
+                fontWeight: "800",
+                letterSpacing: 1.8,
+                color: colors.text,
+              }}
+            >
+              OJARKET
+            </Text>
+          </View>
+          <Text
+            style={{
+              fontSize: 8,
+              fontWeight: "800",
+              letterSpacing: 1.4,
+              color: colors.accent,
+              textTransform: "uppercase",
+              marginTop: 2,
+              marginLeft: 31,
+            }}
+          >
+            {isEn ? "CURATED MARKETPLACE" : "MARKETPLACE D'EXCEPTION"}
+          </Text>
+        </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {/* Action Controls: Lang + Theme + Notifications + Cart */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+          {/* FR / EN Toggle */}
           <Pressable
             onPress={() => setLocale(isEn ? "fr" : "en")}
             style={({ pressed }) => [{
-              paddingHorizontal: 10,
-              paddingVertical: 4,
+              paddingHorizontal: 9,
+              paddingVertical: 5,
               borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
-              backgroundColor: colors.surface,
-              opacity: pressed ? 0.7 : 1,
+              backgroundColor: colors.canvas,
+              opacity: pressed ? 0.75 : 1,
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text }}>
+            <Text style={{ fontSize: 11, fontWeight: "800", color: colors.text, letterSpacing: 0.5 }}>
               {isEn ? "FR" : "EN"}
             </Text>
           </Pressable>
 
+          {/* Theme Toggle */}
           <Pressable
             onPress={() => setMode(isDark ? "light" : "dark")}
-            style={({ pressed }) => [{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: pressed ? 0.7 : 1,
-              transform: [{ scale: pressed ? 0.95 : 1 }],
-            }]}
-          >
-            <Text style={{ fontSize: 13, color: colors.text }}>
-              {isDark ? "☼" : "☾"}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={onOpenCart}
             style={({ pressed }) => [{
               width: 34,
               height: 34,
               borderRadius: 17,
-              backgroundColor: colors.surface,
               borderWidth: 1,
               borderColor: colors.border,
+              backgroundColor: colors.canvas,
               alignItems: "center",
               justifyContent: "center",
-              opacity: pressed ? 0.7 : 1,
+              opacity: pressed ? 0.75 : 1,
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 15, color: colors.text }}>🛍</Text>
+            <Text style={{ fontSize: 14, color: colors.text }}>
+              {isDark ? "☼" : "☾"}
+            </Text>
+          </Pressable>
+
+          {/* Notification Bell with Red Indicator */}
+          <Pressable
+            onPress={onSwitchToSeller}
+            style={({ pressed }) => [{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.canvas,
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              opacity: pressed ? 0.75 : 1,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            }]}
+          >
+            <Text style={{ fontSize: 14 }}>🔔</Text>
+            <View
+              style={{
+                position: "absolute",
+                top: 7,
+                right: 7,
+                width: 7,
+                height: 7,
+                borderRadius: 3.5,
+                backgroundColor: "#EF4444",
+                borderWidth: 1,
+                borderColor: colors.surface,
+              }}
+            />
+          </Pressable>
+
+          {/* Cart Icon */}
+          <Pressable
+            onPress={onOpenCart}
+            style={({ pressed }) => [{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: colors.action,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            }]}
+          >
+            <Text style={{ fontSize: 16, color: "#FFFFFF" }}>🛍</Text>
           </Pressable>
         </View>
       </View>
 
-      {/* ==================== SCROLLABLE CONTENT ==================== */}
+      {/* ==================== SCROLLABLE FEED ==================== */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ==================== EDITORIAL LEAD ==================== */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12 }}>
+        {/* ==================== EDITORIAL HERO TITLE ==================== */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
           <Text
             style={{
               fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-            fontSize: 26,
-            fontWeight: "700",
-            color: colors.text,
-            letterSpacing: -0.4,
-            marginBottom: 4,
-          }}
-        >
-          {isEn ? "Discover the Exceptional" : "Découvrez l'exceptionnel"}
-        </Text>
-        <Text style={{ fontSize: 13, color: colors.muted }}>
-          {isEn
-            ? "Unique pieces for unique individuals."
-            : "Des produits uniques pour des personnes uniques."}
-        </Text>
-      </View>
-
-      {/* ==================== SEARCH BAR ==================== */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: colors.subtle,
-            borderRadius: 24,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingHorizontal: 16,
-            height: 44,
-          }}
-        >
-          <Text style={{ fontSize: 14, color: colors.muted, marginRight: 8 }}>🔍</Text>
-          <TextInput
-            placeholder={
-              isEn
-                ? "Search for products, brands..."
-                : "Rechercher un produit, une marque..."
-            }
-            placeholderTextColor={colors.muted}
-            value={search}
-            onChangeText={setSearch}
-            style={{
-              flex: 1,
-              fontSize: 14,
+              fontSize: 26,
+              fontWeight: "700",
               color: colors.text,
-              paddingVertical: 0,
+              letterSpacing: -0.4,
+              marginBottom: 4,
             }}
-          />
+          >
+            {isEn ? "Discover the Exceptional" : "Découvrez l'exceptionnel"}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
+            {isEn
+              ? "Unique pieces crafted by master artisans for discerning collectors."
+              : "Des créations uniques confectionnées par des maîtres artisans d'exception."}
+          </Text>
         </View>
-      </View>
 
-      {/* ==================== CIRCULAR CATEGORIES ==================== */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 14, paddingBottom: 16 }}
-      >
-        {categories.map((c) => {
-          const isActive = activeCat === c.id;
-          return (
-            <Pressable
-              key={c.id}
-              onPress={() => setActiveCat(c.id)}
-              style={{ alignItems: "center", width: 62 }}
-            >
+        {/* ==================== LUXURY SEARCH PILL ==================== */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: colors.surface,
+              borderRadius: 24,
+              borderWidth: 1,
+              borderColor: colors.border,
+              paddingHorizontal: 16,
+              height: 46,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0 : 0.04,
+              shadowRadius: 6,
+              elevation: 1,
+            }}
+          >
+            <Text style={{ fontSize: 15, color: colors.muted, marginRight: 10 }}>🔍</Text>
+            <TextInput
+              placeholder={
+                isEn
+                  ? "Search for creations, watches, artisans..."
+                  : "Rechercher une création, une montre, un atelier..."
+              }
+              placeholderTextColor={colors.muted}
+              value={search}
+              onChangeText={setSearch}
+              style={{
+                flex: 1,
+                fontSize: 13,
+                color: colors.text,
+                paddingVertical: 0,
+              }}
+            />
+            {search.length > 0 ? (
+              <Pressable onPress={() => setSearch("")} style={{ padding: 4 }}>
+                <Text style={{ fontSize: 13, color: colors.muted }}>✕</Text>
+              </Pressable>
+            ) : (
               <View
                 style={{
-                  width: 58,
-                  height: 58,
-                  borderRadius: 29,
-                  backgroundColor: isActive ? colors.action : colors.subtle,
-                  borderWidth: 1,
-                  borderColor: isActive ? colors.action : colors.border,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  shadowColor: colors.action,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isActive ? 0.25 : 0,
-                  shadowRadius: 4,
-                  elevation: isActive ? 3 : 0,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 6,
+                  backgroundColor: colors.subtle,
                 }}
               >
-                <Text
+                <Text style={{ fontSize: 11, color: colors.muted }}>⚲ SCAN</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* ==================== CIRCULAR CATEGORIES ==================== */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 14, paddingBottom: 16 }}
+        >
+          {categories.map((c) => {
+            const isActive = activeCat === c.id;
+            return (
+              <Pressable
+                key={c.id}
+                onPress={() => setActiveCat(c.id)}
+                style={({ pressed }) => [{
+                  alignItems: "center",
+                  width: 62,
+                  opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                }]}
+              >
+                <View
                   style={{
-                    fontSize: 20,
-                    color: isActive ? "#FFFFFF" : colors.text,
+                    width: 58,
+                    height: 58,
+                    borderRadius: 29,
+                    backgroundColor: isActive ? colors.action : colors.surface,
+                    borderWidth: 1.5,
+                    borderColor: isActive ? colors.accent : colors.border,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 6,
+                    shadowColor: isActive ? colors.action : "#000",
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: isActive ? 0.3 : 0.05,
+                    shadowRadius: 5,
+                    elevation: isActive ? 4 : 1,
                   }}
                 >
-                  {c.icon}
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      color: isActive ? "#FFFFFF" : colors.text,
+                    }}
+                  >
+                    {c.icon}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: isActive ? "800" : "500",
+                    color: isActive ? colors.action : colors.muted,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
+                  {c.label}
                 </Text>
-              </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* ==================== HERO SPOTLIGHT BANNER ==================== */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+          <View
+            style={{
+              backgroundColor: "#022B22",
+              borderRadius: 22,
+              overflow: "hidden",
+              borderWidth: 1,
+              borderColor: "rgba(212, 180, 131, 0.4)",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 14,
+              elevation: 5,
+            }}
+          >
+            {/* Banner Text Content */}
+            <View style={{ padding: 20, paddingBottom: 16 }}>
               <Text
                 style={{
-                  fontSize: 11,
-                  fontWeight: isActive ? "700" : "500",
-                  color: isActive ? colors.text : colors.muted,
-                  textAlign: "center",
+                  fontSize: 10,
+                  fontWeight: "800",
+                  letterSpacing: 1.4,
+                  color: colors.accent,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
                 }}
-                numberOfLines={1}
               >
-                {c.label}
+                {isEn ? "CURATED COLLECTION" : "COLLECTION SÉLECTIONNÉE"}
+              </Text>
+
+              <Text
+                style={{
+                  fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                  fontSize: 24,
+                  lineHeight: 28,
+                  color: "#FFFFFF",
+                  fontWeight: "700",
+                  marginBottom: 6,
+                }}
+              >
+                {isEn ? "Timeless Icons" : "Icônes Intemporelles"}
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255, 255, 255, 0.82)",
+                  lineHeight: 17,
+                  marginBottom: 16,
+                }}
+              >
+                {isEn
+                  ? "Exceptional pieces from yesterday, today, and tomorrow."
+                  : "Des pièces d'exception, hier, aujourd'hui et demain."}
+              </Text>
+
+              <Pressable
+                onPress={onOpenNeed}
+                style={({ pressed }) => [{
+                  alignSelf: "flex-start",
+                  backgroundColor: "#0D4A38",
+                  borderWidth: 1,
+                  borderColor: "rgba(212, 180, 131, 0.6)",
+                  paddingHorizontal: 18,
+                  paddingVertical: 9,
+                  borderRadius: 22,
+                  opacity: pressed ? 0.85 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                }]}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
+                  {isEn ? "Discover Collection →" : "Découvrir la sélection →"}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Visual Header / Showcase Banner */}
+            <View
+              style={{
+                height: 140,
+                backgroundColor: "rgba(13, 74, 56, 0.5)",
+                borderTopWidth: 1,
+                borderColor: "rgba(212, 180, 131, 0.2)",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
+              }}
+            >
+              <Text style={{ fontSize: 44 }}>⌚</Text>
+              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "700", marginTop: 4 }}>
+                Chronographe Héritage · Or & Acier
+              </Text>
+              {/* Pagination Dots */}
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 10,
+                  left: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 14,
+                }}
+              >
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#FFFFFF" }} />
+                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
+                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
+                <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700", marginLeft: 4 }}>
+                  1 / 4
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ==================== 2-COLUMN PRODUCT GRID ==================== */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: 14,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                fontSize: 19,
+                fontWeight: "700",
+                color: colors.text,
+              }}
+            >
+              {isEn ? "Recommended for you" : "Recommandé pour vous"}
+            </Text>
+
+            <Pressable onPress={() => setActiveCat("all")}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: colors.action }}>
+                {isEn ? "See all →" : "Voir tout →"}
               </Text>
             </Pressable>
-          );
-        })}
-      </ScrollView>
+          </View>
 
-      {/* ==================== HERO SPOTLIGHT ==================== */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-        <View
-          style={{
-            backgroundColor: "#022B22",
-            borderRadius: 20,
-            overflow: "hidden",
-            borderWidth: 1,
-            borderColor: "rgba(212, 180, 131, 0.35)",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.18,
-            shadowRadius: 14,
-            elevation: 4,
-          }}
-        >
-          {/* Card Text Content */}
-          <View style={{ padding: 20, paddingBottom: 14 }}>
+          {/* 2-Column Grid of Creations */}
+          <View style={{ flexDirection: "row", gap: 12 }}>
+              {/* Column 1 */}
+              <View style={{ flex: 1, gap: 14 }}>
+                {filtered
+                  .filter((_, i) => i % 2 === 0)
+                  .map((prod) => (
+                    <Pressable
+                      key={prod.id}
+                      onPress={() => onSelectProduct(prod)}
+                      style={({ pressed }) => [{
+                        backgroundColor: colors.surface,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        overflow: "hidden",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 3 },
+                        shadowOpacity: isDark ? 0 : 0.05,
+                        shadowRadius: 8,
+                        elevation: isDark ? 0 : 2,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      }]}
+                    >
+                      {/* Photo preview banner */}
+                      <View
+                        style={{
+                          width: "100%",
+                          height: 140,
+                          backgroundColor: colors.canvas,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                        }}
+                      >
+                        <Text style={{ fontSize: 40 }}>
+                          {prod.category === "watches" ? "⌚" : (prod.category === "leather" ? "👜" : (prod.category === "home" ? "🛋" : "💎"))}
+                        </Text>
+                        {/* Floating Wishlist Heart */}
+                        <Pressable
+                          onPress={() => toggleFav(prod.id)}
+                          style={({ pressed }) => [{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            width: 30,
+                            height: 30,
+                            borderRadius: 15,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 4,
+                            elevation: 2,
+                            transform: [{ scale: pressed ? 0.9 : 1 }],
+                          }]}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              color: favorites[prod.id] ? "#EF4444" : "#4B5563",
+                            }}
+                          >
+                            {favorites[prod.id] ? "♥" : "♡"}
+                          </Text>
+                        </Pressable>
+                      </View>
+
+                      {/* Body */}
+                      <View style={{ padding: 12 }}>
+                        <Text
+                          style={{
+                            fontSize: 9,
+                            fontWeight: "800",
+                            letterSpacing: 0.8,
+                            color: colors.muted,
+                            textTransform: "uppercase",
+                            marginBottom: 2,
+                          }}
+                        >
+                          {prod.seller}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                            fontSize: 14,
+                            fontWeight: "700",
+                            color: colors.text,
+                            marginBottom: 6,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {prod.title}
+                        </Text>
+
+                        {/* Footer: Price + Solid Cart CTA */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginTop: 4,
+                            paddingTop: 8,
+                            borderTopWidth: 1,
+                            borderTopColor: colors.border,
+                          }}
+                        >
+                          <View>
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                fontWeight: "800",
+                                color: colors.text,
+                              }}
+                            >
+                              {formatXOF(prod.price)}
+                            </Text>
+                            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
+                              ★ {prod.rating.toFixed(1)} ({prod.reviews})
+                            </Text>
+                          </View>
+
+                          <Pressable
+                            onPress={() => onSelectProduct(prod)}
+                            style={({ pressed }) => [{
+                              width: 32,
+                              height: 32,
+                              borderRadius: 8,
+                              backgroundColor: colors.action,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              opacity: pressed ? 0.85 : 1,
+                              transform: [{ scale: pressed ? 0.92 : 1 }],
+                            }]}
+                          >
+                            <Text style={{ color: "#FFFFFF", fontSize: 14 }}>
+                              🛒
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+              </View>
+
+              {/* Column 2 */}
+              <View style={{ flex: 1, gap: 14 }}>
+                {filtered
+                  .filter((_, i) => i % 2 !== 0)
+                  .map((prod) => (
+                    <Pressable
+                      key={prod.id}
+                      onPress={() => onSelectProduct(prod)}
+                      style={({ pressed }) => [{
+                        backgroundColor: colors.surface,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        overflow: "hidden",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 3 },
+                        shadowOpacity: isDark ? 0 : 0.05,
+                        shadowRadius: 8,
+                        elevation: isDark ? 0 : 2,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      }]}
+                    >
+                      {/* Photo preview banner */}
+                      <View
+                        style={{
+                          width: "100%",
+                          height: 140,
+                          backgroundColor: colors.canvas,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                        }}
+                      >
+                        <Text style={{ fontSize: 40 }}>
+                          {prod.category === "watches" ? "⌚" : (prod.category === "leather" ? "👜" : (prod.category === "home" ? "🛋" : "💎"))}
+                        </Text>
+                        {/* Floating Wishlist Heart */}
+                        <Pressable
+                          onPress={() => toggleFav(prod.id)}
+                          style={({ pressed }) => [{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            width: 30,
+                            height: 30,
+                            borderRadius: 15,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 4,
+                            elevation: 2,
+                            transform: [{ scale: pressed ? 0.9 : 1 }],
+                          }]}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              color: favorites[prod.id] ? "#EF4444" : "#4B5563",
+                            }}
+                          >
+                            {favorites[prod.id] ? "♥" : "♡"}
+                          </Text>
+                        </Pressable>
+                      </View>
+
+                      {/* Body */}
+                      <View style={{ padding: 12 }}>
+                        <Text
+                          style={{
+                            fontSize: 9,
+                            fontWeight: "800",
+                            letterSpacing: 0.8,
+                            color: colors.muted,
+                            textTransform: "uppercase",
+                            marginBottom: 2,
+                          }}
+                        >
+                          {prod.seller}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                            fontSize: 14,
+                            fontWeight: "700",
+                            color: colors.text,
+                            marginBottom: 6,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {prod.title}
+                        </Text>
+
+                        {/* Footer: Price + Solid Cart CTA */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginTop: 4,
+                            paddingTop: 8,
+                            borderTopWidth: 1,
+                            borderTopColor: colors.border,
+                          }}
+                        >
+                          <View>
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                fontWeight: "800",
+                                color: colors.text,
+                              }}
+                            >
+                              {formatXOF(prod.price)}
+                            </Text>
+                            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
+                              ★ {prod.rating.toFixed(1)} ({prod.reviews})
+                            </Text>
+                          </View>
+
+                          <Pressable
+                            onPress={() => onSelectProduct(prod)}
+                            style={({ pressed }) => [{
+                              width: 32,
+                              height: 32,
+                              borderRadius: 8,
+                              backgroundColor: colors.action,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              opacity: pressed ? 0.85 : 1,
+                              transform: [{ scale: pressed ? 0.92 : 1 }],
+                            }]}
+                          >
+                            <Text style={{ color: "#FFFFFF", fontSize: 14 }}>
+                              🛒
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+              </View>
+            </View>
+        </View>
+
+        {/* ==================== BOUTIQUES DE CONFIANCE (TRUSTED SHOPS) ==================== */}
+        <View style={{ marginBottom: 28 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              paddingHorizontal: 20,
+              marginBottom: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                fontSize: 19,
+                fontWeight: "700",
+                color: colors.text,
+              }}
+            >
+              {isEn ? "Trusted Boutiques" : "Boutiques de confiance"}
+            </Text>
+
+            <Pressable>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: colors.action }}>
+                {isEn ? "See all →" : "Voir tout →"}
+              </Text>
+            </Pressable>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+          >
+            {[
+              {
+                name: "Maison Laurent",
+                initials: "ML",
+                specialty: "Maroquinerie d'art",
+                rating: 4.9,
+                reviews: 320,
+                icon1: "👜",
+                icon2: "🧳",
+              },
+              {
+                name: "Atelier Horlogerie",
+                initials: "AH",
+                specialty: "Horlogerie & Joaillerie",
+                rating: 5.0,
+                reviews: 186,
+                icon1: "⌚",
+                icon2: "💎",
+              },
+              {
+                name: "Studio Djoliba",
+                initials: "SD",
+                specialty: "Design & Textiles nobles",
+                rating: 4.8,
+                reviews: 340,
+                icon1: "🛋",
+                icon2: "🏺",
+              },
+            ].map((shop, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 285,
+                  backgroundColor: colors.surface,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  padding: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isDark ? 0 : 0.04,
+                  shadowRadius: 6,
+                  elevation: 1,
+                }}
+              >
+                {/* Left: Avatar + Badge + Rating */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                  <View
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 21,
+                      backgroundColor: colors.canvas,
+                      borderWidth: 1.5,
+                      borderColor: colors.accent,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: colors.accent,
+                      }}
+                    >
+                      {shop.initials}
+                    </Text>
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{ fontSize: 13, fontWeight: "700", color: colors.text }}
+                      numberOfLines={1}
+                    >
+                      {shop.name}
+                    </Text>
+                    {/* Gold Pill Badge */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 3,
+                        backgroundColor: "rgba(212, 180, 131, 0.2)",
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 10,
+                        alignSelf: "flex-start",
+                        marginTop: 2,
+                      }}
+                    >
+                      <Text style={{ fontSize: 9 }}>👑</Text>
+                      <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
+                        Vendeur Pro
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
+                      ★ {shop.rating} ({shop.reviews})
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Right: 2 product preview icons */}
+                <View style={{ flexDirection: "row", gap: 5 }}>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      backgroundColor: colors.canvas,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 20 }}>{shop.icon1}</Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      backgroundColor: colors.canvas,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 20 }}>{shop.icon2}</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ==================== ARTISAN REQUEST PROMPT ==================== */}
+        <View style={{ paddingHorizontal: 20 }}>
+          <View
+            style={{
+              backgroundColor: "#022B22",
+              borderRadius: 20,
+              padding: 22,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "rgba(212, 180, 131, 0.4)",
+            }}
+          >
             <Text
               style={{
                 fontSize: 10,
                 fontWeight: "800",
-                letterSpacing: 1.4,
+                letterSpacing: 1.2,
                 color: colors.accent,
                 textTransform: "uppercase",
                 marginBottom: 6,
               }}
             >
-              {isEn ? "CURATED COLLECTION" : "COLLECTION SÉLECTIONNÉE"}
+              {isEn ? "ARTISAN NETWORK" : "RÉSEAU D'ARTISANS"}
             </Text>
 
             <Text
               style={{
                 fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                fontSize: 24,
-                lineHeight: 28,
+                fontSize: 18,
+                lineHeight: 22,
                 color: "#FFFFFF",
                 fontWeight: "700",
+                textAlign: "center",
                 marginBottom: 6,
               }}
             >
-              {isEn ? "Timeless Icons" : "Icônes Intemporelles"}
+              {isEn
+                ? "Cannot find the ideal creation?"
+                : "Vous ne trouvez pas la création idéale ?"}
             </Text>
 
             <Text
               style={{
                 fontSize: 12,
-                color: "rgba(255, 255, 255, 0.8)",
+                color: "rgba(255, 255, 255, 0.82)",
+                textAlign: "center",
                 lineHeight: 17,
-                marginBottom: 14,
+                marginBottom: 16,
               }}
             >
               {isEn
-                ? "Exceptional pieces from yesterday, today, and tomorrow."
-                : "Des pièces d'exception, hier, aujourd'hui et demain."}
+                ? "Describe your custom need. Master artisans submit tailored quotes directly to your inbox."
+                : "Décrivez votre projet sur-mesure. Les maîtres artisans d'art vous soumettent directement leurs devis personnalisés."}
             </Text>
 
             <Pressable
               onPress={onOpenNeed}
-              style={{
-                alignSelf: "flex-start",
-                backgroundColor: "#033C2F",
-                borderWidth: 1,
-                borderColor: "rgba(212, 180, 131, 0.5)",
-                paddingHorizontal: 18,
-                paddingVertical: 8,
-                borderRadius: 20,
-              }}
+              style={({ pressed }) => [{
+                backgroundColor: colors.action,
+                paddingHorizontal: 20,
+                paddingVertical: 11,
+                borderRadius: 24,
+                opacity: pressed ? 0.85 : 1,
+                transform: [{ scale: pressed ? 0.96 : 1 }],
+              }]}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
-                {isEn ? "Discover →" : "Découvrir →"}
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>
+                {isEn ? "Post bespoke request →" : "Publier ma demande de création →"}
               </Text>
             </Pressable>
           </View>
-
-          {/* Watch Visual */}
-          <View style={{ height: 180, width: "100%", position: "relative" }}>
-            <Image
-              source={imgWatchChrono}
-              style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-            />
-            {/* Pagination Dots */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 10,
-                left: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: "rgba(0,0,0,0.4)",
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-                borderRadius: 12,
-              }}
-            >
-              <View
-                style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#FFFFFF" }}
-              />
-              <View
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: 2.5,
-                  backgroundColor: "rgba(255,255,255,0.4)",
-                }}
-              />
-              <View
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: 2.5,
-                  backgroundColor: "rgba(255,255,255,0.4)",
-                }}
-              />
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontSize: 10,
-                  fontWeight: "600",
-                  marginLeft: 4,
-                }}
-              >
-                1 / 4
-              </Text>
-            </View>
-          </View>
         </View>
-      </View>
-
-      {/* ==================== 2-COLUMN PRODUCT GRID ==================== */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 26 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            marginBottom: 14,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 18,
-              fontWeight: "700",
-              color: colors.text,
-            }}
-          >
-            {isEn ? "Recommended for you" : "Recommandé pour vous"}
-          </Text>
-
-          <Pressable onPress={() => setActiveCat("all")}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.action }}>
-              {isEn ? "See all →" : "Voir tout →"}
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* 2 Columns Layout */}
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          {/* Column 1 (even index) */}
-          <View style={{ flex: 1, gap: 12 }}>
-            {filtered
-              .filter((_, i) => i % 2 === 0)
-              .map((prod) => (
-                <Pressable
-                  key={prod.id}
-                  onPress={() => onSelectProduct(prod)}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    overflow: "hidden",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: isDark ? 0 : 0.04,
-                    shadowRadius: 6,
-                    elevation: isDark ? 0 : 1,
-                  }}
-                >
-                  {/* Photo 4:5 */}
-                  <View style={{ width: "100%", aspectRatio: 4 / 5, position: "relative" }}>
-                    <Image
-                      source={prod.image}
-                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-                    />
-                    {/* Wishlist Heart */}
-                    <Pressable
-                      onPress={() => toggleFav(prod.id)}
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        width: 28,
-                        height: 28,
-                        borderRadius: 14,
-                        backgroundColor: "rgba(255,255,255,0.85)",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: favorites[prod.id] ? "#EF4444" : "#5B6661",
-                        }}
-                      >
-                        {favorites[prod.id] ? "♥" : "♡"}
-                      </Text>
-                    </Pressable>
-                  </View>
-
-                  {/* Body */}
-                  <View style={{ padding: 10 }}>
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        fontWeight: "700",
-                        letterSpacing: 0.8,
-                        color: colors.muted,
-                        textTransform: "uppercase",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {prod.seller}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                        fontSize: 13,
-                        fontWeight: "700",
-                        color: colors.text,
-                        marginBottom: 4,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {prod.title}
-                    </Text>
-
-                    {/* Footer: Price + Cart */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginTop: 4,
-                        paddingTop: 6,
-                        borderTopWidth: 1,
-                        borderTopColor: colors.border,
-                      }}
-                    >
-                      <View>
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: "800",
-                            color: colors.text,
-                          }}
-                        >
-                          {formatXOF(prod.price, prod.currency)}
-                        </Text>
-                        <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
-                          ★ {prod.rating.toFixed(1)}
-                        </Text>
-                      </View>
-
-                      <Pressable
-                        onPress={() => onOpenCart()}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 7,
-                          backgroundColor: colors.action,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>
-                          +
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                </Pressable>
-              ))}
-          </View>
-
-          {/* Column 2 (odd index) */}
-          <View style={{ flex: 1, gap: 12 }}>
-            {filtered
-              .filter((_, i) => i % 2 !== 0)
-              .map((prod) => (
-                <Pressable
-                  key={prod.id}
-                  onPress={() => onSelectProduct(prod)}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    overflow: "hidden",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: isDark ? 0 : 0.04,
-                    shadowRadius: 6,
-                    elevation: isDark ? 0 : 1,
-                  }}
-                >
-                  {/* Photo 4:5 */}
-                  <View style={{ width: "100%", aspectRatio: 4 / 5, position: "relative" }}>
-                    <Image
-                      source={prod.image}
-                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-                    />
-                    {/* Wishlist Heart */}
-                    <Pressable
-                      onPress={() => toggleFav(prod.id)}
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        width: 28,
-                        height: 28,
-                        borderRadius: 14,
-                        backgroundColor: "rgba(255,255,255,0.85)",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: favorites[prod.id] ? "#EF4444" : "#5B6661",
-                        }}
-                      >
-                        {favorites[prod.id] ? "♥" : "♡"}
-                      </Text>
-                    </Pressable>
-                  </View>
-
-                  {/* Body */}
-                  <View style={{ padding: 10 }}>
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        fontWeight: "700",
-                        letterSpacing: 0.8,
-                        color: colors.muted,
-                        textTransform: "uppercase",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {prod.seller}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                        fontSize: 13,
-                        fontWeight: "700",
-                        color: colors.text,
-                        marginBottom: 4,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {prod.title}
-                    </Text>
-
-                    {/* Footer: Price + Cart */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginTop: 4,
-                        paddingTop: 6,
-                        borderTopWidth: 1,
-                        borderTopColor: colors.border,
-                      }}
-                    >
-                      <View>
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: "800",
-                            color: colors.text,
-                          }}
-                        >
-                          {formatXOF(prod.price, prod.currency)}
-                        </Text>
-                        <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
-                          ★ {prod.rating.toFixed(1)}
-                        </Text>
-                      </View>
-
-                      <Pressable
-                        onPress={() => onOpenCart()}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 7,
-                          backgroundColor: colors.action,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>
-                          +
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                </Pressable>
-              ))}
-          </View>
-        </View>
-      </View>
-
-      {/* ==================== BOUTIQUES DE CONFIANCE ==================== */}
-      <View style={{ marginBottom: 26 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            paddingHorizontal: 20,
-            marginBottom: 12,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 18,
-              fontWeight: "700",
-              color: colors.text,
-            }}
-          >
-            {isEn ? "Trusted Shops" : "Boutiques de confiance"}
-          </Text>
-
-          <Pressable>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.action }}>
-              {isEn ? "See all →" : "Voir tout →"}
-            </Text>
-          </Pressable>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-        >
-          {[
-            {
-              name: "Maison Laurent",
-              initials: "ML",
-              verified: true,
-              rating: 4.8,
-              reviews: 320,
-              photos: [imgLeatherTote, imgArmchair],
-            },
-            {
-              name: "Atelier Horlogerie",
-              initials: "AH",
-              verified: true,
-              rating: 4.9,
-              reviews: 186,
-              photos: [imgWatchChrono, imgLeatherTote],
-            },
-            {
-              name: "Studio Djoliba",
-              initials: "SD",
-              verified: true,
-              rating: 4.8,
-              reviews: 340,
-              photos: [imgArmchair, imgWatchChrono],
-            },
-          ].map((shop, i) => (
-            <View
-              key={i}
-              style={{
-                width: 270,
-                backgroundColor: colors.surface,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: colors.border,
-                padding: 12,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              {/* Left: Avatar + Info */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
-                <View
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 19,
-                    backgroundColor: colors.subtle,
-                    borderWidth: 1,
-                    borderColor: colors.accent,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color: colors.accent,
-                    }}
-                  >
-                    {shop.initials}
-                  </Text>
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 13, fontWeight: "700", color: colors.text }}
-                    numberOfLines={1}
-                  >
-                    {shop.name}
-                  </Text>
-                  <Text style={{ fontSize: 10, color: colors.action, fontWeight: "700" }}>
-                    ✓ Vendeur Pro
-                  </Text>
-                  <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
-                    ★ {shop.rating} ({shop.reviews})
-                  </Text>
-                </View>
-              </View>
-
-              {/* Right: 2 photos */}
-              <View style={{ flexDirection: "row", gap: 4 }}>
-                {shop.photos.map((ph, idx) => (
-                  <Image
-                    key={idx}
-                    source={ph}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 6,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                  />
-                ))}
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* ==================== ARTISAN REQUEST CARD ==================== */}
-      <View style={{ paddingHorizontal: 20 }}>
-        <View
-          style={{
-            backgroundColor: "#022B22",
-            borderRadius: 18,
-            padding: 20,
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: "rgba(212, 180, 131, 0.4)",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: "800",
-              letterSpacing: 1.2,
-              color: colors.accent,
-              textTransform: "uppercase",
-              marginBottom: 6,
-            }}
-          >
-            {isEn ? "ARTISAN NETWORK" : "RÉSEAU D'ARTISANS"}
-          </Text>
-
-          <Text
-            style={{
-              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 18,
-              lineHeight: 22,
-              color: "#FFFFFF",
-              fontWeight: "700",
-              textAlign: "center",
-              marginBottom: 6,
-            }}
-          >
-            {isEn
-              ? "Cannot find the ideal creation?"
-              : "Vous ne trouvez pas la création idéale ?"}
-          </Text>
-
-          <Text
-            style={{
-              fontSize: 12,
-              color: "rgba(255, 255, 255, 0.8)",
-              textAlign: "center",
-              lineHeight: 16,
-              marginBottom: 14,
-            }}
-          >
-            {isEn
-              ? "Describe your need. Verified artisans submit customized proposals."
-              : "Décrivez votre besoin sur-mesure. Les artisans certifiés vous soumettent directement leurs devis."}
-          </Text>
-
-          <Pressable
-            onPress={onOpenNeed}
-            style={{
-              backgroundColor: colors.action,
-              paddingHorizontal: 18,
-              paddingVertical: 10,
-              borderRadius: 20,
-            }}
-          >
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
-              {isEn ? "Post bespoke request →" : "Publier ma demande de création →"}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </View>
   );
 }

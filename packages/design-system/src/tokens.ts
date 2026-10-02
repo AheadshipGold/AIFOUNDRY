@@ -1,43 +1,47 @@
 export const palette = {
   light: {
-    canvas: "#FAF9F6",
+    canvas: "#FAF9F6", // Ivoire Soyeux
     surface: "#FFFFFF",
-    subtle: "#F2F0EA",
+    subtle: "#F4F0EA", // Pierre douce
     elevated: "#FFFFFF",
     text: "#151E1C",
-    muted: "#5B6661",
-    border: "#DFE4DE",
-    action: "#075D49",
+    muted: "#717882", // Gris Minéral
+    border: "#E7E1D9", // Pierre
+    action: "#0D4A38", // Vert Émeraude Profond Luxury
     onAction: "#FFFFFF",
-    accent: "#AD8455",
-    focus: "#075D49",
-    successBg: "#E6F4EE",
-    successFg: "#185F46",
-    pendingBg: "#FFF3DF",
-    pendingFg: "#7A4A12",
-    errorBg: "#FFF1F2",
-    errorFg: "#B42C3E",
+    accent: "#D4B483", // Or Champagne
+    focus: "#0D4A38",
+    successBg: "#ECFDF5", // Menthe Aide IA
+    successFg: "#065F46",
+    pendingBg: "#FFFBEB",
+    pendingFg: "#B45309",
+    errorBg: "#FEF2F2",
+    errorFg: "#B91C1C",
     overlay: "rgba(11,20,26,0.64)",
+    gold: "#D4B483",
+    goldBg: "rgba(212, 180, 131, 0.15)",
   },
   dark: {
-    canvas: "#0B141A",
-    surface: "#132129",
-    subtle: "#1B2D34",
-    elevated: "#22343B",
+    canvas: "#081018", // Bleu Nuit Profond
+    surface: "#111C1A", // Graphite Émeraude
+    subtle: "#182624", // Gris Ardoise
+    elevated: "#1D2E2B",
     text: "#F5F7F3",
-    muted: "#BBC9C3",
-    border: "#34464C",
-    action: "#63DBB6",
-    onAction: "#0B141A",
-    accent: "#D3B98E",
-    focus: "#63DBB6",
-    successBg: "#163D33",
-    successFg: "#9BE9C5",
-    pendingBg: "#42311D",
-    pendingFg: "#F0D3A4",
-    errorBg: "#46242B",
-    errorFg: "#FFB7C3",
-    overlay: "rgba(11,20,26,0.80)",
+    muted: "#94A3B8", // Gris Minéral Clair
+    border: "#233834",
+    action: "#10B981", // Vert Profond Interactif
+    onAction: "#081018",
+    accent: "#D4B483", // Or Champagne
+    focus: "#10B981",
+    successBg: "#06241D",
+    successFg: "#6EE7B7",
+    pendingBg: "#3B2710",
+    pendingFg: "#FDE68A",
+    errorBg: "#451218",
+    errorFg: "#FCA5A5",
+    overlay: "rgba(8,16,24,0.85)",
+    gold: "#D4B483",
+    goldBg: "rgba(212, 180, 131, 0.18)",
   },
 } as const;
 export type Theme = keyof typeof palette;

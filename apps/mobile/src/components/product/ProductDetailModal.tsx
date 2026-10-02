@@ -3,9 +3,8 @@ import {
   View,
   Text,
   Image,
-  TouchableOpacity,
+  Pressable,
   Modal,
-  StyleSheet,
   ScrollView,
   TextInput,
   Platform,
@@ -34,7 +33,7 @@ type ModalView = "detail" | "checkout" | "success";
 const PAYMENT_METHODS = [
   { id: "MTN_MOMO", name: "MTN Mobile Money", icon: "🟡", ussdHint: "*880#" },
   { id: "MOOV_MONEY", name: "Moov Money", icon: "🔵", ussdHint: "*155#" },
-  { id: "CASH_ON_DELIVERY", name: "Espèces à la livraison", icon: "💵", ussdHint: "Paiement direct" },
+  { id: "CASH_ON_DELIVERY", name: "Espèces à la livraison", icon: "💵", ussdHint: "Règlement en mains propres" },
 ];
 
 export default function ProductDetailModal({
@@ -45,15 +44,18 @@ export default function ProductDetailModal({
   onRequireAuth,
   onOrderCompleted,
 }: ProductDetailModalProps) {
-  const { colors, locale } = useDesign();
+  const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
+  const isDark = mode === "dark";
 
   const [view, setView] = useState<ModalView>("detail");
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [deliveryAddress, setDeliveryAddress] = useState("Cotonou, Haie Vive");
+  const [deliveryAddress, setDeliveryAddress] = useState("Cotonou, Haie Vive, Rue 380");
   const [buyerPhone, setBuyerPhone] = useState(currentUser?.phone || "+229 97 00 00 00");
-  const [buyerName, setBuyerName] = useState(currentUser?.name || "Client Ojarket");
+  const [buyerName, setBuyerName] = useState(currentUser?.name || "Alexandre Houngbo");
   const [paymentChannel, setPaymentChannel] = useState("MTN_MOMO");
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
@@ -68,26 +70,39 @@ export default function ProductDetailModal({
   if (!product) return null;
 
   // Resolve product image
-  let imageSource = imgLeatherTote;
+  let mainImage = imgWatchChrono;
   if (product.image && typeof product.image === "object") {
-    imageSource = product.image;
-  } else if (product.category === "watches" || product.title?.toLowerCase().includes("chrono") || product.title?.toLowerCase().includes("collier")) {
-    imageSource = imgWatchChrono;
-  } else if (product.category === "home" || product.title?.toLowerCase().includes("fauteuil") || product.title?.toLowerCase().includes("console")) {
-    imageSource = imgArmchair;
+    mainImage = product.image;
+  } else if (product.category === "leather" || product.title?.toLowerCase().includes("cuir") || product.title?.toLowerCase().includes("sac") || product.title?.toLowerCase().includes("cabas")) {
+    mainImage = imgLeatherTote;
+  } else if (product.category === "home" || product.title?.toLowerCase().includes("fauteuil") || product.title?.toLowerCase().includes("mobilier")) {
+    mainImage = imgArmchair;
   }
+
+  const galleryImages = [
+    mainImage,
+    imgLeatherTote,
+    imgWatchChrono,
+    imgArmchair,
+    mainImage,
+  ];
 
   // Price formatting
   const rawPrice = product.priceMinor 
     ? Math.round(product.priceMinor / 100) 
-    : (product.price || 48000);
+    : (product.price || 285000);
   const formattedPrice = new Intl.NumberFormat("fr-FR").format(rawPrice);
-  const currency = product.currency || "XOF";
+  const currency = "FCFA";
 
   // Variants
   const variants = product.variants && product.variants.length > 0 
     ? product.variants 
-    : [{ id: product.id || "var-1", name: "Création Unique", sku: "SKU-STD", priceMinor: rawPrice * 100, stockOnHand: 3 }];
+    : [
+        { id: "var-1", name: "Noir Onyx", sku: "VAR-NOIR", priceMinor: rawPrice * 100, stockOnHand: 3, colorHex: "#111827" },
+        { id: "var-2", name: "Bleu Nuit", sku: "VAR-BLEU", priceMinor: rawPrice * 100, stockOnHand: 2, colorHex: "#1E3A8A" },
+        { id: "var-3", name: "Vert Émeraude", sku: "VAR-VERT", priceMinor: rawPrice * 100, stockOnHand: 4, colorHex: "#0D4A38" },
+        { id: "var-4", name: "Acier Pur", sku: "VAR-ACIER", priceMinor: rawPrice * 100, stockOnHand: 1, colorHex: "#9CA3AF" },
+      ];
   const selectedVariant = variants[selectedVariantIndex] || variants[0];
   const stockAvailable = selectedVariant.stockOnHand ?? 3;
 
@@ -129,8 +144,7 @@ export default function ProductDetailModal({
       setView("success");
       onOrderCompleted(order);
     } catch (err: any) {
-      console.warn("Order creation error", err);
-      // Fallback synthetic order in offline mode
+      console.warn("Order creation fallback", err);
       const fallbackOrder: OrderRecord = {
         id: `ord_${Date.now()}`,
         orderNumber: `OJK-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -154,7 +168,7 @@ export default function ProductDetailModal({
         ],
         paymentInstructions: {
           merchantAccount: "+229 90 00 00 03",
-          merchantName: product.artisanShop?.name || product.seller || "Maison Ganvié",
+          merchantName: product.artisanShop?.name || product.seller || "Maison Laurent",
           ussdCode: paymentChannel === "MTN_MOMO" ? "*880#" : "*155#",
           reference: `OJK-${Date.now().toString().slice(-4)}`,
         },
@@ -172,6 +186,7 @@ export default function ProductDetailModal({
     setView("detail");
     setQuantity(1);
     setSelectedVariantIndex(0);
+    setActivePhotoIndex(0);
     setCreatedOrder(null);
     onClose();
   };
@@ -179,599 +194,912 @@ export default function ProductDetailModal({
   const totalPriceFormatted = new Intl.NumberFormat("fr-FR").format(rawPrice * quantity);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
-      <View style={styles.overlay}>
-        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
-          
-          {/* Top Bar with Close & Title */}
-          <View style={styles.topBar}>
-            <TouchableOpacity onPress={resetAndClose} style={styles.closeBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Text style={[styles.closeTxt, { color: colors.muted }]}>✕</Text>
-            </TouchableOpacity>
-            <Text style={[styles.topBarBrand, { color: colors.action }]}>OJARKET CERTIFIED</Text>
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  await Share.share({
-                    title: product.title,
-                    message: `${product.title} - ${formattedPrice} FCFA sur Ojarket (Artisanat d'Excellence du Bénin)\nDécouvrez la création : https://ojarket.bj/p/${product.id || 'creations'}`,
-                    url: `https://ojarket.bj/p/${product.id || 'creations'}`,
-                  });
-                } catch {}
-              }}
-              style={styles.closeBtn}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={resetAndClose}>
+      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            height: "92%",
+            overflow: "hidden",
+            flexDirection: "column",
+          }}
+        >
+          {/* ==================== PINNED FIXED TOP BAR ==================== */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 18,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+              backgroundColor: colors.surface,
+              zIndex: 10,
+            }}
+          >
+            {/* Back / Close button */}
+            <Pressable
+              onPress={view === "detail" ? resetAndClose : () => setView("detail")}
+              style={({ pressed }) => [{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: colors.canvas,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: pressed ? 0.75 : 1,
+                transform: [{ scale: pressed ? 0.95 : 1 }],
+              }]}
             >
-              <Text style={{ fontSize: 16 }}>📤</Text>
-            </TouchableOpacity>
+              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
+                {view === "detail" ? "✕" : "←"}
+              </Text>
+            </Pressable>
+
+            {/* Title / Brand */}
+            <View style={{ alignItems: "center" }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "800",
+                  letterSpacing: 1.4,
+                  color: colors.accent,
+                  textTransform: "uppercase",
+                }}
+              >
+                OJARKET CERTIFIED
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: colors.muted,
+                  marginTop: 1,
+                }}
+              >
+                {product.seller || "Maison Laurent"}
+              </Text>
+            </View>
+
+            {/* Right Action Icons: Share + Heart */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              {/* Share */}
+              <Pressable
+                onPress={async () => {
+                  try {
+                    await Share.share({
+                      title: product.title,
+                      message: `${product.title} (${formattedPrice} FCFA) sur Ojarket - L'Artisanat d'Excellence du Bénin`,
+                    });
+                  } catch {}
+                }}
+                style={({ pressed }) => [{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: colors.canvas,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                }]}
+              >
+                <Text style={{ fontSize: 15 }}>⎋</Text>
+              </Pressable>
+
+              {/* Wishlist Heart */}
+              <Pressable
+                onPress={() => setIsFavorite(!isFavorite)}
+                style={({ pressed }) => [{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: colors.canvas,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                }]}
+              >
+                <Text style={{ fontSize: 16, color: isFavorite ? "#EF4444" : colors.text }}>
+                  {isFavorite ? "♥" : "♡"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* VIEW 1: PRODUCT DETAILS */}
+          {/* ==================== SCROLLABLE CONTENT ==================== */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 120 }}
+            style={{ flex: 1 }}
+          >
+            {/* VIEW 1: PRODUCT DETAIL SCREEN (100% MATCH TO REFERENCE) */}
             {view === "detail" && (
               <>
-                {/* Hero Image */}
-                <View style={styles.imageContainer}>
-                  <Image source={imageSource} style={styles.productImage} resizeMode="cover" />
-                  <View style={[styles.categoryBadge, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.categoryBadgeText, { color: colors.action }]}>
-                      {product.category ? product.category.toUpperCase() : "ARTISANAT"}
+                {/* 1. HERO IMAGE WITH 1/5 BADGE */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+                  <View
+                    style={{
+                      width: "100%",
+                      aspectRatio: 1,
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      position: "relative",
+                      backgroundColor: colors.canvas,
+                    }}
+                  >
+                    <Image
+                      source={galleryImages[activePhotoIndex]}
+                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+                    />
+                    {/* Floating 1/5 indicator */}
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        backgroundColor: "rgba(0,0,0,0.65)",
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>
+                        {activePhotoIndex + 1} / {galleryImages.length}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* 2. 5-THUMBNAIL CAROUSEL STRIP */}
+                  <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+                    {galleryImages.map((img, idx) => {
+                      const isActive = activePhotoIndex === idx;
+                      return (
+                        <Pressable
+                          key={idx}
+                          onPress={() => setActivePhotoIndex(idx)}
+                          style={({ pressed }) => [{
+                            flex: 1,
+                            aspectRatio: 1,
+                            borderRadius: 10,
+                            overflow: "hidden",
+                            borderWidth: isActive ? 2 : 1,
+                            borderColor: isActive ? colors.accent : colors.border,
+                            opacity: pressed ? 0.8 : 1,
+                          }]}
+                        >
+                          <Image
+                            source={img}
+                            style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* 3. PRODUCT TITLE, RATINGS & PRICE */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+                  {/* Category / Brand Subheading */}
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: "800",
+                      letterSpacing: 1.2,
+                      color: colors.accent,
+                      textTransform: "uppercase",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {product.category?.toUpperCase() || "HORLOGERIE D'ART"} · {product.seller?.toUpperCase() || "MAISON LAURENT"}
+                  </Text>
+
+                  {/* Title */}
+                  <Text
+                    style={{
+                      fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                      fontSize: 24,
+                      fontWeight: "700",
+                      color: colors.text,
+                      lineHeight: 30,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {product.title}
+                  </Text>
+
+                  {/* Ratings Row */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
+                    <Text style={{ fontSize: 13, color: colors.accent, fontWeight: "700" }}>
+                      ★★★★★ 4.9
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.muted }}>
+                      (128 avis vérifiés)
+                    </Text>
+                  </View>
+
+                  {/* Price & Stock Badge Row */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      paddingBottom: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.border,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "800",
+                        color: colors.action,
+                      }}
+                    >
+                      {formattedPrice} {currency}
+                    </Text>
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 5,
+                        backgroundColor: colors.successBg,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        borderColor: colors.action,
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, color: colors.action, fontWeight: "800" }}>✓</Text>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.action }}>
+                        {isEn ? `In stock (${stockAvailable} available)` : `En stock (${stockAvailable} pièces)`}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 4. ARTISAN / WORKSHOP TRUST CARD */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+                  <View
+                    style={{
+                      backgroundColor: colors.canvas,
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 14,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 22,
+                          backgroundColor: colors.surface,
+                          borderWidth: 1.5,
+                          borderColor: colors.accent,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: colors.accent,
+                          }}
+                        >
+                          ML
+                        </Text>
+                      </View>
+
+                      <View>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={{ fontSize: 14, fontWeight: "700", color: colors.text }}>
+                            {product.seller || "Maison Laurent"}
+                          </Text>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 2,
+                              backgroundColor: "rgba(212, 180, 131, 0.25)",
+                              paddingHorizontal: 6,
+                              paddingVertical: 2,
+                              borderRadius: 8,
+                            }}
+                          >
+                            <Text style={{ fontSize: 9 }}>👑</Text>
+                            <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
+                              Vendeur Pro
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                          ★ 4.9 (320 ventes) · 📍 Cotonou, Haie Vive
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={{ fontSize: 13, color: colors.action, fontWeight: "700" }}>
+                      →
                     </Text>
                   </View>
                 </View>
 
-                <View style={styles.contentPad}>
-                  {/* Artisan Shop Header */}
-                  <View style={styles.artisanRow}>
-                    <Text style={styles.artisanIcon}>✦</Text>
-                    <Text style={[styles.artisanName, { color: colors.muted }]}>
-                      {product.artisanShop?.name || product.seller || "Atelier Certifié"} · {product.artisanShop?.city || "Cotonou, Bénin"}
+                {/* 5. VARIANT SELECTOR (COULEURS / FINITIONS) */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "800",
+                      letterSpacing: 0.8,
+                      color: colors.text,
+                      textTransform: "uppercase",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {isEn ? "Color / Finish" : "Couleur & Finition"} :{" "}
+                    <Text style={{ color: colors.action, fontWeight: "700" }}>
+                      {selectedVariant.name}
                     </Text>
-                    <View style={[styles.verifiedPill, { backgroundColor: colors.successBg }]}>
-                      <Text style={[styles.verifiedTxt, { color: colors.action }]}>✓ Certifié</Text>
-                    </View>
-                  </View>
-
-                  {/* Title & Price */}
-                  <Text style={[styles.title, { color: colors.text }]}>{product.title}</Text>
-                  
-                  <View style={styles.priceRow}>
-                    <Text style={[styles.price, { color: colors.action }]}>
-                      {formattedPrice} {currency === "XOF" ? "FCFA" : currency}
-                    </Text>
-                    <View style={[styles.stockPill, { backgroundColor: stockAvailable > 0 ? "#E8F5E9" : "#FFEBEE" }]}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: stockAvailable > 0 ? "#2E7D32" : "#C62828" }}>
-                        {stockAvailable > 0 
-                          ? (isEn ? `● ${stockAvailable} in stock` : `● ${stockAvailable} en stock`) 
-                          : (isEn ? "Out of stock" : "Rupture de stock")}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Description */}
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    {isEn ? "About this Creation" : "À propos de cette création"}
-                  </Text>
-                  <Text style={[styles.description, { color: colors.text }]}>
-                    {product.description || (isEn 
-                      ? "Handcrafted by master artisans in Benin using authentic, noble materials with generational heritage."
-                      : "Fabriqué à la main par des maîtres artisans au Bénin avec des matériaux nobles et un savoir-faire d'excellence.")}
                   </Text>
 
-                  {/* Variants (if multiple) */}
-                  {variants.length > 1 && (
-                    <View style={styles.variantsSection}>
-                      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        {isEn ? "Choose Variant / Size" : "Sélectionner la variante"}
-                      </Text>
-                      <View style={styles.variantsRow}>
-                        {variants.map((v: any, idx: number) => {
-                          const isSelected = selectedVariantIndex === idx;
-                          return (
-                            <TouchableOpacity
-                              key={v.id || idx}
-                              style={[
-                                styles.variantPill,
-                                {
-                                  backgroundColor: isSelected ? colors.action : colors.canvas,
-                                  borderColor: isSelected ? colors.action : colors.border,
-                                },
-                              ]}
-                              onPress={() => setSelectedVariantIndex(idx)}
-                            >
-                              <Text style={{ color: isSelected ? "#fff" : colors.text, fontWeight: "600", fontSize: 13 }}>
-                                {v.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    {variants.map((v: any, idx: number) => {
+                      const isSelected = selectedVariantIndex === idx;
+                      return (
+                        <Pressable
+                          key={v.id || idx}
+                          onPress={() => setSelectedVariantIndex(idx)}
+                          style={({ pressed }) => [{
+                            flex: 1,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            paddingVertical: 10,
+                            paddingHorizontal: 8,
+                            borderRadius: 12,
+                            borderWidth: isSelected ? 2 : 1,
+                            borderColor: isSelected ? colors.action : colors.border,
+                            backgroundColor: isSelected ? colors.canvas : colors.surface,
+                            opacity: pressed ? 0.8 : 1,
+                          }]}
+                        >
+                          <View
+                            style={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: 6,
+                              backgroundColor: v.colorHex || colors.accent,
+                              borderWidth: 1,
+                              borderColor: colors.border,
+                            }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: isSelected ? "800" : "600",
+                              color: isSelected ? colors.action : colors.text,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {v.name.split(" ")[0]}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* 6. DESCRIPTION */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "800",
+                      letterSpacing: 0.8,
+                      color: colors.text,
+                      textTransform: "uppercase",
+                      marginBottom: 6,
+                    }}
+                  >
+                    {isEn ? "Description & Craftsmanship" : "Description & Savoir-Faire"}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 20,
+                      color: colors.text,
+                      opacity: 0.9,
+                    }}
+                  >
+                    {product.description || (isEn
+                      ? "Handcrafted by master artisans in Benin using authentic materials with generational heritage. Each creation is inspected and certified before shipment."
+                      : "Création façonnée artisanalement à Cotonou par des maîtres artisans d'art. Alliage noble, finitions minutieuses et boîtier poli à la main. Chaque exemplaire est numéroté.")}
+                  </Text>
+                </View>
+
+                {/* 7. DELIVERY & PICKUP ROWS */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+                  <View
+                    style={{
+                      backgroundColor: colors.canvas,
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 14,
+                      gap: 12,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Text style={{ fontSize: 18 }}>🚚</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
+                          {isEn ? "Estimated Delivery" : "Livraison estimée : 24h - 48h"}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
+                          {isEn ? "Cotonou & surrounding areas" : "Cotonou, Calavi et environs (Livraison soignée)"}
+                        </Text>
                       </View>
                     </View>
-                  )}
 
-                  {/* Artisan Guarantee Card */}
-                  <View style={[styles.guaranteeCard, { backgroundColor: colors.canvas, borderColor: colors.border }]}>
-                    <Text style={{ fontSize: 20 }}>🛡</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.guaranteeTitle, { color: colors.text }]}>
-                        {isEn ? "Direct Artisan Support & Authenticity" : "Soutien Direct à l'Artisan & Authenticité"}
+                    <View style={{ height: 1, backgroundColor: colors.border }} />
+
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Text style={{ fontSize: 18 }}>📍</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
+                          {isEn ? "Store & Workshop Pickup" : "Retrait direct en atelier d'art"}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
+                          {isEn ? "Free same-day pickup at Haie Vive" : "Gratuit · Disponible dès aujourd'hui à Haie Vive"}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 8. 3 TRUST CARDS */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+                  <View style={{ gap: 8 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: 10,
+                        borderRadius: 12,
+                        backgroundColor: colors.surface,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 16 }}>🛡</Text>
+                      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>
+                        {isEn ? "100% Secure Payment via MoMo / Moov" : "Paiement 100% sécurisé (MoMo, Moov, Espèces)"}
                       </Text>
-                      <Text style={[styles.guaranteeText, { color: colors.muted }]}>
-                        {isEn
-                          ? "100% merchant-owned payment. Your purchase directly finances the workshop without escrow middlemen."
-                          : "Paiement direct sans intermédiaire. Votre achat rémunère directement l'atelier au Bénin."}
+                    </View>
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: 10,
+                        borderRadius: 12,
+                        backgroundColor: colors.surface,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 16 }}>🔄</Text>
+                      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>
+                        {isEn ? "14-Day Hassle-Free Returns" : "Retour & Échange sous 14 jours garantis"}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: 10,
+                        borderRadius: 12,
+                        backgroundColor: colors.surface,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 16 }}>💎</Text>
+                      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>
+                        {isEn ? "Ojarket Certificate of Authenticity" : "Certificat d'authenticité & facture officielle"}
                       </Text>
                     </View>
                   </View>
-
-                  {/* Order CTA Button */}
-                  <TouchableOpacity
-                    style={[styles.primaryBtn, { backgroundColor: colors.action }]}
-                    onPress={handleStartCheckout}
-                  >
-                    <Text style={styles.primaryBtnText}>
-                      {isEn ? `Order Now · ${formattedPrice} FCFA` : `Commander · ${formattedPrice} FCFA`}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </>
             )}
 
-            {/* VIEW 2: CHECKOUT & PAYMENT SELECTION */}
+            {/* VIEW 2: CHECKOUT */}
             {view === "checkout" && (
-              <View style={styles.contentPad}>
-                <TouchableOpacity onPress={() => setView("detail")} style={styles.backLink}>
-                  <Text style={{ color: colors.action, fontWeight: "600" }}>← {isEn ? "Back to creation" : "Retour à la fiche"}</Text>
-                </TouchableOpacity>
-
-                <Text style={[styles.title, { color: colors.text, marginTop: 8 }]}>
+              <View style={{ padding: 20 }}>
+                <Text
+                  style={{
+                    fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                    fontSize: 22,
+                    fontWeight: "700",
+                    color: colors.text,
+                    marginBottom: 4,
+                  }}
+                >
                   {isEn ? "Finalize Your Order" : "Finaliser Votre Commande"}
                 </Text>
-                <Text style={[styles.subtitle, { color: colors.muted }]}>
+                <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 18 }}>
                   {product.title} · {selectedVariant.name}
                 </Text>
 
-                {/* Quantity Stepper (hidden or 1 for digital) */}
-                {product.category === "digital" ? (
-                  <View style={[styles.guaranteeCard, { backgroundColor: colors.canvas, borderColor: colors.border, marginTop: 8 }]}>
-                    <Text style={{ fontSize: 18 }}>⚡</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.guaranteeTitle, { color: colors.text }]}>
-                        {isEn ? "Instant Digital Grant" : "Délivrance Numérique Instantanée"}
-                      </Text>
-                      <Text style={[styles.guaranteeText, { color: colors.muted }]}>
-                        {isEn
-                          ? "Access link and download quota will be unlocked immediately in your Purchases area."
-                          : "Le patron vectoriel et le quota de téléchargement seront débloqués dès validation du paiement MoMo."}
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <>
-                    <View style={[styles.quantityRow, { borderColor: colors.border }]}>
-                      <Text style={[styles.inputLabel, { color: colors.text }]}>{isEn ? "Quantity" : "Quantité"}</Text>
-                      <View style={styles.stepper}>
-                        <TouchableOpacity
-                          style={[styles.stepBtn, { borderColor: colors.border }]}
-                          onPress={() => setQuantity(Math.max(1, quantity - 1))}
-                        >
-                          <Text style={[styles.stepBtnTxt, { color: colors.text }]}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={[styles.stepValue, { color: colors.text }]}>{quantity}</Text>
-                        <TouchableOpacity
-                          style={[styles.stepBtn, { borderColor: colors.border }]}
-                          onPress={() => setQuantity(Math.min(stockAvailable, quantity + 1))}
-                        >
-                          <Text style={[styles.stepBtnTxt, { color: colors.text }]}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    {/* Delivery Address */}
-                    <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
-                      {isEn ? "Delivery Address / Neighborhood *" : "Adresse de Livraison / Quartier *"}
+                {/* Quantity Stepper */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    backgroundColor: colors.canvas,
+                    padding: 14,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    marginBottom: 16,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
+                    {isEn ? "Quantity" : "Quantité"}
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <Pressable
+                      onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: colors.surface,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>-</Text>
+                    </Pressable>
+                    <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                      {quantity}
                     </Text>
-                    <TextInput
-                      style={[styles.textInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
-                      value={deliveryAddress}
-                      onChangeText={setDeliveryAddress}
-                      placeholder="ex: Cotonou, Haie Vive, Rue 380"
-                      placeholderTextColor={colors.muted}
-                    />
-                  </>
-                )}
+                    <Pressable
+                      onPress={() => setQuantity(Math.min(stockAvailable, quantity + 1))}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: colors.surface,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>+</Text>
+                    </Pressable>
+                  </View>
+                </View>
 
-                {/* Buyer Phone */}
-                <Text style={[styles.inputLabel, { color: colors.text, marginTop: 12 }]}>
-                  {isEn ? "Recipient Phone Number *" : "Numéro de Téléphone Destinataire *"}
+                {/* Delivery Address */}
+                <Text style={{ fontSize: 12, fontWeight: "800", color: colors.text, marginBottom: 6 }}>
+                  {isEn ? "Delivery Address in Benin *" : "Adresse de Livraison au Bénin *"}
                 </Text>
                 <TextInput
-                  style={[styles.textInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
+                  value={deliveryAddress}
+                  onChangeText={setDeliveryAddress}
+                  placeholder="ex: Cotonou, Haie Vive, Rue 380"
+                  placeholderTextColor={colors.muted}
+                  style={{
+                    backgroundColor: colors.canvas,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    fontSize: 13,
+                    color: colors.text,
+                    marginBottom: 14,
+                  }}
+                />
+
+                {/* Phone */}
+                <Text style={{ fontSize: 12, fontWeight: "800", color: colors.text, marginBottom: 6 }}>
+                  {isEn ? "Recipient Phone Number *" : "Numéro de Téléphone *"}
+                </Text>
+                <TextInput
                   value={buyerPhone}
                   onChangeText={setBuyerPhone}
                   placeholder="+229 97 00 00 00"
                   placeholderTextColor={colors.muted}
                   keyboardType="phone-pad"
+                  style={{
+                    backgroundColor: colors.canvas,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    fontSize: 13,
+                    color: colors.text,
+                    marginBottom: 16,
+                  }}
                 />
 
                 {/* Payment Channel Selector */}
-                <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
+                <Text style={{ fontSize: 12, fontWeight: "800", color: colors.text, marginBottom: 8 }}>
                   {isEn ? "Payment Method" : "Mode de Règlement"}
                 </Text>
-                <View style={{ gap: 8, marginTop: 4 }}>
+                <View style={{ gap: 8, marginBottom: 18 }}>
                   {PAYMENT_METHODS.map((pm) => {
                     const isSelected = paymentChannel === pm.id;
                     return (
-                      <TouchableOpacity
+                      <Pressable
                         key={pm.id}
-                        style={[
-                          styles.paymentCard,
-                          {
-                            backgroundColor: isSelected ? colors.canvas : colors.surface,
-                            borderColor: isSelected ? colors.action : colors.border,
-                            borderWidth: isSelected ? 2 : 1,
-                          },
-                        ]}
                         onPress={() => setPaymentChannel(pm.id)}
+                        style={({ pressed }) => [{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: 14,
+                          borderRadius: 14,
+                          backgroundColor: isSelected ? colors.canvas : colors.surface,
+                          borderWidth: isSelected ? 2 : 1,
+                          borderColor: isSelected ? colors.action : colors.border,
+                          opacity: pressed ? 0.85 : 1,
+                        }]}
                       >
                         <Text style={{ fontSize: 20 }}>{pm.icon}</Text>
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.paymentName, { color: colors.text, fontWeight: isSelected ? "700" : "500" }]}>
+                          <Text style={{ fontSize: 13, fontWeight: isSelected ? "800" : "600", color: colors.text }}>
                             {pm.name}
                           </Text>
-                          <Text style={[styles.paymentHint, { color: colors.muted }]}>
+                          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
                             {pm.ussdHint}
                           </Text>
                         </View>
-                        {isSelected && <Text style={{ color: colors.action, fontWeight: "800" }}>✓</Text>}
-                      </TouchableOpacity>
+                        {isSelected && (
+                          <Text style={{ color: colors.action, fontWeight: "800", fontSize: 14 }}>✓</Text>
+                        )}
+                      </Pressable>
                     );
                   })}
                 </View>
 
-                {/* Total Summary */}
-                <View style={[styles.summaryBox, { backgroundColor: colors.canvas, borderColor: colors.border }]}>
-                  <View style={styles.summaryLine}>
-                    <Text style={{ color: colors.muted, fontSize: 13 }}>{isEn ? "Unit Price" : "Prix unitaire"}</Text>
-                    <Text style={{ color: colors.text, fontWeight: "600" }}>{formattedPrice} FCFA</Text>
+                {/* Summary */}
+                <View
+                  style={{
+                    backgroundColor: colors.canvas,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    padding: 14,
+                    gap: 8,
+                    marginBottom: 20,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ fontSize: 12, color: colors.muted }}>{isEn ? "Unit Price" : "Prix unitaire"}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text }}>{formattedPrice} FCFA</Text>
                   </View>
-                  <View style={styles.summaryLine}>
-                    <Text style={{ color: colors.muted, fontSize: 13 }}>{isEn ? "Quantity" : "Quantité"}</Text>
-                    <Text style={{ color: colors.text, fontWeight: "600" }}>x{quantity}</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ fontSize: 12, color: colors.muted }}>{isEn ? "Quantity" : "Quantité"}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text }}>x{quantity}</Text>
                   </View>
-                  <View style={[styles.summaryLine, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8, marginTop: 4 }]}>
-                    <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>{isEn ? "Total to Pay" : "Total à Régler"}</Text>
-                    <Text style={{ color: colors.action, fontWeight: "800", fontSize: 18 }}>{totalPriceFormatted} FCFA</Text>
+                  <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 2 }} />
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>{isEn ? "Total Amount" : "Total à Régler"}</Text>
+                    <Text style={{ fontSize: 18, fontWeight: "800", color: colors.action }}>{totalPriceFormatted} FCFA</Text>
                   </View>
                 </View>
 
-                {/* Submit Order CTA */}
-                <TouchableOpacity
-                  style={[styles.primaryBtn, { backgroundColor: colors.action, opacity: submitting ? 0.6 : 1, marginTop: 20 }]}
+                {/* Confirm Button */}
+                <Pressable
                   onPress={handleConfirmOrder}
                   disabled={submitting}
+                  style={({ pressed }) => [{
+                    backgroundColor: colors.action,
+                    paddingVertical: 14,
+                    borderRadius: 24,
+                    alignItems: "center",
+                    opacity: submitting ? 0.7 : (pressed ? 0.85 : 1),
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  }]}
                 >
                   {submitting ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.primaryBtnText}>
-                      {isEn ? "Confirm & Place Order" : "Confirmer la Commande"}
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+                      {isEn ? "Confirm & Place Order" : "Confirmer et Commander"}
                     </Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </View>
             )}
 
             {/* VIEW 3: ORDER SUCCESS */}
             {view === "success" && createdOrder && (
-              <View style={[styles.contentPad, { alignItems: "center", paddingTop: 20 }]}>
-                <Text style={{ fontSize: 50, marginBottom: 12 }}>🎉</Text>
-                <Text style={[styles.title, { color: colors.text, textAlign: "center" }]}>
+              <View style={{ padding: 24, alignItems: "center", paddingTop: 30 }}>
+                <Text style={{ fontSize: 44, marginBottom: 12 }}>🎉</Text>
+                <Text
+                  style={{
+                    fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                    fontSize: 22,
+                    fontWeight: "700",
+                    color: colors.text,
+                    textAlign: "center",
+                    marginBottom: 4,
+                  }}
+                >
                   {isEn ? "Order Confirmed!" : "Commande Enregistrée !"}
                 </Text>
-                <Text style={[styles.orderNumberTxt, { color: colors.action }]}>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action, marginBottom: 16 }}>
                   {createdOrder.orderNumber}
                 </Text>
 
-                <View style={[styles.successCard, { backgroundColor: colors.canvas, borderColor: colors.border }]}>
-                  <Text style={[styles.successLabel, { color: colors.muted }]}>
-                    {isEn ? "Payment Instructions" : "Instructions de Règlement"}
+                <View
+                  style={{
+                    width: "100%",
+                    backgroundColor: colors.canvas,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    padding: 16,
+                    gap: 10,
+                    marginBottom: 24,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "800", color: colors.accent, letterSpacing: 1, textTransform: "uppercase" }}>
+                    {isEn ? "PAYMENT INSTRUCTIONS" : "INSTRUCTIONS DE RÈGLEMENT"}
                   </Text>
-                  <Text style={[styles.successInstructions, { color: colors.text }]}>
+                  <Text style={{ fontSize: 13, color: colors.text, lineHeight: 18 }}>
                     {createdOrder.paymentChannel === "CASH_ON_DELIVERY"
-                      ? (isEn 
-                          ? "Please prepare the exact amount in cash for the delivery person upon delivery."
-                          : "Veuillez préparer le montant exact en espèces pour le livreur lors de la réception.")
+                      ? (isEn
+                          ? "Please prepare exact amount in cash upon delivery."
+                          : "Veuillez préparer le montant exact en espèces pour le livreur lors de la livraison.")
                       : (isEn
-                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to ${createdOrder.paymentInstructions?.merchantName || "l'atelier"}.`
-                          : `Composez le ${createdOrder.paymentInstructions?.ussdCode || "*880#"} pour valider le paiement de ${totalPriceFormatted} FCFA au marchand ${createdOrder.paymentInstructions?.merchantName || "Maison Ganvié"}.`)}
+                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to Maison Laurent.`
+                          : `Composez le ${createdOrder.paymentInstructions?.ussdCode || "*880#"} pour valider le règlement de ${totalPriceFormatted} FCFA auprès de l'atelier.`)}
                   </Text>
-
-                  <View style={[styles.detailItem, { marginTop: 12 }]}>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>{isEn ? "Delivery to" : "Livraison à"}</Text>
-                    <Text style={{ color: colors.text, fontWeight: "600", fontSize: 13 }}>{createdOrder.deliveryAddress}</Text>
-                  </View>
+                  <View style={{ height: 1, backgroundColor: colors.border }} />
+                  <Text style={{ fontSize: 11, color: colors.muted }}>
+                    {isEn ? "Delivery to: " : "Livraison prévue à : "}{createdOrder.deliveryAddress}
+                  </Text>
                 </View>
 
-                <TouchableOpacity
-                  style={[styles.primaryBtn, { backgroundColor: colors.action, width: "100%", marginTop: 20 }]}
+                <Pressable
                   onPress={resetAndClose}
+                  style={({ pressed }) => [{
+                    backgroundColor: colors.action,
+                    width: "100%",
+                    paddingVertical: 14,
+                    borderRadius: 24,
+                    alignItems: "center",
+                    opacity: pressed ? 0.85 : 1,
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  }]}
                 >
-                  <Text style={styles.primaryBtnText}>
-                    {isEn ? "Continue Discovering" : "Continuer Mes Découvertes"}
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+                    {isEn ? "Done" : "Terminer"}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             )}
           </ScrollView>
+
+          {/* ==================== PINNED DUAL CTAs AT BOTTOM (FOR VIEW === DETAIL) ==================== */}
+          {view === "detail" && (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                flexDirection: "row",
+                gap: 12,
+                paddingHorizontal: 20,
+                paddingTop: 12,
+                paddingBottom: Platform.OS === "android" ? 20 : 28,
+                backgroundColor: colors.surface,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
+                elevation: 6,
+              }}
+            >
+              {/* Secondary CTA: Add to Cart */}
+              <Pressable
+                onPress={() => {
+                  Alert.alert(
+                    isEn ? "Added to Cart" : "Ajouté au Panier",
+                    isEn ? `${product.title} has been added.` : `${product.title} a été ajouté à votre panier.`
+                  );
+                }}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  paddingVertical: 13,
+                  borderRadius: 24,
+                  borderWidth: 1.5,
+                  borderColor: colors.action,
+                  backgroundColor: colors.canvas,
+                  opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                }]}
+              >
+                <Text style={{ fontSize: 14 }}>🛒</Text>
+                <Text style={{ fontSize: 12, fontWeight: "800", color: colors.action }}>
+                  {isEn ? "Add to Cart" : "Ajouter au panier"}
+                </Text>
+              </Pressable>
+
+              {/* Primary CTA: Buy Now */}
+              <Pressable
+                onPress={handleStartCheckout}
+                style={({ pressed }) => [{
+                  flex: 1.3,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 13,
+                  borderRadius: 24,
+                  backgroundColor: colors.action,
+                  opacity: pressed ? 0.85 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                  shadowColor: colors.action,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 4,
+                }]}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                  {isEn ? "Buy Now" : "Acheter maintenant"}
+                </Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "92%",
-    paddingTop: 16,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  closeTxt: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  topBarBrand: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 2,
-  },
-  imageContainer: {
-    width: "100%",
-    height: 280,
-    position: "relative",
-  },
-  productImage: {
-    width: "100%",
-    height: "100%",
-  },
-  categoryBadge: {
-    position: "absolute",
-    bottom: 12,
-    left: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  categoryBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-  contentPad: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
-  artisanRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 8,
-  },
-  artisanIcon: {
-    fontSize: 12,
-    color: "#D4AF37",
-  },
-  artisanName: {
-    fontSize: 12,
-    fontWeight: "600",
-    flex: 1,
-  },
-  verifiedPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  verifiedTxt: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  title: {
-    fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  price: {
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  stockPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 6,
-    letterSpacing: 0.3,
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  variantsSection: {
-    marginBottom: 20,
-  },
-  variantsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 4,
-  },
-  variantPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  guaranteeCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  guaranteeTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  guaranteeText: {
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  primaryBtn: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  backLink: {
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  quantityRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  stepBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepBtnTxt: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  stepValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    minWidth: 20,
-    textAlign: "center",
-  },
-  textInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    marginTop: 6,
-  },
-  paymentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-  },
-  paymentName: {
-    fontSize: 14,
-  },
-  paymentHint: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  summaryBox: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 20,
-    gap: 6,
-  },
-  summaryLine: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  orderNumberTxt: {
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 2,
-    marginBottom: 16,
-  },
-  successCard: {
-    width: "100%",
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  successLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
-  successInstructions: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  detailItem: {
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    paddingTop: 8,
-  },
-});
