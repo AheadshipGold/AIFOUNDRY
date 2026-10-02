@@ -1384,3 +1384,441 @@ body {
     padding-right: var(--oj-space-3);
   }
 }
+
+/* ==========================================================================
+   OJAKRET ADMIN OS — ENTERPRISE CONTROL PLANE CSS
+   ========================================================================== */
+
+.oj-admin-app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--oj-color-canvas);
+  color: var(--oj-color-text);
+  overflow: hidden;
+  font-family: var(--oj-font-ui);
+}
+
+.oj-admin-topbar {
+  height: 56px;
+  background-color: var(--oj-color-surface);
+  border-bottom: 1px solid var(--oj-color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.oj-admin-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.oj-admin-toggle-btn {
+  background: var(--oj-color-subtle);
+  border: 1px solid var(--oj-color-border);
+  color: var(--oj-color-text);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.oj-admin-toggle-btn:hover {
+  background: var(--oj-color-border);
+}
+
+.oj-admin-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.oj-admin-brand-logo {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+}
+
+.oj-admin-os-pill {
+  background: var(--oj-color-action);
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+
+.oj-admin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.oj-admin-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.oj-admin-sidebar {
+  width: 260px;
+  background-color: var(--oj-color-surface);
+  border-right: 1px solid var(--oj-color-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 90;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1025px) {
+  .oj-admin-sidebar.collapsed {
+    width: 70px;
+  }
+
+  .oj-admin-sidebar.collapsed .oj-admin-group-title,
+  .oj-admin-sidebar.collapsed .oj-admin-nav-label,
+  .oj-admin-sidebar.collapsed .oj-admin-badge,
+  .oj-admin-sidebar.collapsed .oj-admin-user-info {
+    display: none;
+  }
+
+  .oj-admin-sidebar.collapsed .oj-admin-nav-item {
+    justify-content: center;
+    padding: 10px 0;
+  }
+}
+
+.oj-admin-nav-group {
+  padding: 12px 8px;
+}
+
+.oj-admin-group-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--oj-color-muted);
+  padding: 6px 12px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.oj-admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--oj-color-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.oj-admin-sidebar.collapsed .oj-admin-nav-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.oj-admin-nav-item:hover {
+  background-color: var(--oj-color-subtle);
+  color: var(--oj-color-text);
+}
+
+.oj-admin-nav-item.active {
+  background-color: var(--oj-color-subtle);
+  color: var(--oj-color-action);
+  border-left: 3px solid var(--oj-color-action);
+  font-weight: 700;
+}
+
+.oj-admin-nav-icon {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.oj-admin-nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oj-admin-sidebar.collapsed .oj-admin-nav-label {
+  display: none;
+}
+
+.oj-admin-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--oj-color-border);
+  color: var(--oj-color-text);
+}
+
+.oj-admin-sidebar.collapsed .oj-admin-badge {
+  display: none;
+}
+
+.oj-admin-badge.warning {
+  background: #FFF3DF;
+  color: #7A4A12;
+}
+
+.oj-admin-badge.success {
+  background: #E6F4EE;
+  color: #185F46;
+}
+
+.oj-admin-sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--oj-color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oj-admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--oj-color-subtle);
+}
+
+.oj-admin-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--oj-color-action);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.oj-admin-user-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.oj-admin-sidebar.collapsed .oj-admin-user-info {
+  display: none;
+}
+
+.oj-admin-user-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--oj-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oj-admin-user-role {
+  font-size: 10px;
+  color: var(--oj-color-accent);
+  font-weight: 700;
+}
+
+.oj-admin-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  background-color: var(--oj-color-canvas);
+}
+
+.oj-admin-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.oj-admin-title-wrap h1 {
+  font-family: var(--oj-font-editorial);
+  font-size: 24px;
+  margin: 0 0 4px;
+  color: var(--oj-color-text);
+}
+
+.oj-admin-title-wrap p {
+  font-size: 13px;
+  color: var(--oj-color-muted);
+  margin: 0;
+}
+
+.oj-admin-compact-banner {
+  background: linear-gradient(135deg, #022B22 0%, #075D49 100%);
+  color: #FAF9F6;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(7, 93, 73, 0.12);
+}
+
+.oj-admin-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.oj-admin-search {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.oj-admin-search input {
+  width: 100%;
+  padding: 8px 14px 8px 36px;
+  border-radius: 8px;
+  border: 1px solid var(--oj-color-border);
+  background: var(--oj-color-surface);
+  color: var(--oj-color-text);
+  font-size: 13px;
+}
+
+.oj-admin-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--oj-color-muted);
+  font-size: 13px;
+}
+
+.oj-admin-table-card {
+  background: var(--oj-color-surface);
+  border: 1px solid var(--oj-color-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.oj-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.oj-admin-table th {
+  background: var(--oj-color-subtle);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--oj-color-muted);
+  border-bottom: 1px solid var(--oj-color-border);
+}
+
+.oj-admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--oj-color-border);
+  color: var(--oj-color-text);
+}
+
+.oj-admin-table tr:hover td {
+  background-color: var(--oj-color-subtle);
+}
+
+/* Mobile off-canvas drawer */
+@media (max-width: 1024px) {
+  .oj-admin-sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: -280px;
+    width: 260px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+    transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .oj-admin-sidebar.open {
+    left: 0;
+  }
+
+  .oj-admin-sidebar .oj-admin-group-title,
+  .oj-admin-sidebar .oj-admin-nav-label,
+  .oj-admin-sidebar .oj-admin-badge,
+  .oj-admin-sidebar .oj-admin-user-info {
+    display: block !important;
+  }
+
+  .oj-admin-sidebar .oj-admin-nav-item {
+    justify-content: flex-start !important;
+    padding: 10px 14px !important;
+  }
+
+  .oj-admin-backdrop {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 85;
+    backdrop-filter: blur(2px);
+  }
+
+  .oj-admin-topbar {
+    padding: 0 12px;
+  }
+
+  .oj-admin-topbar-right {
+    gap: 6px;
+  }
+
+  .oj-admin-brand-logo {
+    height: 22px;
+  }
+
+  .oj-admin-role-text {
+    display: none;
+  }
+
+  .oj-admin-table-card {
+    overflow-x: auto;
+  }
+}

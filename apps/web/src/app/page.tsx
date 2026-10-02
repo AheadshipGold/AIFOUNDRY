@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { DesignProvider, useDesign } from "../design-system/provider";
+import { translations, Locale } from "@aifoundry/shared";
 import "../design-system/styles.css";
 import "./landing.css";
+
 
 // Types
 interface Product {
@@ -332,6 +334,7 @@ function MainMarketplaceView() {
   const { locale, setLocale, theme, setMode } = useDesign();
   const isEn = locale === "en";
   const isDark = theme === "dark";
+  const t = translations[(locale as Locale) || "fr"];
 
   const [universe, setUniverse] = useState<"buyer" | "seller">("buyer");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -341,13 +344,122 @@ function MainMarketplaceView() {
   const [cartOpen, setCartOpen] = useState(false);
   const [needModalOpen, setNeedModalOpen] = useState(false);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [sellerTab, setSellerTab] = useState<"overview" | "orders" | "cashbook">("overview");
+  const [sellerTab, setSellerTab] = useState<"overview" | "opportunities" | "orders" | "cashbook">("overview");
   const [needDesc, setNeedDesc] = useState("");
   const [needBudget, setNeedBudget] = useState("");
   const [needPlace, setNeedPlace] = useState("");
   const [needCategory, setNeedCategory] = useState("leather");
   const [needSubmitted, setNeedSubmitted] = useState(false);
   const [aiStructuring, setAiStructuring] = useState(false);
+
+  // D02 Buyer proposals & comparison modal state
+  const [buyerRequestsModalOpen, setBuyerRequestsModalOpen] = useState(false);
+  const [proposalAccepted, setProposalAccepted] = useState(false);
+
+  // D02 Seller Quote modal state
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [selectedRequestForQuote, setSelectedRequestForQuote] = useState<any>(null);
+  const [quotePrice, setQuotePrice] = useState("270000");
+  const [quoteAdvance, setQuoteAdvance] = useState("100000");
+  const [quoteDays, setQuoteDays] = useState("10");
+  const [quoteNotes, setQuoteNotes] = useState("Bronze noble poli, ébauche sous 4 jours, livraison soignée.");
+  const [quoteSuccessMsg, setQuoteSuccessMsg] = useState("");
+
+  // FinOps Manual Collection modal state
+  const [collectModalOpen, setCollectModalOpen] = useState(false);
+  const [collectLabel, setCollectLabel] = useState("Acompte commande sur-mesure bronze");
+  const [collectAmount, setCollectAmount] = useState("100000");
+  const [collectChannel, setCollectChannel] = useState("MTN MoMo");
+  const [collectRef, setCollectRef] = useState("TXN-MOMO-9912");
+
+  // FinOps Daily Close modal state
+  const [dailyCloseModalOpen, setDailyCloseModalOpen] = useState(false);
+  const [physicalCashInput, setPhysicalCashInput] = useState("850000");
+  const [closeNotesInput, setCloseNotesInput] = useState("Caisse conforme, inventaire vérifié");
+  const [closureSuccess, setClosureSuccess] = useState(false);
+
+  // Dynamic D02 Requests state
+  const [requestsList, setRequestsList] = useState([
+    {
+      id: "req-01",
+      buyerName: "Amina Diop",
+      buyerCity: "Cotonou",
+      title: "Parure royale en bronze ciselé pour cérémonie traditionnelle",
+      description: "Recherche d'un atelier d'artisan d'Abomey capable de forger un collier plastron et manchettes assorties sous 15 jours avec symboles royaux.",
+      category: "Joaillerie & Bronze",
+      budget: "280 000 FCFA",
+      proposalsCount: 2,
+      proposals: [
+        {
+          id: "prop-01",
+          artisan: "Fonderie Royale d'Abomey",
+          city: "Abomey",
+          price: 275000,
+          advance: 100000,
+          days: 12,
+          notes: "Faisable sous 12 jours. Ébauche envoyée par WhatsApp après confirmation du versement direct MoMo.",
+          status: "PENDING",
+        },
+        {
+          id: "prop-02",
+          artisan: "Ateliers d'Honneur",
+          city: "Cotonou",
+          price: 290000,
+          advance: 120000,
+          days: 10,
+          notes: "Finition bronze patiné noble, garniture intérieure velours noir.",
+          status: "PENDING",
+        },
+      ],
+    },
+    {
+      id: "req-02",
+      buyerName: "Marcelle Houngbo",
+      buyerCity: "Porto-Novo",
+      title: "Table console sculptée en bois d'Iroko massif",
+      description: "Console d'entrée 140cm x 40cm avec pieds sculptés motifs bas-reliefs dahoméens. Finition cirée naturelle.",
+      category: "Mobilier d'Art",
+      budget: "450 000 FCFA",
+      proposalsCount: 1,
+      proposals: [
+        {
+          id: "prop-03",
+          artisan: "Studio Bois Sacré",
+          city: "Porto-Novo",
+          price: 430000,
+          advance: 200000,
+          days: 21,
+          notes: "Bois d'Iroko séché 3 ans. Sculptures réalisées par maître ébéniste.",
+          status: "PENDING",
+        }
+      ],
+    },
+    {
+      id: "req-03",
+      buyerName: "Didier Agossa",
+      buyerCity: "Parakou",
+      title: "Sac de voyage weekend en cuir pleine fleur patiné",
+      description: "Sac de voyage 50L en cuir brun foncé avec compartiment chaussures et bandoulière renforcée.",
+      category: "Maroquinerie",
+      budget: "190 000 FCFA",
+      proposalsCount: 0,
+      proposals: [],
+    }
+  ]);
+
+  // Dynamic FinOps Entries state
+  const [finopsEntries, setFinopsEntries] = useState([
+    { id: "fin-01", type: "ENCAISSEMENT", label: "Commande OJK-2026-0891 (Sac Cabas Grand Marché)", channel: "MTN MoMo", amount: 185000, reference: "TXN-MTN-89021", time: "14:32", status: "Confirmé par PSP" },
+    { id: "fin-02", type: "ENCAISSEMENT", label: "Vente directe comptoir — Porte-carte cuir cognac", channel: "Espèces", amount: 45000, reference: "REC-CPT-004", time: "11:15", status: "Confirmé par vendeur" },
+    { id: "fin-03", type: "VENTE_A_CREDIT", label: "Commande Galerie Royale — Solde à livraison", channel: "Virement", amount: 120000, reference: "CMD-GAL-990", time: "09:10", status: "Créance en attente" },
+  ]);
+
+  const [finopsKpis, setFinopsKpis] = useState({
+    vendu: 1280000,
+    encaisse: 850000,
+    restant: 430000,
+  });
+
 
   const addToCart = (prod: Product) => {
     setCart((prev) => {
@@ -444,19 +556,32 @@ function MainMarketplaceView() {
                 className={`oj-pill-opt ${universe === "buyer" ? "active" : ""}`}
                 onClick={() => setUniverse("buyer")}
               >
-                {isEn ? "Buyer" : "Acheteur"}
+                {t.nav.buyerUniverse}
               </button>
               <button
                 className={`oj-pill-opt ${universe === "seller" ? "active" : ""}`}
                 onClick={() => setUniverse("seller")}
               >
-                {isEn ? "Seller Pro" : "Vendeur Pro"}
+                {t.nav.sellerUniverse}
               </button>
+              <Link
+                href="/admin"
+                className="oj-pill-opt"
+                style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center" }}
+              >
+                {t.nav.admin}
+              </Link>
             </div>
 
-            <button className="oj-icon-btn" onClick={() => setLocale(isEn ? "fr" : "en")}>
-              {isEn ? "FR" : "EN"}
+            <button
+              className="oj-icon-btn"
+              onClick={() => setLocale(locale === "fr" ? "en" : "fr")}
+              title={t.nav.langToggle}
+              style={{ fontWeight: 700, fontSize: "13px" }}
+            >
+              {locale.toUpperCase()}
             </button>
+
 
             <button className="oj-icon-btn" onClick={() => setMode(isDark ? "light" : "dark")}>
               {isDark ? "☼" : "☾"}
@@ -705,9 +830,19 @@ function MainMarketplaceView() {
                   ? "Describe your needs. Certified artisans will submit tailored proposals with clear timelines."
                   : "Décrivez votre besoin sur-mesure. Les maîtres artisans certifiés vous soumettront directement leurs propositions personnalisées avec délais et devis clairs."}
               </p>
-              <button className="oj-btn-primary" onClick={() => setNeedModalOpen(true)}>
-                {isEn ? "Post your request →" : "Publier ma demande de création →"}
-              </button>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "16px" }}>
+                <button className="oj-btn-primary" onClick={() => setNeedModalOpen(true)}>
+                  {t.d02.bannerCta} →
+                </button>
+                <button
+                  className="oj-btn-secondary"
+                  onClick={() => setBuyerRequestsModalOpen(true)}
+                  style={{ background: "rgba(255,255,255,0.15)", color: "#FAF9F6", borderColor: "rgba(255,255,255,0.3)" }}
+                >
+                  {locale === "fr" ? "Mes demandes & devis reçus (2) →" : "My requests & quotes received (2) →"}
+                </button>
+              </div>
+
             </div>
           </section>
         </main>
@@ -732,7 +867,7 @@ function MainMarketplaceView() {
             </div>
 
             <div className="oj-seller-tabs">
-              {(["overview", "orders", "cashbook"] as const).map((tab) => (
+              {(["overview", "opportunities", "orders", "cashbook"] as const).map((tab) => (
                 <button
                   key={tab}
                   className={`oj-seller-tab ${sellerTab === tab ? "active" : ""}`}
@@ -740,9 +875,11 @@ function MainMarketplaceView() {
                 >
                   {tab === "overview"
                     ? isEn ? "Dashboard" : "Tableau de bord"
+                    : tab === "opportunities"
+                    ? isEn ? "Buyer Demands (3)" : "Opportunités D02 (3)"
                     : tab === "orders"
                     ? isEn ? "Orders (14)" : "Commandes (14)"
-                    : isEn ? "Cashbook" : "Caisse & FinOps"}
+                    : isEn ? "Cashbook & FinOps" : "Caisse & FinOps"}
                 </button>
               ))}
             </div>
@@ -774,7 +911,7 @@ function MainMarketplaceView() {
                   </h3>
                   {[
                     { label: isEn ? "Orders to prepare" : "Commandes à préparer", count: "04", action: () => setSellerTab("orders") },
-                    { label: isEn ? "Requests to review" : "Demandes à traiter", count: "06", action: () => setSellerTab("overview") },
+                    { label: isEn ? "Buyer requests to quote" : "Demandes sur-mesure à chiffrer", count: "03", action: () => setSellerTab("opportunities") },
                     { label: isEn ? "Items to restock" : "Réappro à planifier", count: "02", action: () => setSellerTab("overview") },
                   ].map((todo, i) => (
                     <div key={i} className="oj-todo-item">
@@ -785,6 +922,82 @@ function MainMarketplaceView() {
                         </small>
                       </div>
                       <button className="oj-btn-ghost" onClick={todo.action}>→</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sellerTab === "opportunities" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontFamily: "var(--oj-font-editorial)", fontSize: "20px" }}>
+                      {t.d02.sellerOpportunities}
+                    </h3>
+                    <p style={{ margin: 0, color: "var(--oj-color-muted)", fontSize: "13px" }}>
+                      {t.d02.sellerOpportunitiesDesc}
+                    </p>
+                  </div>
+                </div>
+
+                {quoteSuccessMsg && (
+                  <div style={{ background: "#E6F4EE", color: "#185F46", padding: "12px 18px", borderRadius: "10px", marginBottom: "20px", fontWeight: 600, fontSize: "13px" }}>
+                    ✓ {quoteSuccessMsg}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {requestsList.map((req) => (
+                    <div
+                      key={req.id}
+                      style={{
+                        background: "var(--oj-color-surface)",
+                        border: "1px solid var(--oj-color-border)",
+                        borderRadius: "var(--oj-radius-card)",
+                        padding: "24px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        flexWrap: "wrap",
+                        gap: "20px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: "280px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                          <span className="oj-status-pill pending">{req.category}</span>
+                          <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                            {req.buyerName} · {req.buyerCity}
+                          </span>
+                        </div>
+                        <h4 style={{ margin: "0 0 8px", fontSize: "17px", fontWeight: 600 }}>{req.title}</h4>
+                        <p style={{ margin: "0 0 16px", color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.5" }}>
+                          {req.description}
+                        </p>
+                        <div style={{ display: "flex", gap: "20px", fontSize: "13px" }}>
+                          <div>
+                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Target Budget:" : "Budget indicatif :"} </span>
+                            <strong style={{ color: "var(--oj-color-action)" }}>{req.budget}</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Quotes:" : "Devis soumis :"} </span>
+                            <strong>{req.proposalsCount}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "180px" }}>
+                        <button
+                          className="oj-btn-primary"
+                          onClick={() => {
+                            setSelectedRequestForQuote(req);
+                            setQuoteModalOpen(true);
+                          }}
+                        >
+                          {t.d02.submitProposal} →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -833,24 +1046,89 @@ function MainMarketplaceView() {
 
             {sellerTab === "cashbook" && (
               <div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
-                  {[
-                    { label: isEn ? "SOLD" : "VENDU", value: "1 280 000 FCFA", desc: isEn ? "Total orders" : "Commandes enregistrées" },
-                    { label: isEn ? "COLLECTED" : "ENCAISSÉ", value: "850 000 FCFA", desc: isEn ? "Funds received" : "Fonds réels reçus" },
-                    { label: isEn ? "OUTSTANDING" : "RESTANT", value: "430 000 FCFA", desc: isEn ? "To collect" : "À encaisser" },
-                  ].map((col, i) => (
-                    <div key={i} className="oj-kpi-card">
-                      <div className="oj-kpi-header"><span>{col.label}</span></div>
-                      <strong className="oj-kpi-value">{col.value}</strong>
-                      <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{col.desc}</small>
-                    </div>
-                  ))}
+                {/* Triade FinOps */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+                  <div className="oj-kpi-card" style={{ borderLeft: "4px solid var(--oj-color-action)" }}>
+                    <div className="oj-kpi-header"><span style={{ fontWeight: 700 }}>{t.finops.vendu}</span></div>
+                    <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums" }}>{formatPrice(finopsKpis.vendu)}</strong>
+                    <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{t.finops.venduSub}</small>
+                  </div>
+                  <div className="oj-kpi-card" style={{ borderLeft: "4px solid #185F46" }}>
+                    <div className="oj-kpi-header"><span style={{ fontWeight: 700 }}>{t.finops.encaisse}</span></div>
+                    <strong className="oj-kpi-value" style={{ color: "#185F46", fontVariantNumeric: "tabular-nums" }}>{formatPrice(finopsKpis.encaisse)}</strong>
+                    <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{t.finops.encaisseSub}</small>
+                  </div>
+                  <div className="oj-kpi-card" style={{ borderLeft: "4px solid #AD8455" }}>
+                    <div className="oj-kpi-header"><span style={{ fontWeight: 700 }}>{t.finops.restant}</span></div>
+                    <strong className="oj-kpi-value" style={{ color: "#AD8455", fontVariantNumeric: "tabular-nums" }}>{formatPrice(finopsKpis.restant)}</strong>
+                    <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{t.finops.restantSub}</small>
+                  </div>
                 </div>
-                <button className="oj-btn-primary" onClick={() => alert("Clôture de journée validée.")}>
-                  {isEn ? "Close Day →" : "Effectuer la clôture de journée →"}
-                </button>
+
+                {/* Actions FinOps */}
+                <div style={{ display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" }}>
+                  <button className="oj-btn-primary" onClick={() => setCollectModalOpen(true)}>
+                    + {t.finops.recordCollection}
+                  </button>
+                  <button className="oj-btn-secondary" onClick={() => setDailyCloseModalOpen(true)}>
+                    ✓ {t.finops.dailyClose} (S44)
+                  </button>
+                </div>
+
+                {closureSuccess && (
+                  <div style={{ background: "#E6F4EE", color: "#185F46", padding: "14px 20px", borderRadius: "10px", marginBottom: "20px", fontWeight: 600, fontSize: "13px" }}>
+                    ✓ {isEn ? "Daily close registered successfully! Audit ledger updated." : "Clôture de journée enregistrée avec succès ! Grand livre immuable mis à jour."}
+                  </div>
+                )}
+
+                {/* Journal de Caisse Table */}
+                <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "20px", marginBottom: "24px" }}>
+                  <h4 style={{ margin: "0 0 16px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
+                    {t.finops.cashbookTitle}
+                  </h4>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--oj-color-border)", color: "var(--oj-color-muted)" }}>
+                        <th style={{ textAlign: "left", padding: "10px 0" }}>Libellé & Référence</th>
+                        <th style={{ textAlign: "left", padding: "10px 0" }}>Canal</th>
+                        <th style={{ textAlign: "left", padding: "10px 0" }}>Heure</th>
+                        <th style={{ textAlign: "left", padding: "10px 0" }}>Statut</th>
+                        <th style={{ textAlign: "right", padding: "10px 0" }}>Montant</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {finopsEntries.map((e) => (
+                        <tr key={e.id} style={{ borderBottom: "1px solid var(--oj-color-subtle)" }}>
+                          <td style={{ padding: "14px 0" }}>
+                            <div style={{ fontWeight: 600 }}>{e.label}</div>
+                            <small style={{ color: "var(--oj-color-muted)" }}>{e.reference}</small>
+                          </td>
+                          <td style={{ padding: "14px 0" }}>{e.channel}</td>
+                          <td style={{ padding: "14px 0", color: "var(--oj-color-muted)" }}>{e.time}</td>
+                          <td style={{ padding: "14px 0" }}>
+                            <span className="oj-status-pill success">{e.status}</span>
+                          </td>
+                          <td style={{ padding: "14px 0", textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                            {formatPrice(e.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Grand Livre Immuable (Append-only preview) */}
+                <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", fontSize: "12px" }}>
+                  <div style={{ fontWeight: 700, marginBottom: "8px", color: "var(--oj-color-action)" }}>
+                    🔒 Grand Livre Immuable (Append-Only Events — V3 Architecture)
+                  </div>
+                  <div style={{ color: "var(--oj-color-muted)", lineHeight: "1.6" }}>
+                    Toute écriture de vente ou encaissement génère un événement non supprimable (`PAYMENT_CONFIRMED`, `SALE_CREATED`, `DAY_CLOSED`). Les rectifications se font par contre-passation auditée.
+                  </div>
+                </div>
               </div>
             )}
+
           </div>
         </main>
       )}
@@ -1048,6 +1326,524 @@ function MainMarketplaceView() {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== D02 BUYER REQUESTS & PROPOSALS MODAL (S06) ==================== */}
+      {buyerRequestsModalOpen && (
+        <div className="oj-modal-overlay" onClick={() => setBuyerRequestsModalOpen(false)}>
+          <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "860px", padding: "32px", maxHeight: "90vh", overflowY: "auto" }}>
+            <button
+              onClick={() => setBuyerRequestsModalOpen(false)}
+              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+            >
+              ✕
+            </button>
+            <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+              {isEn ? "BESPOKE S06 — COMPARISON & ACCEPTANCE" : "SUR-MESURE S06 — COMPARATEUR DE DEVIS"}
+            </span>
+            <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", margin: "8px 0 8px" }}>
+              {isEn ? "My Bespoke Demands & Artisan Proposals" : "Mes Demandes & Devis Artisans Reçus"}
+            </h2>
+            <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: "0 0 24px" }}>
+              {isEn
+                ? "Compare proposals received from verified ateliers. Choose the best offer to convert it into a confirmed workshop order."
+                : "Comparez les devis détaillés soumis par nos ateliers vérifiés. Sélectionnez la meilleure offre pour la convertir en commande atelier."}
+            </p>
+
+            {proposalAccepted && (
+              <div style={{ background: "#E6F4EE", color: "#185F46", padding: "16px 20px", borderRadius: "10px", marginBottom: "24px", border: "1px solid #63DBB6" }}>
+                <strong>✓ {isEn ? "Proposal Accepted!" : "Devis accepté avec succès !"}</strong>
+                <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
+                  {isEn
+                    ? "Workshop order OJK-SURMESURE-8921 created. The artisan has been notified to start crafting upon receipt of direct deposit via Mobile Money."
+                    : "Commande atelier n° OJK-SURMESURE-8921 créée. L'atelier a été notifié pour amorcer la confection dès versement direct de l'acompte."}
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {requestsList.map((req) => (
+                <div
+                  key={req.id}
+                  style={{
+                    border: "1px solid var(--oj-color-border)",
+                    borderRadius: "var(--oj-radius-card)",
+                    padding: "20px",
+                    background: "var(--oj-color-surface)",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+                    <div>
+                      <span className="oj-status-pill success" style={{ fontSize: "11px", marginBottom: "6px", display: "inline-block" }}>
+                        {req.category}
+                      </span>
+                      <h3 style={{ margin: "4px 0", fontSize: "18px", fontFamily: "var(--oj-font-editorial)" }}>
+                        {req.title}
+                      </h3>
+                      <small style={{ color: "var(--oj-color-muted)" }}>
+                        {req.buyerName} · {req.buyerCity} · {isEn ? "Budget:" : "Budget indicatif :"} <strong>{req.budget}</strong>
+                      </small>
+                    </div>
+                    <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--oj-color-action)" }}>
+                      {req.proposals.length} {isEn ? "proposals" : "devis reçus"}
+                    </span>
+                  </div>
+
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", lineHeight: "1.5", margin: "0 0 16px" }}>
+                    {req.description}
+                  </p>
+
+                  {req.proposals.length === 0 ? (
+                    <div style={{ background: "var(--oj-color-subtle)", padding: "12px 16px", borderRadius: "8px", fontSize: "13px", color: "var(--oj-color-muted)" }}>
+                      {isEn ? "Awaiting proposals from workshops..." : "En attente de réponses des ateliers partenaires..."}
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+                      {req.proposals.map((prop) => (
+                        <div
+                          key={prop.id}
+                          style={{
+                            border: prop.status === "ACCEPTED" ? "2px solid var(--oj-color-action)" : "1px solid var(--oj-color-border)",
+                            borderRadius: "var(--oj-radius-field)",
+                            padding: "16px",
+                            background: prop.status === "ACCEPTED" ? "var(--oj-color-subtle)" : "var(--oj-color-surface)",
+                            position: "relative",
+                          }}
+                        >
+                          {prop.status === "ACCEPTED" && (
+                            <div style={{ position: "absolute", top: "10px", right: "10px" }}>
+                              <span className="oj-status-pill success">{isEn ? "ACCEPTED" : "RETENU"}</span>
+                            </div>
+                          )}
+                          <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "4px" }}>
+                            {prop.artisan}
+                          </div>
+                          <div style={{ color: "var(--oj-color-muted)", fontSize: "12px", marginBottom: "12px" }}>
+                            📍 {prop.city} · ⏱ {prop.days} {isEn ? "days lead time" : "jours de confection"}
+                          </div>
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                            <span style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>{isEn ? "Total Quote:" : "Devis total :"}</span>
+                            <strong style={{ fontSize: "16px", fontVariantNumeric: "tabular-nums" }}>{formatPrice(prop.price)}</strong>
+                          </div>
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                            <span style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>{isEn ? "Deposit required:" : "Acompte direct :"}</span>
+                            <span style={{ fontWeight: 600, color: "var(--oj-color-accent)", fontVariantNumeric: "tabular-nums" }}>{formatPrice(prop.advance)}</span>
+                          </div>
+
+                          <div style={{ fontSize: "12px", color: "var(--oj-color-muted)", background: "var(--oj-color-subtle)", padding: "10px", borderRadius: "6px", marginBottom: "14px", fontStyle: "italic" }}>
+                            "{prop.notes}"
+                          </div>
+
+                          {prop.status !== "ACCEPTED" && (
+                            <button
+                              className="oj-btn-primary"
+                              style={{ width: "100%", fontSize: "13px", padding: "10px" }}
+                              onClick={() => {
+                                setRequestsList((prev) =>
+                                  prev.map((r) =>
+                                    r.id === req.id
+                                      ? {
+                                          ...r,
+                                          proposals: r.proposals.map((p) => ({
+                                            ...p,
+                                            status: p.id === prop.id ? "ACCEPTED" : "DECLINED",
+                                          })),
+                                        }
+                                      : r
+                                  )
+                                );
+                                setProposalAccepted(true);
+                              }}
+                            >
+                              {isEn ? "Accept this quote & Order →" : "Accepter ce devis & Commander →"}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== D02 ARTISAN QUOTE SUBMISSION MODAL (S27) ==================== */}
+      {quoteModalOpen && selectedRequestForQuote && (
+        <div className="oj-modal-overlay" onClick={() => setQuoteModalOpen(false)}>
+          <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", padding: "32px" }}>
+            <button
+              onClick={() => setQuoteModalOpen(false)}
+              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+            >
+              ✕
+            </button>
+            <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+              {isEn ? "ARTISAN PROPOSAL (S27)" : "DEVIS ATELIER SUR-MESURE (S27)"}
+            </span>
+            <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "22px", margin: "8px 0 8px" }}>
+              {isEn ? "Submit Artisan Quote" : "Soumettre un devis artisan"}
+            </h2>
+            <div style={{ background: "var(--oj-color-subtle)", padding: "12px 16px", borderRadius: "var(--oj-radius-field)", marginBottom: "20px", fontSize: "13px" }}>
+              <strong>{selectedRequestForQuote.title}</strong>
+              <div style={{ color: "var(--oj-color-muted)", marginTop: "4px" }}>
+                Client : {selectedRequestForQuote.buyerName} ({selectedRequestForQuote.buyerCity}) · Budget indicatif : {selectedRequestForQuote.budget}
+              </div>
+            </div>
+
+            {quoteSuccessMsg ? (
+              <div style={{ background: "#E6F4EE", color: "#185F46", padding: "20px", borderRadius: "10px", textAlign: "center" }}>
+                <div style={{ fontSize: "36px", marginBottom: "8px" }}>✓</div>
+                <strong>{quoteSuccessMsg}</strong>
+                <div style={{ marginTop: "16px" }}>
+                  <button className="oj-btn-primary" onClick={() => { setQuoteSuccessMsg(""); setQuoteModalOpen(false); }}>
+                    {isEn ? "Done" : "Fermer"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const priceNum = parseInt(quotePrice, 10) || 0;
+                  const advNum = parseInt(quoteAdvance, 10) || 0;
+                  const daysNum = parseInt(quoteDays, 10) || 10;
+                  setRequestsList((prev) =>
+                    prev.map((r) => {
+                      if (r.id === selectedRequestForQuote.id) {
+                        const newProp = {
+                          id: `prop-${Date.now()}`,
+                          artisan: "Alexandre Cuir Prestige",
+                          city: "Cotonou",
+                          price: priceNum,
+                          advance: advNum,
+                          days: daysNum,
+                          notes: quoteNotes,
+                          status: "PENDING",
+                        };
+                        return {
+                          ...r,
+                          proposalsCount: r.proposalsCount + 1,
+                          proposals: [...r.proposals, newProp],
+                        };
+                      }
+                      return r;
+                    })
+                  );
+                  setQuoteSuccessMsg(isEn ? "Quote submitted successfully to client!" : "Votre devis a été transmis au client avec succès !");
+                }}
+              >
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                      {isEn ? "Total Quote (FCFA) *" : "Prix total proposé (FCFA) *"}
+                    </label>
+                    <input
+                      type="number"
+                      value={quotePrice}
+                      onChange={(e) => setQuotePrice(e.target.value)}
+                      required
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                        border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                        color: "var(--oj-color-text)", fontSize: "14px"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                      {isEn ? "Advance Required (FCFA) *" : "Acompte requis (FCFA) *"}
+                    </label>
+                    <input
+                      type="number"
+                      value={quoteAdvance}
+                      onChange={(e) => setQuoteAdvance(e.target.value)}
+                      required
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                        border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                        color: "var(--oj-color-text)", fontSize: "14px"
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                    {isEn ? "Execution Lead Time (Days) *" : "Délai de fabrication (jours) *"}
+                  </label>
+                  <input
+                    type="number"
+                    value={quoteDays}
+                    onChange={(e) => setQuoteDays(e.target.value)}
+                    required
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                      border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                      color: "var(--oj-color-text)", fontSize: "14px"
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: "24px" }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                    {isEn ? "Workshop Notes & Specifications *" : "Spécifications & Engagements atelier *"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={quoteNotes}
+                    onChange={(e) => setQuoteNotes(e.target.value)}
+                    required
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                      border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                      color: "var(--oj-color-text)", fontSize: "13px"
+                    }}
+                  />
+                </div>
+
+                <button type="submit" className="oj-btn-primary" style={{ width: "100%" }}>
+                  {isEn ? "Submit Official Quote (S27) →" : "Transmettre le devis officiel (S27) →"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== FINOPS MANUAL COLLECTION MODAL (S46) ==================== */}
+      {collectModalOpen && (
+        <div className="oj-modal-overlay" onClick={() => setCollectModalOpen(false)}>
+          <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "560px", padding: "32px" }}>
+            <button
+              onClick={() => setCollectModalOpen(false)}
+              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+            >
+              ✕
+            </button>
+            <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+              {isEn ? "FINOPS S46 — MANUAL COLLECTION" : "FINOPS S46 — ENCAISSEMENT MANUEL"}
+            </span>
+            <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "22px", margin: "8px 0 8px" }}>
+              {isEn ? "Record Payment Collection" : "Enregistrer un Encaissement"}
+            </h2>
+            <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", margin: "0 0 20px" }}>
+              {isEn
+                ? "Record a payment received directly via Mobile Money, bank transfer, or cash on delivery. Updates ledger immutably."
+                : "Enregistrez un paiement perçu directement (MTN MoMo, Moov, Espèces, Virement). Génère un événement audit immuable."}
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const amt = parseInt(collectAmount, 10) || 0;
+                setFinopsEntries((prev) => [
+                  {
+                    id: `fin-${Date.now()}`,
+                    type: "ENCAISSEMENT",
+                    label: collectLabel,
+                    channel: collectChannel,
+                    amount: amt,
+                    reference: collectRef,
+                    time: "À l'instant",
+                    status: "Confirmé par vendeur",
+                  },
+                  ...prev,
+                ]);
+                setFinopsKpis((prev) => ({
+                  ...prev,
+                  encaisse: prev.encaisse + amt,
+                  restant: Math.max(0, prev.restant - amt),
+                }));
+                setCollectModalOpen(false);
+              }}
+            >
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                  {isEn ? "Payment Label / Order Ref *" : "Libellé de la vente / Réf commande *"}
+                </label>
+                <input
+                  type="text"
+                  value={collectLabel}
+                  onChange={(e) => setCollectLabel(e.target.value)}
+                  required
+                  style={{
+                    width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                    border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                    color: "var(--oj-color-text)", fontSize: "14px"
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                    {isEn ? "Amount Collected (FCFA) *" : "Montant encaissé (FCFA) *"}
+                  </label>
+                  <input
+                    type="number"
+                    value={collectAmount}
+                    onChange={(e) => setCollectAmount(e.target.value)}
+                    required
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                      border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                      color: "var(--oj-color-text)", fontSize: "14px"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                    {isEn ? "Payment Channel *" : "Canal de règlement *"}
+                  </label>
+                  <select
+                    value={collectChannel}
+                    onChange={(e) => setCollectChannel(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                      border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                      color: "var(--oj-color-text)", fontSize: "14px"
+                    }}
+                  >
+                    <option value="MTN MoMo">MTN Mobile Money</option>
+                    <option value="Moov Money">Moov Money</option>
+                    <option value="Celtiis Cash">Celtiis Cash</option>
+                    <option value="Espèces">Espèces comptoir</option>
+                    <option value="Virement">Virement bancaire</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "24px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                  {isEn ? "Transaction Reference *" : "Référence / N° de transaction *"}
+                </label>
+                <input
+                  type="text"
+                  value={collectRef}
+                  onChange={(e) => setCollectRef(e.target.value)}
+                  required
+                  style={{
+                    width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                    border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                    color: "var(--oj-color-text)", fontSize: "14px"
+                  }}
+                />
+              </div>
+
+              <button type="submit" className="oj-btn-primary" style={{ width: "100%" }}>
+                {isEn ? "Confirm Collection (Append-Only Event) →" : "Valider l'encaissement (Append-Only Event) →"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== FINOPS DAILY CLOSE MODAL (S44) ==================== */}
+      {dailyCloseModalOpen && (
+        <div className="oj-modal-overlay" onClick={() => setDailyCloseModalOpen(false)}>
+          <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "620px", padding: "32px", maxHeight: "90vh", overflowY: "auto" }}>
+            <button
+              onClick={() => setDailyCloseModalOpen(false)}
+              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+            >
+              ✕
+            </button>
+            <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+              {isEn ? "FINOPS S44 — DAILY CLOSURE" : "FINOPS S44 — CLÔTURE DE JOURNÉE"}
+            </span>
+            <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "22px", margin: "8px 0 8px" }}>
+              {isEn ? "Daily Cashbook Close & Reconciliation" : "Clôture de Caisse & Rapprochement"}
+            </h2>
+            <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", margin: "0 0 20px" }}>
+              {isEn
+                ? "Compare theoretical system collections with physical cash and mobile money statements. Irreversible audit seal."
+                : "Vérifiez la concordance entre les encaissements théoriques et vos relevés réels. Scellement immuable de la journée."}
+            </p>
+
+            {/* Breakdown table */}
+            <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", marginBottom: "20px" }}>
+              <h4 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 700 }}>
+                {isEn ? "Theoretical System Breakdown" : "Ventilation Théorique du Système"}
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>MTN Mobile Money :</span>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel.includes("MTN")).reduce((s, e) => s + e.amount, 0))}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Moov / Celtiis :</span>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel.includes("Moov") || e.channel.includes("Celtiis")).reduce((s, e) => s + e.amount, 0))}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Espèces en caisse théorique :</span>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel === "Espèces").reduce((s, e) => s + e.amount, 0))}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Virements bancaires :</span>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel === "Virement").reduce((s, e) => s + e.amount, 0))}</strong>
+                </div>
+                <div style={{ borderTop: "1px solid var(--oj-color-border)", paddingTop: "8px", display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                  <span>Total Théorique Encaissé :</span>
+                  <span style={{ color: "var(--oj-color-action)" }}>{formatPrice(finopsKpis.encaisse)}</span>
+                </div>
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setClosureSuccess(true);
+                setDailyCloseModalOpen(false);
+              }}
+            >
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                  {isEn ? "Physical Cash Count (FCFA) *" : "Comptage physique des espèces (FCFA) *"}
+                </label>
+                <input
+                  type="number"
+                  value={physicalCashInput}
+                  onChange={(e) => setPhysicalCashInput(e.target.value)}
+                  required
+                  style={{
+                    width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                    border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                    color: "var(--oj-color-text)", fontSize: "14px"
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                  {isEn ? "Audit Notes & Observations *" : "Notes de clôture & Observations *"}
+                </label>
+                <input
+                  type="text"
+                  value={closeNotesInput}
+                  onChange={(e) => setCloseNotesInput(e.target.value)}
+                  required
+                  style={{
+                    width: "100%", padding: "10px 14px", borderRadius: "var(--oj-radius-field)",
+                    border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                    color: "var(--oj-color-text)", fontSize: "14px"
+                  }}
+                />
+              </div>
+
+              <div style={{ background: "#E6F4EE", padding: "12px 16px", borderRadius: "8px", fontSize: "12px", color: "#185F46", marginBottom: "20px" }}>
+                🔒 La validation scelle le registre de la date du jour. Toute modification ultérieure sera consignée comme écriture de contre-passation auditable.
+              </div>
+
+              <button type="submit" className="oj-btn-primary" style={{ width: "100%" }}>
+                {isEn ? "Sign & Validate Day Close (S44) →" : "Signer et Valider la Clôture (S44) →"}
+              </button>
+            </form>
           </div>
         </div>
       )}
