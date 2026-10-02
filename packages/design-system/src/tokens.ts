@@ -29,10 +29,10 @@ export const palette = {
     text: "#F5F7F3",
     muted: "#94A3B8", // Gris Minéral Clair
     border: "#233834",
-    action: "#10B981", // Vert Profond Interactif
-    onAction: "#081018",
+    action: "#0D4A38", // Vert Émeraude Profond Luxury
+    onAction: "#FFFFFF",
     accent: "#D4B483", // Or Champagne
-    focus: "#10B981",
+    focus: "#0D4A38",
     successBg: "#06241D",
     successFg: "#6EE7B7",
     pendingBg: "#3B2710",
