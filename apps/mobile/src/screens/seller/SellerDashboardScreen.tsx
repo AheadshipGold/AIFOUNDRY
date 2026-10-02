@@ -83,7 +83,7 @@ export default function SellerDashboardScreen({
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          paddingHorizontal: 20,
+          paddingHorizontal: 16,
           paddingTop: Platform.OS === "android" ? 14 : 10,
           paddingBottom: 12,
           backgroundColor: colors.surface,
@@ -92,36 +92,36 @@ export default function SellerDashboardScreen({
           zIndex: 10,
         }}
       >
-        {/* Official Brand Logo */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        {/* Official Brand Logo + Atelier Subtitle */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Image
             source={isDark ? logoDark : logoLight}
-            style={{ width: 110, height: 26, resizeMode: "contain" }}
+            style={{ width: 100, height: 26, resizeMode: "contain" }}
           />
           <View
             style={{
               backgroundColor: "rgba(212, 180, 131, 0.18)",
-              paddingHorizontal: 7,
-              paddingVertical: 3,
+              paddingHorizontal: 6,
+              paddingVertical: 2,
               borderRadius: 6,
               borderWidth: 1,
               borderColor: colors.accent,
             }}
           >
-            <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.5 }}>
+            <Text style={{ fontSize: 8.5, color: colors.accent, fontWeight: "800", letterSpacing: 0.5 }}>
               ATELIER
             </Text>
           </View>
         </View>
 
         {/* Right Controls: Notifications + Avatar + Buyer Switch */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           {/* Notification Bell */}
           <Pressable
             style={({ pressed }) => [{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
               backgroundColor: colors.canvas,
               borderWidth: 1,
               borderColor: colors.border,
@@ -132,18 +132,16 @@ export default function SellerDashboardScreen({
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 14, color: colors.text }}>🔔</Text>
+            <Text style={{ fontSize: 13, color: colors.text }}>🔔</Text>
             <View
               style={{
                 position: "absolute",
-                top: 7,
-                right: 7,
-                width: 7,
-                height: 7,
-                borderRadius: 3.5,
+                top: 6,
+                right: 6,
+                width: 6,
+                height: 6,
+                borderRadius: 3,
                 backgroundColor: colors.accent,
-                borderWidth: 1,
-                borderColor: colors.surface,
               }}
             />
           </Pressable>
@@ -151,9 +149,9 @@ export default function SellerDashboardScreen({
           {/* Seller Avatar */}
           <View
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
               backgroundColor: colors.action,
               alignItems: "center",
               justifyContent: "center",
@@ -161,7 +159,7 @@ export default function SellerDashboardScreen({
               borderColor: colors.accent,
             }}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>
               AL
             </Text>
           </View>
@@ -171,15 +169,21 @@ export default function SellerDashboardScreen({
             onPress={onSwitchToBuyer}
             style={({ pressed }) => [{
               backgroundColor: colors.action,
-              paddingHorizontal: 12,
-              paddingVertical: 7,
-              borderRadius: 16,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 14,
               opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.95 : 1 }],
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 3,
             }]}
           >
             <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
-              {isEn ? "Buyer Space →" : "Acheteur →"}
+              {isEn ? "Buyer" : "Acheteur"}
+            </Text>
+            <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "800" }}>
+              →
             </Text>
           </Pressable>
         </View>
@@ -192,42 +196,43 @@ export default function SellerDashboardScreen({
         showsVerticalScrollIndicator={false}
       >
         {/* ==================== GREETING HEADER ==================== */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 14 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View>
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
                   fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: "700",
                   color: colors.text,
+                  letterSpacing: -0.3,
                 }}
               >
                 {isEn ? `Hello ${sellerName} 👋` : `Bonjour ${sellerName} 👋`}
               </Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
-                {shopName} · {isEn ? "Master Atelier Cotonou" : "Atelier d'Art Cotonou"}
-              </Text>
-            </View>
-
-            {/* Gold Vendeur Pro Badge */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-                backgroundColor: "rgba(212, 180, 131, 0.22)",
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: colors.accent,
-              }}
-            >
-              <Text style={{ fontSize: 12 }}>👑</Text>
-              <Text style={{ fontSize: 11, color: colors.accent, fontWeight: "800" }}>
-                Vendeur Pro
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                <Text style={{ fontSize: 11, color: colors.muted }}>
+                  {shopName} · {isEn ? "Cotonou Atelier" : "Atelier Cotonou"}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 3,
+                    backgroundColor: "rgba(212, 180, 131, 0.18)",
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: colors.accent,
+                  }}
+                >
+                  <Text style={{ fontSize: 10 }}>👑</Text>
+                  <Text style={{ fontSize: 9.5, color: colors.accent, fontWeight: "800" }}>
+                    Vendeur Pro
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -386,51 +391,52 @@ export default function SellerDashboardScreen({
         </View>
 
         {/* ==================== 4 ACTION SHORTCUTS ==================== */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 26 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
             {[
               { label: isEn ? "Creations" : "Créations", symbol: "◈", action: onOpenCashbook },
               { label: isEn ? "Orders" : "Commandes", symbol: "☵", action: onOpenOrders },
-              { label: isEn ? "Bespoke D02" : "Sur-Mesure", symbol: "✦", action: onOpenOpportunities },
+              { label: isEn ? "Bespoke" : "Sur-Mesure", symbol: "✦", action: onOpenOpportunities },
               { label: isEn ? "Atelier" : "Mon Atelier", symbol: "🏛", action: onOpenCashbook },
             ].map((item, idx) => (
               <Pressable
                 key={idx}
                 onPress={item.action}
                 style={({ pressed }) => [{
+                  flex: 1,
                   alignItems: "center",
-                  width: 76,
                   opacity: pressed ? 0.75 : 1,
                   transform: [{ scale: pressed ? 0.94 : 1 }],
                 }]}
               >
                 <View
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 18,
+                    width: 52,
+                    height: 52,
+                    borderRadius: 16,
                     backgroundColor: colors.surface,
                     borderWidth: 1.5,
                     borderColor: colors.accent,
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: 7,
+                    marginBottom: 6,
                     shadowColor: "#000",
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: isDark ? 0 : 0.05,
-                    shadowRadius: 5,
+                    shadowRadius: 4,
                     elevation: 1,
                   }}
                 >
-                  <Text style={{ fontSize: 20, color: colors.accent, fontWeight: "900" }}>{item.symbol}</Text>
+                  <Text style={{ fontSize: 18, color: colors.accent, fontWeight: "900" }}>{item.symbol}</Text>
                 </View>
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: "700",
                     color: colors.text,
                     textAlign: "center",
                   }}
+                  numberOfLines={1}
                 >
                   {item.label}
                 </Text>
@@ -440,7 +446,7 @@ export default function SellerDashboardScreen({
         </View>
 
         {/* ==================== COMMANDES RÉCENTES ==================== */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 26 }}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 26 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
             <Text
               style={{
