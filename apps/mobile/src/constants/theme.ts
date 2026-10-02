@@ -1,12 +1,14 @@
+import { palette } from "@aifoundry/design-system";
+// Compatibility adapter: one approved palette, no independent legacy theme.
 export const colors = {
   light: {
-    background: '#FFFFFF',
-    text: '#000000',
-    primary: '#007AFF',
+    background: palette.light.canvas,
+    text: palette.light.text,
+    primary: palette.light.action,
   },
   dark: {
-    background: '#000000',
-    text: '#FFFFFF',
-    primary: '#0A84FF',
-  }
+    background: palette.dark.canvas,
+    text: palette.dark.text,
+    primary: palette.dark.action,
+  },
 };

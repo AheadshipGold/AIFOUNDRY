@@ -6,14 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint --config ../../.eslintrc.ui.cjs src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aifoundry/design-system": "0.1.0",
+    "@aifoundry/shared": "*",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18"
   },
+
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",

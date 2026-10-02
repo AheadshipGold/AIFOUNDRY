@@ -1,4 +1,4 @@
 export const en = {
-  welcome: "Welcome to AI Foundry",
+  welcome: "Welcome",
   foundation_ready: "Foundation ready (FR/EN Structure Ready)"
 };

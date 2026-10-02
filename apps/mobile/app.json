@@ -1,17 +1,38 @@
 {
   "expo": {
-    "name": "AIFoundry",
-    "slug": "ai-foundry",
+    "name": "Ojarket",
+    "slug": "ojarket",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png",
     "userInterfaceStyle": "automatic",
+    "scheme": "ojarket",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#FAF9F6"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ojarket.app"
     },
-    "android": {},
-    "web": {}
+    "android": {
+      "package": "com.ojarket.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/Ojarket_01_Icon_UltraPremium_Transparent.png",
+        "backgroundColor": "#0D2E26"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/brand/Ojarket_04_Favicon_512_Transparent.png"
+    }
   }
 }

@@ -6,8 +6,12 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "@aifoundry/shared": [
+        "../../packages/shared/src/index.ts"
       ]
     }
+
   },
   "include": [
     "**/*.ts",

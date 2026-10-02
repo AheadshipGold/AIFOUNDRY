@@ -1,32 +1,26 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CoreModule } from './core/core.module';
-import { LoggerModule } from 'nestjs-pino';
+import { PrismaModule } from './prisma/prisma.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { RequestsModule } from './requests/requests.module';
+import { OrdersModule } from './orders/orders.module';
+import { SellerModule } from './seller/seller.module';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
-import { ShopsModule } from './shops/shops.module';
-import { StorageModule } from './storage/storage.module';
-import { JobsModule } from './jobs/jobs.module';
-import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
-    CoreModule,
+    PrismaModule,
+    CatalogModule,
+    RequestsModule,
+    OrdersModule,
+    SellerModule,
+    AdminModule,
     AuthModule,
-    ShopsModule,
-    StorageModule,
-    JobsModule,
-    HealthModule,
-    LoggerModule.forRoot({
-      pinoHttp: {
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { singleLine: true } }
-            : undefined,
-      },
-    }),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

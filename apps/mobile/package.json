@@ -8,17 +8,21 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint .",
+    "lint": "eslint --config ../../.eslintrc.ui.cjs App.tsx src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "build": "echo 'No build step for mobile workspace alone yet'"
   },
   "dependencies": {
-    "@expo/metro-runtime": "^57.0.16",
+    "@aifoundry/design-system": "0.1.0",
+    "@aifoundry/shared": "*",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@expo/metro-runtime": "~3.2.3",
     "expo": "~51.0.28",
     "react": "18.2.0",
     "react-native": "0.74.5",
-    "react-native-web": "^0.21.3"
+    "react-native-web": "~0.19.10"
   },
+
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.2.45",
