@@ -23,6 +23,8 @@ interface BuyerHomeScreenProps {
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
 const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
 const imgArmchair = require("../../../assets/products/armchair.jpg");
+const logoDark = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Dark_Transparent.png");
+const logoLight = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Transparent.png");
 
 const CATALOG = [
   {
@@ -222,49 +224,11 @@ export default function BuyerHomeScreen({
           zIndex: 10,
         }}
       >
-        {/* Brand Geometric Crest + Name */}
-        <View style={{ flexDirection: "column" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-            <View
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: 6,
-                backgroundColor: colors.action,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: colors.accent,
-              }}
-            >
-              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>✦</Text>
-            </View>
-            <Text
-              style={{
-                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                fontSize: 18,
-                fontWeight: "800",
-                letterSpacing: 1.8,
-                color: colors.text,
-              }}
-            >
-              OJARKET
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 8,
-              fontWeight: "800",
-              letterSpacing: 1.4,
-              color: colors.accent,
-              textTransform: "uppercase",
-              marginTop: 2,
-              marginLeft: 31,
-            }}
-          >
-            {isEn ? "CURATED MARKETPLACE" : "MARKETPLACE D'EXCEPTION"}
-          </Text>
-        </View>
+        {/* Official Brand Logo */}
+        <Image
+          source={isDark ? logoDark : logoLight}
+          style={{ width: 116, height: 32, resizeMode: "contain" }}
+        />
 
         {/* Action Controls: Lang + Theme + Notifications + Cart */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
