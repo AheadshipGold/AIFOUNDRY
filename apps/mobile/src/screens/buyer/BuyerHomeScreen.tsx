@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -7,8 +7,10 @@ import {
   Image,
   TextInput,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useDesign } from "../../design-system/provider";
+import { CatalogApi, ProductItem } from "../../services/api";
 
 interface BuyerHomeScreenProps {
   onSelectProduct: (prod: any) => void;
@@ -103,6 +105,28 @@ function formatXOF(price: number, currency = "XOF") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
 
+function mapApiProduct(prod: ProductItem) {
+  let image = imgLeatherTote;
+  const cat = (prod.category || "").toLowerCase();
+  if (cat.includes("joaillerie") || cat.includes("watches") || cat.includes("bijoux")) image = imgWatchChrono;
+  else if (cat.includes("mobilier") || cat.includes("home") || cat.includes("deco")) image = imgArmchair;
+  else if (cat.includes("mode") || cat.includes("fashion") || cat.includes("art")) image = imgLeatherTote;
+  else if (cat.includes("maroquinerie") || cat.includes("leather")) image = imgLeatherTote;
+  
+  return {
+    id: prod.id,
+    title: prod.title,
+    subtitle: prod.description,
+    seller: prod.artisanShop?.name || "Artisan",
+    price: Math.round(prod.priceMinor / 100),
+    currency: prod.currency || "XOF",
+    rating: 4.8,
+    reviews: 12,
+    image,
+    category: prod.category,
+  };
+}
+
 export default function BuyerHomeScreen({
   onSelectProduct,
   onOpenNeed,
@@ -115,6 +139,44 @@ export default function BuyerHomeScreen({
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [products, setProducts] = useState<any[]>(CATALOG);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const query = search.trim() ? search : undefined;
+        const category = activeCat !== "all" ? activeCat : undefined;
+        const apiProds = await CatalogApi.getProducts(query, category);
+        if (apiProds && apiProds.length > 0) {
+          setProducts(apiProds.map(mapApiProduct));
+        } else {
+          setProducts([]);
+        }
+      } catch (err) {
+        console.warn("API failed, falling back to CATALOG", err);
+        // Fallback filter
+        const filtered = CATALOG.filter((p) => {
+          const matchCat = activeCat === "all" || p.category === activeCat;
+          const matchSearch =
+            !search ||
+            p.title.toLowerCase().includes(search.toLowerCase()) ||
+            p.seller.toLowerCase().includes(search.toLowerCase());
+          return matchCat && matchSearch;
+        });
+        setProducts(filtered);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const timeout = setTimeout(() => {
+      fetchProducts();
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [search, activeCat]);
 
   const toggleFav = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -129,14 +191,7 @@ export default function BuyerHomeScreen({
     { id: "digital", label: isEn ? "Digital" : "Numérique", icon: "▤" },
   ];
 
-  const filtered = CATALOG.filter((p) => {
-    const matchCat = activeCat === "all" || p.category === activeCat;
-    const matchSearch =
-      !search ||
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.seller.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const filtered = products;
 
   return (
     <ScrollView
@@ -881,7 +936,7 @@ export default function BuyerHomeScreen({
         </ScrollView>
       </View>
 
-      {/* ==================== D02 BESPOKE CARD ==================== */}
+      {/* ==================== ARTISAN REQUEST CARD ==================== */}
       <View style={{ paddingHorizontal: 20 }}>
         <View
           style={{
@@ -903,7 +958,7 @@ export default function BuyerHomeScreen({
               marginBottom: 6,
             }}
           >
-            {isEn ? "BESPOKE NETWORK" : "RÉSEAU SUR-MESURE"}
+            {isEn ? "ARTISAN NETWORK" : "RÉSEAU D'ARTISANS"}
           </Text>
 
           <Text

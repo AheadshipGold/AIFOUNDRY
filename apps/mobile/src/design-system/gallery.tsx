@@ -41,7 +41,7 @@ export default function ComponentGallery() {
         contentContainerStyle={{ padding: 20, paddingBottom: 120, gap: 32 }}
         keyboardShouldPersistTaps="handled"
       >
-        <UI.Header title="AI FOUNDRY · D01 + D02" />
+        <UI.Header title="Component Gallery" />
         <UI.Label variant="display">{t.gallery}</UI.Label>
         <UI.Label muted>{t.demo}</UI.Label>
         <UI.ResponsiveGrid>
