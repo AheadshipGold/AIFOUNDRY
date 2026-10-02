@@ -25,8 +25,24 @@ const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
 const imgArmchair = require("../../../assets/products/armchair.jpg");
 const imgJewelryGold = require("../../../assets/products/jewelry-gold.jpg");
 const imgArtBronze = require("../../../assets/products/art-bronze.jpg");
+const imgDigitalPatterns = require("../../../assets/products/digital-patterns.jpg");
 
-const CATALOG = [
+export interface Product {
+  id: string;
+  title: string;
+  subtitle: string;
+  seller: string;
+  price: number;
+  currency: string;
+  rating: number;
+  reviews: number;
+  image: any;
+  category: string;
+  isDigital?: boolean;
+  format?: string;
+}
+
+const CATALOG: Product[] = [
   {
     id: "prod-1",
     title: "Cabas Studio en Cuir",
@@ -38,6 +54,7 @@ const CATALOG = [
     reviews: 124,
     image: imgLeatherTote,
     category: "leather",
+    isDigital: false,
   },
   {
     id: "prod-2",
@@ -50,6 +67,7 @@ const CATALOG = [
     reviews: 68,
     image: imgWatchChrono,
     category: "watches",
+    isDigital: false,
   },
   {
     id: "prod-3",
@@ -62,6 +80,7 @@ const CATALOG = [
     reviews: 42,
     image: imgArmchair,
     category: "home",
+    isDigital: false,
   },
   {
     id: "prod-4",
@@ -73,7 +92,8 @@ const CATALOG = [
     rating: 5.0,
     reviews: 89,
     image: imgArtBronze,
-    category: "digital",
+    category: "art",
+    isDigital: false,
   },
   {
     id: "prod-5",
@@ -86,18 +106,48 @@ const CATALOG = [
     reviews: 31,
     image: imgJewelryGold,
     category: "fashion",
+    isDigital: false,
   },
   {
     id: "prod-6",
+    title: "Traité de Modélisme & Patrons 1:1",
+    subtitle: "Patrons vectoriels A0/A4 · Sac Cabas Royal",
+    seller: "Studio Éditions",
+    price: 6500,
+    currency: "XOF",
+    rating: 4.9,
+    reviews: 215,
+    image: imgDigitalPatterns,
+    category: "digital",
+    isDigital: true,
+    format: "PDF Vectoriel (14.5 Mo)",
+  },
+  {
+    id: "prod-7",
+    title: "Guide Fonte Cire Perdue",
+    subtitle: "Manuel technique d'alliages nobles",
+    seller: "Fonderie Royale d'Abomey",
+    price: 12000,
+    currency: "XOF",
+    rating: 5.0,
+    reviews: 54,
+    image: imgDigitalPatterns,
+    category: "digital",
+    isDigital: true,
+    format: "E-Book Illustré (28.4 Mo)",
+  },
+  {
+    id: "prod-8",
     title: "Tenture Bogolan & Soie",
     subtitle: "Soie sauvage · Pigments d'argile",
     seller: "Studio Djoliba",
     price: 36000,
     currency: "XOF",
     rating: 4.8,
-    reviews: 215,
+    reviews: 89,
     image: imgLeatherTote,
-    category: "fashion",
+    category: "art",
+    isDigital: false,
   },
 ];
 
@@ -105,16 +155,19 @@ function formatXOF(price: number, currency = "FCFA") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
 
-function mapApiProduct(prod: ProductItem) {
+function mapApiProduct(prod: ProductItem): Product {
   let image = imgLeatherTote;
   const cat = (prod.category || "").toLowerCase();
+  const isDigital = cat.includes("digital") || cat.includes("patron") || cat.includes("guide");
   if (cat.includes("watch") || cat.includes("montre") || cat.includes("horlog")) {
     image = imgWatchChrono;
   } else if (cat.includes("home") || cat.includes("mobilier") || cat.includes("deco") || cat.includes("fauteuil")) {
     image = imgArmchair;
   } else if (cat.includes("jewel") || cat.includes("bijou") || cat.includes("or") || cat.includes("bague")) {
     image = imgJewelryGold;
-  } else if (cat.includes("art") || cat.includes("bronze") || cat.includes("sculpt") || cat.includes("digital")) {
+  } else if (isDigital) {
+    image = imgDigitalPatterns;
+  } else if (cat.includes("art") || cat.includes("bronze") || cat.includes("sculpt")) {
     image = imgArtBronze;
   } else if (cat.includes("leather") || cat.includes("maroquinerie") || cat.includes("sac")) {
     image = imgLeatherTote;
@@ -130,7 +183,9 @@ function mapApiProduct(prod: ProductItem) {
     rating: 4.8,
     reviews: 12,
     image,
-    category: prod.category,
+    category: prod.category || "other",
+    isDigital: !!isDigital,
+    format: isDigital ? "PDF Vectoriel (14.5 Mo)" : undefined,
   };
 }
 
@@ -220,7 +275,8 @@ export default function SearchScreen({
     { id: "leather", label: isEn ? "Leather" : "Maroquinerie" },
     { id: "fashion", label: isEn ? "Jewelry" : "Bijoux d'Art" },
     { id: "home", label: isEn ? "Home" : "Mobilier & Déco" },
-    { id: "digital", label: isEn ? "Sculptures" : "Art & Bronze" },
+    { id: "art", label: isEn ? "Sculptures" : "Art & Bronze" },
+    { id: "digital", label: isEn ? "Digital" : "Numérique" },
   ];
 
   const priceRanges = [
@@ -524,6 +580,27 @@ export default function SearchScreen({
                           resizeMode: "cover",
                         }}
                       />
+                      {/* Digital Badge */}
+                      {prod.isDigital || prod.category === "digital" ? (
+                        <View
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            backgroundColor: "rgba(2, 43, 34, 0.92)",
+                            paddingHorizontal: 7,
+                            paddingVertical: 3,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: colors.accent,
+                          }}
+                        >
+                          <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
+                            ⚡ NUMÉRIQUE
+                          </Text>
+                        </View>
+                      ) : null}
+
                       <Pressable
                         onPress={() => toggleFav(prod.id)}
                         style={{
@@ -608,24 +685,25 @@ export default function SearchScreen({
                           </Text>
                         </View>
                         <Pressable
-                          onPress={() => onOpenCart()}
+                          onPress={() => (prod.isDigital || prod.category === "digital" ? onSelectProduct(prod) : onOpenCart())}
                           style={{
-                            width: 28,
+                            paddingHorizontal: prod.isDigital || prod.category === "digital" ? 8 : 0,
+                            width: prod.isDigital || prod.category === "digital" ? "auto" : 28,
                             height: 28,
                             borderRadius: 7,
-                            backgroundColor: colors.action,
+                            backgroundColor: prod.isDigital || prod.category === "digital" ? colors.accent : colors.action,
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
                           <Text
                             style={{
-                              color: "#FFFFFF",
-                              fontSize: 13,
+                              color: prod.isDigital || prod.category === "digital" ? "#022B22" : "#FFFFFF",
+                              fontSize: prod.isDigital || prod.category === "digital" ? 10 : 13,
                               fontWeight: "700",
                             }}
                           >
-                            +
+                            {prod.isDigital || prod.category === "digital" ? "⚡ Télécharger" : "+"}
                           </Text>
                         </Pressable>
                       </View>
@@ -665,6 +743,27 @@ export default function SearchScreen({
                           resizeMode: "cover",
                         }}
                       />
+                      {/* Digital Badge */}
+                      {prod.isDigital || prod.category === "digital" ? (
+                        <View
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            backgroundColor: "rgba(2, 43, 34, 0.92)",
+                            paddingHorizontal: 7,
+                            paddingVertical: 3,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: colors.accent,
+                          }}
+                        >
+                          <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
+                            ⚡ NUMÉRIQUE
+                          </Text>
+                        </View>
+                      ) : null}
+
                       <Pressable
                         onPress={() => toggleFav(prod.id)}
                         style={{
@@ -749,24 +848,25 @@ export default function SearchScreen({
                           </Text>
                         </View>
                         <Pressable
-                          onPress={() => onOpenCart()}
+                          onPress={() => (prod.isDigital || prod.category === "digital" ? onSelectProduct(prod) : onOpenCart())}
                           style={{
-                            width: 28,
+                            paddingHorizontal: prod.isDigital || prod.category === "digital" ? 8 : 0,
+                            width: prod.isDigital || prod.category === "digital" ? "auto" : 28,
                             height: 28,
                             borderRadius: 7,
-                            backgroundColor: colors.action,
+                            backgroundColor: prod.isDigital || prod.category === "digital" ? colors.accent : colors.action,
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
                           <Text
                             style={{
-                              color: "#FFFFFF",
-                              fontSize: 13,
+                              color: prod.isDigital || prod.category === "digital" ? "#022B22" : "#FFFFFF",
+                              fontSize: prod.isDigital || prod.category === "digital" ? 10 : 13,
                               fontWeight: "700",
                             }}
                           >
-                            +
+                            {prod.isDigital || prod.category === "digital" ? "⚡ Télécharger" : "+"}
                           </Text>
                         </Pressable>
                       </View>

@@ -116,7 +116,7 @@ const CATALOG: Product[] = [
     id: "prod-4",
     title: "Buste Royal Dahomey en Bronze",
     subtitle: "Bronze noble · Cire perdue d'Abomey",
-    category: "digital",
+    category: "art",
     price: 195000,
     currency: "XOF",
     rating: 5.0,
@@ -166,12 +166,12 @@ const CATALOG: Product[] = [
   },
   {
     id: "prod-6",
-    title: "Traité de Modélisme",
-    subtitle: "PDF interactif · Patrons 1:1",
+    title: "Traité de Modélisme & Patrons 1:1",
+    subtitle: "Patrons vectoriels A0/A4 · Sac Cabas Royal",
     category: "digital",
     price: 6500,
     currency: "XOF",
-    rating: 4.7,
+    rating: 4.9,
     reviewsCount: 215,
     seller: {
       name: "Studio Éditions",
@@ -181,11 +181,60 @@ const CATALOG: Product[] = [
       salesCount: 890,
       initials: "SE",
     },
-    image: "/products/armchair.jpg",
+    image: "/products/digital-patterns.jpg",
     description:
-      "Guide complet haute résolution détaillant le point sellier, le parage et l'assemblage des cuirs nobles.",
-    stock: 99,
-    variants: [{ name: "Édition Numérique", color: "#075D49" }],
+      "Guide complet et patrons vectoriels haute résolution A0/A4 détaillant le traçage, le parage et l'assemblage au point sellier.",
+    stock: 999,
+    variants: [{ name: "PDF Vectoriel A0/A4 (14.5 Mo)", color: "#0D4A38" }],
+  },
+  {
+    id: "prod-7",
+    title: "Guide Fonte à la Cire Perdue",
+    subtitle: "Manuel d'alliages & moulage noble",
+    category: "digital",
+    price: 12000,
+    currency: "XOF",
+    rating: 5.0,
+    reviewsCount: 54,
+    seller: {
+      name: "Fonderie Royale d'Abomey",
+      city: "Abomey",
+      verified: true,
+      rating: 5.0,
+      salesCount: 140,
+      initials: "FA",
+    },
+    image: "/products/digital-patterns.jpg",
+    description:
+      "Traité technique complet sur la préparation des cires d'abeille, les moules réfractaires et les alliages de bronze traditionnels.",
+    stock: 999,
+    variants: [{ name: "E-Book Haute Définition (28.4 Mo)", color: "#D4B483" }],
+  },
+  {
+    id: "prod-8",
+    title: "Tenture Murale Bogolan & Soie",
+    subtitle: "Soie sauvage · Pigments d'argile",
+    category: "art",
+    price: 36000,
+    currency: "XOF",
+    rating: 4.8,
+    reviewsCount: 89,
+    seller: {
+      name: "Studio Djoliba",
+      city: "Bamako",
+      verified: true,
+      rating: 4.8,
+      salesCount: 340,
+      initials: "SD",
+    },
+    image: "/products/leather-tote.jpg",
+    description:
+      "Œuvre textile unique aux pigments d'argile fermentée, mêlant motifs géométriques ancestraux et lisière de soie sauvage filée à la main.",
+    stock: 7,
+    variants: [
+      { name: "Noir & Ocre", color: "#2B241F" },
+      { name: "Indigo Profond", color: "#1D283E" },
+    ],
   },
 ];
 
@@ -607,7 +656,8 @@ function MainMarketplaceView() {
     { id: "leather", label: isEn ? "Bags" : "Maroquinerie", image: "/products/leather-tote.jpg", isAll: false },
     { id: "fashion", label: isEn ? "Jewelry" : "Bijoux d'Art", image: "/products/jewelry-gold.jpg", isAll: false },
     { id: "home", label: isEn ? "Home" : "Mobilier d'Art", image: "/products/armchair.jpg", isAll: false },
-    { id: "digital", label: isEn ? "Sculptures" : "Art & Bronze", image: "/products/art-bronze.jpg", isAll: false },
+    { id: "art", label: isEn ? "Sculptures" : "Art & Bronze", image: "/products/art-bronze.jpg", isAll: false },
+    { id: "digital", label: isEn ? "Digital" : "Numérique", image: "/products/digital-patterns.jpg", isAll: false },
   ];
 
   return (
@@ -984,6 +1034,26 @@ function MainMarketplaceView() {
                   <article key={p.id} className="oj-prod-card">
                     <div className="oj-prod-media" onClick={() => setSelectedProduct(p)}>
                       <img src={p.image} alt={p.title} />
+                      {p.category === "digital" && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "10px",
+                            left: "10px",
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            backgroundColor: "rgba(2, 43, 34, 0.92)",
+                            color: "var(--oj-color-accent)",
+                            fontSize: "10px",
+                            fontWeight: 800,
+                            border: "1px solid var(--oj-color-accent)",
+                            letterSpacing: "0.5px",
+                            zIndex: 2,
+                          }}
+                        >
+                          ⚡ NUMÉRIQUE
+                        </span>
+                      )}
                       <button
                         className="oj-fav-btn"
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
@@ -1008,13 +1078,33 @@ function MainMarketplaceView() {
                             <span>{p.rating.toFixed(1)} ({p.reviewsCount})</span>
                           </div>
                         </div>
-                        <button
-                          className="oj-prod-cart-btn"
-                          onClick={() => addToCart(p)}
-                          title={isEn ? "Add to cart" : "Ajouter au panier"}
-                        >
-                          <IconCart />
-                        </button>
+                        {p.category === "digital" ? (
+                          <button
+                            className="oj-btn-primary"
+                            onClick={() => addToCart(p)}
+                            style={{
+                              height: "36px",
+                              padding: "0 12px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              borderRadius: "var(--oj-radius-field)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <span>⚡</span>
+                            <span>{isEn ? "Download" : "Télécharger"}</span>
+                          </button>
+                        ) : (
+                          <button
+                            className="oj-prod-cart-btn"
+                            onClick={() => addToCart(p)}
+                            title={isEn ? "Add to cart" : "Ajouter au panier"}
+                          >
+                            <IconCart />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>
@@ -2161,6 +2251,22 @@ function MainMarketplaceView() {
                   ))}
                 </div>
                 <div style={{ padding: "20px 24px", borderTop: "1px solid var(--oj-color-border)" }}>
+                  {cart.some((i) => i.product.category === "digital") && (
+                    <div
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        backgroundColor: "rgba(212, 180, 131, 0.15)",
+                        border: "1px solid var(--oj-color-accent)",
+                        color: "var(--oj-color-text)",
+                        fontSize: "12px",
+                        lineHeight: 1.4,
+                        marginBottom: "12px",
+                      }}
+                    >
+                      ⚡ <strong>Livraison Numérique Immédiate :</strong> Les traités et patrons d'atelier sont délivrés instantanément avec licence artisanale après paiement.
+                    </div>
+                  )}
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
                     <span>{isEn ? "Total" : "Total"}</span>
                     <strong style={{ fontSize: "18px", fontVariantNumeric: "tabular-nums" }}>{formatPrice(cartTotal)}</strong>
@@ -2168,7 +2274,22 @@ function MainMarketplaceView() {
                   <small style={{ display: "block", color: "var(--oj-color-muted)", fontSize: "12px", marginBottom: "16px" }}>
                     {isEn ? "Direct payment via Mobile Money or Card." : "Règlement direct Mobile Money (MTN, Moov, Wave) ou Carte."}
                   </small>
-                  <button className="oj-btn-primary" style={{ width: "100%" }} onClick={() => { alert(isEn ? "Order placed!" : "Commande enregistrée !"); setCart([]); setCartOpen(false); }}>
+                  <button
+                    className="oj-btn-primary"
+                    style={{ width: "100%" }}
+                    onClick={() => {
+                      const hasDigital = cart.some((i) => i.product.category === "digital");
+                      alert(
+                        hasDigital
+                          ? (isEn
+                              ? "Order placed! Your digital files and download license are now available in your space."
+                              : "Commande validée ! Vos fichiers numériques et licences d'atelier sont immédiatement accessibles.")
+                          : (isEn ? "Order placed successfully!" : "Commande enregistrée avec succès !")
+                      );
+                      setCart([]);
+                      setCartOpen(false);
+                    }}
+                  >
                     {isEn ? `Place order (${formatPrice(cartTotal)})` : `Valider la commande (${formatPrice(cartTotal)})`}
                   </button>
                 </div>
