@@ -2,12 +2,19 @@
 // Connects to local NestJS backend with intelligent offline fallback
 
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// On Android Emulator: use 10.0.2.2. On physical device: machine LAN IP. On web: localhost.
-const DEFAULT_API_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:3001/api',
-  default: 'http://localhost:3001/api',
-});
+// Dynamic API resolution: on physical device via Expo Dev Client, Metro's hostUri provides the machine LAN IP.
+// On Android Emulator without hostUri: fallback to 10.0.2.2. On web / fallback: localhost.
+const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost;
+const host = debuggerHost ? debuggerHost.split(':')[0] : null;
+
+const DEFAULT_API_BASE_URL = host
+  ? `http://${host}:3001/api`
+  : Platform.select({
+      android: 'http://10.0.2.2:3001/api',
+      default: 'http://localhost:3001/api',
+    });
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
 
