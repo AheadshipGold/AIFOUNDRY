@@ -67,6 +67,7 @@ model Shop {
   cashbook      CashbookEntry[]
   dayClosures   DayClosure[]
   paymentConnections ShopPaymentConnection[]
+  subscriptions      Subscription[]
 
   @@map("shops")
 }
@@ -578,6 +579,63 @@ model OrderIncident {
   order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("order_incidents")
+}
+
+// ==============================================================================
+// 9. MERCHANT SAAS SUBSCRIPTIONS & MONETIZATION (FR-37)
+// ==============================================================================
+
+enum PlanTier {
+  DECOUVERTE_FREE
+  ATELIER_PRO
+  MAISON_D_ART_PRESTIGE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum BillingSource {
+  MONEROO
+  MTN_MOMO
+  MOOV_MONEY
+  PLAY_BILLING
+  WEB_DIRECT
+  MANUAL_ADMIN
+}
+
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  shopId             String
+  planTier           PlanTier           @default(DECOUVERTE_FREE)
+  status             SubscriptionStatus @default(ACTIVE)
+  billingSource      BillingSource      @default(MTN_MOMO)
+  billingInterval    BillingInterval    @default(MONTHLY)
+  priceMinor         Int                @default(0)
+  currency           String             @default("XOF")
+  maxProducts        Int                @default(5)
+  hasPriorityD02     Boolean            @default(false)
+  hasFecExport       Boolean            @default(false)
+  hasVipConcierge    Boolean            @default(false)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  externalPaymentRef String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 

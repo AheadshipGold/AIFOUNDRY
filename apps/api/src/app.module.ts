@@ -10,6 +10,7 @@ import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { DigitalModule } from './digital/digital.module';
 import { IncidentsModule } from './incidents/incidents.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { IncidentsModule } from './incidents/incidents.module';
     AuthModule,
     DigitalModule,
     IncidentsModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

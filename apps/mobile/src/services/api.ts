@@ -532,3 +532,62 @@ export const IncidentsApi = {
   },
 };
 
+// ---------------------------------------------------------
+// 9. ABONNEMENTS MARCHANDS SAAS (FR-37)
+// ---------------------------------------------------------
+
+export interface PlanFeatureDefinition {
+  tier: string;
+  title: string;
+  priceMonthlyMinor: number;
+  priceAnnualMinor: number;
+  maxProducts: number;
+  hasPriorityD02: boolean;
+  hasFecExport: boolean;
+  hasVipConcierge: boolean;
+  featuresList: string[];
+}
+
+export interface SubscriptionRecord {
+  id: string;
+  shopId: string;
+  shopName?: string;
+  planTier: string;
+  status: string;
+  billingSource: string;
+  billingInterval: string;
+  priceMinor: number;
+  currency: string;
+  maxProducts: number;
+  hasPriorityD02: boolean;
+  hasFecExport: boolean;
+  hasVipConcierge: boolean;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  externalPaymentRef?: string;
+}
+
+export const SubscriptionsApi = {
+  async getPlans(): Promise<PlanFeatureDefinition[]> {
+    return request<PlanFeatureDefinition[]>('/v1/subscriptions/plans');
+  },
+
+  async getShopSubscription(shopId: string): Promise<SubscriptionRecord> {
+    return request<SubscriptionRecord>(`/v1/subscriptions/shop/${shopId}`);
+  },
+
+  async upgradePlan(data: {
+    shopId: string;
+    planTier: string;
+    billingInterval?: string;
+    billingSource?: string;
+    paymentReference?: string;
+  }): Promise<SubscriptionRecord> {
+    return request<SubscriptionRecord>('/v1/subscriptions/upgrade', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
