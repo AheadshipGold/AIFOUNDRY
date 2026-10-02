@@ -5,8 +5,8 @@ import { Platform } from 'react-native';
 
 // On Android Emulator: use 10.0.2.2. On physical device: machine LAN IP. On web: localhost.
 const DEFAULT_API_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:3001',
-  default: 'http://localhost:3001',
+  android: 'http://10.0.2.2:3001/api',
+  default: 'http://localhost:3001/api',
 });
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL;

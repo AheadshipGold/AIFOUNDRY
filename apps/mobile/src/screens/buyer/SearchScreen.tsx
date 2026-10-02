@@ -148,16 +148,32 @@ export default function SearchScreen({
         const query = search.trim() ? search : undefined;
         const category = activeCat !== "all" ? activeCat : undefined;
         const apiProds = await CatalogApi.getProducts(query, category);
-        if (apiProds && apiProds.length > 0) {
-          let mapped = apiProds.map(mapApiProduct);
-          // Apply price filter to API results
-          if (activePrice === "low") mapped = mapped.filter(p => p.price < 50000);
-          if (activePrice === "mid") mapped = mapped.filter(p => p.price >= 50000 && p.price <= 150000);
-          if (activePrice === "high") mapped = mapped.filter(p => p.price > 150000);
-          setProducts(mapped);
-        } else {
-          setProducts([]);
+        const mappedApi = (apiProds || []).map(mapApiProduct);
+
+        // Filter CATALOG baseline
+        const filteredCatalog = CATALOG.filter((p) => {
+          if (activeCat !== "all" && p.category !== activeCat) return false;
+          if (search.trim()) {
+            const q = search.toLowerCase();
+            if (!p.title.toLowerCase().includes(q) && !p.seller.toLowerCase().includes(q)) return false;
+          }
+          if (activePrice === "low" && p.price >= 50000) return false;
+          if (activePrice === "mid" && (p.price < 50000 || p.price > 150000)) return false;
+          if (activePrice === "high" && p.price <= 150000) return false;
+          return true;
+        });
+
+        // Merge API products without duplicating IDs
+        const combined = [...filteredCatalog];
+        for (const apiP of mappedApi) {
+          if (!combined.some((p) => p.id === apiP.id)) {
+            if (activePrice === "low" && apiP.price >= 50000) continue;
+            if (activePrice === "mid" && (apiP.price < 50000 || apiP.price > 150000)) continue;
+            if (activePrice === "high" && apiP.price <= 150000) continue;
+            combined.push(apiP);
+          }
         }
+        setProducts(combined);
       } catch (err) {
         console.warn("API failed, falling back to CATALOG", err);
         // Fallback filter
@@ -180,7 +196,7 @@ export default function SearchScreen({
     
     const timeout = setTimeout(() => {
       fetchProducts();
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timeout);
   }, [search, activeCat, activePrice]);

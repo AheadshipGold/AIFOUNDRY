@@ -147,20 +147,26 @@ export default function BuyerHomeScreen({
         const query = search.trim() ? search : undefined;
         const category = activeCat !== "all" ? activeCat : undefined;
         const apiProds = await CatalogApi.getProducts(query, category);
-        if (apiProds && apiProds.length > 0) {
-          setProducts(apiProds.map(mapApiProduct));
-        } else {
-          // Fallback to rich curated catalog
-          const filtered = CATALOG.filter((p) => {
-            const matchCat = activeCat === "all" || p.category === activeCat;
-            const matchSearch =
-              !search ||
-              p.title.toLowerCase().includes(search.toLowerCase()) ||
-              p.seller.toLowerCase().includes(search.toLowerCase());
-            return matchCat && matchSearch;
-          });
-          setProducts(filtered);
+        const mappedApi = (apiProds || []).map(mapApiProduct);
+
+        // Filter CATALOG baseline
+        const filteredCatalog = CATALOG.filter((p) => {
+          const matchCat = activeCat === "all" || p.category === activeCat;
+          const matchSearch =
+            !search ||
+            p.title.toLowerCase().includes(search.toLowerCase()) ||
+            p.seller.toLowerCase().includes(search.toLowerCase());
+          return matchCat && matchSearch;
+        });
+
+        // Combine CATALOG with API products (avoiding duplicates by id)
+        const combined = [...filteredCatalog];
+        for (const apiP of mappedApi) {
+          if (!combined.some((p) => p.id === apiP.id)) {
+            combined.push(apiP);
+          }
         }
+        setProducts(combined);
       } catch (err) {
         console.warn("API fallback to CATALOG", err);
         const filtered = CATALOG.filter((p) => {
@@ -578,40 +584,54 @@ export default function BuyerHomeScreen({
             {/* Visual Header / Showcase Banner */}
             <View
               style={{
-                height: 140,
+                height: 160,
                 backgroundColor: "rgba(13, 74, 56, 0.5)",
                 borderTopWidth: 1,
                 borderColor: "rgba(212, 180, 131, 0.2)",
-                justifyContent: "center",
-                alignItems: "center",
+                overflow: "hidden",
                 position: "relative",
               }}
             >
-              <Text style={{ fontSize: 44 }}>⌚</Text>
-              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "700", marginTop: 4 }}>
-                Chronographe Héritage · Or & Acier
-              </Text>
-              {/* Pagination Dots */}
+              <Image
+                source={imgWatchChrono}
+                style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+              />
               <View
                 style={{
                   position: "absolute",
-                  bottom: 10,
-                  left: 16,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  backgroundColor: "rgba(2, 43, 34, 0.8)",
                   flexDirection: "row",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  gap: 6,
-                  backgroundColor: "rgba(0,0,0,0.5)",
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  borderRadius: 14,
                 }}
               >
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#FFFFFF" }} />
-                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
-                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
-                <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700", marginLeft: 4 }}>
-                  1 / 4
+                <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>
+                  Chronographe Héritage · Or & Acier
                 </Text>
+                {/* Pagination Dots */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 5,
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 12,
+                  }}
+                >
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#FFFFFF" }} />
+                  <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
+                  <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
+                  <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "700", marginLeft: 3 }}>
+                    1 / 4
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
@@ -673,16 +693,20 @@ export default function BuyerHomeScreen({
                       <View
                         style={{
                           width: "100%",
-                          height: 140,
+                          aspectRatio: 4 / 5,
                           backgroundColor: colors.canvas,
-                          alignItems: "center",
-                          justifyContent: "center",
                           position: "relative",
+                          overflow: "hidden",
                         }}
                       >
-                        <Text style={{ fontSize: 40 }}>
-                          {prod.category === "watches" ? "⌚" : (prod.category === "leather" ? "👜" : (prod.category === "home" ? "🛋" : "💎"))}
-                        </Text>
+                        <Image
+                          source={prod.image}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            resizeMode: "cover",
+                          }}
+                        />
                         {/* Floating Wishlist Heart */}
                         <Pressable
                           onPress={() => toggleFav(prod.id)}
@@ -818,16 +842,20 @@ export default function BuyerHomeScreen({
                       <View
                         style={{
                           width: "100%",
-                          height: 140,
+                          aspectRatio: 4 / 5,
                           backgroundColor: colors.canvas,
-                          alignItems: "center",
-                          justifyContent: "center",
                           position: "relative",
+                          overflow: "hidden",
                         }}
                       >
-                        <Text style={{ fontSize: 40 }}>
-                          {prod.category === "watches" ? "⌚" : (prod.category === "leather" ? "👜" : (prod.category === "home" ? "🛋" : "💎"))}
-                        </Text>
+                        <Image
+                          source={prod.image}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            resizeMode: "cover",
+                          }}
+                        />
                         {/* Floating Wishlist Heart */}
                         <Pressable
                           onPress={() => toggleFav(prod.id)}
@@ -980,8 +1008,8 @@ export default function BuyerHomeScreen({
                 specialty: "Maroquinerie d'art",
                 rating: 4.9,
                 reviews: 320,
-                icon1: "👜",
-                icon2: "🧳",
+                img1: imgLeatherTote,
+                img2: imgArmchair,
               },
               {
                 name: "Atelier Horlogerie",
@@ -989,8 +1017,8 @@ export default function BuyerHomeScreen({
                 specialty: "Horlogerie & Joaillerie",
                 rating: 5.0,
                 reviews: 186,
-                icon1: "⌚",
-                icon2: "💎",
+                img1: imgWatchChrono,
+                img2: imgLeatherTote,
               },
               {
                 name: "Studio Djoliba",
@@ -998,8 +1026,8 @@ export default function BuyerHomeScreen({
                 specialty: "Design & Textiles nobles",
                 rating: 4.8,
                 reviews: 340,
-                icon1: "🛋",
-                icon2: "🏺",
+                img1: imgArmchair,
+                img2: imgWatchChrono,
               },
             ].map((shop, i) => (
               <View
@@ -1080,35 +1108,37 @@ export default function BuyerHomeScreen({
                   </View>
                 </View>
 
-                {/* Right: 2 product preview icons */}
-                <View style={{ flexDirection: "row", gap: 5 }}>
+                {/* Right: 2 product preview images */}
+                <View style={{ flexDirection: "row", gap: 6 }}>
                   <View
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 44,
                       borderRadius: 8,
-                      backgroundColor: colors.canvas,
+                      overflow: "hidden",
                       borderWidth: 1,
                       borderColor: colors.border,
-                      alignItems: "center",
-                      justifyContent: "center",
                     }}
                   >
-                    <Text style={{ fontSize: 20 }}>{shop.icon1}</Text>
+                    <Image
+                      source={shop.img1}
+                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+                    />
                   </View>
                   <View
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 44,
                       borderRadius: 8,
-                      backgroundColor: colors.canvas,
+                      overflow: "hidden",
                       borderWidth: 1,
                       borderColor: colors.border,
-                      alignItems: "center",
-                      justifyContent: "center",
                     }}
                   >
-                    <Text style={{ fontSize: 20 }}>{shop.icon2}</Text>
+                    <Image
+                      source={shop.img2}
+                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+                    />
                   </View>
                 </View>
               </View>
