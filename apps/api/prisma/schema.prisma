@@ -312,6 +312,7 @@ model Order {
   reservations           Reservation[]
   financialEvents        FinancialEvent[]
   digitalEntitlements    DigitalEntitlement[]
+  incidents              OrderIncident[]
 
   @@map("orders")
 }
@@ -532,6 +533,51 @@ model OtpToken {
 
   @@index([identifier])
   @@map("otp_tokens")
+}
+
+// ==============================================================================
+// 8. DISPUTES & INCIDENT MANAGEMENT (FR-52 to FR-55)
+// ==============================================================================
+
+enum IncidentCategory {
+  DAMAGED_ITEM
+  DEFECTIVE_CRAFT
+  NON_CONFORMING
+  DELAY_EXCEEDED
+  UNDELIVERED
+  DIGITAL_ACCESS_ISSUE
+  OTHER
+}
+
+enum IncidentStatus {
+  OPEN
+  UNDER_REVIEW
+  ACTION_REQUIRED
+  PROPOSAL_MADE
+  RESOLVED
+  CONTESTED
+  CLOSED
+}
+
+model OrderIncident {
+  id              String           @id @default(uuid())
+  orderId         String
+  reporterName    String
+  reporterPhone   String?
+  category        IncidentCategory @default(OTHER)
+  title           String
+  description     String
+  evidenceUrls    String[]
+  status          IncidentStatus   @default(OPEN)
+  resolution      String?
+  proposedOutcome String?
+  resolvedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_incidents")
 }
 
 

@@ -8,6 +8,8 @@ import { OrdersModule } from './orders/orders.module';
 import { SellerModule } from './seller/seller.module';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
+import { DigitalModule } from './digital/digital.module';
+import { IncidentsModule } from './incidents/incidents.module';
 
 @Module({
   imports: [
@@ -18,9 +20,10 @@ import { AuthModule } from './auth/auth.module';
     SellerModule,
     AdminModule,
     AuthModule,
+    DigitalModule,
+    IncidentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-

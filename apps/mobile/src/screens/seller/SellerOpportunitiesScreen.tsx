@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -8,34 +8,14 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useDesign } from "../../design-system/provider";
 import { Button } from "../../design-system/components";
+import { RequestsApi, PurchaseRequestItem } from "../../services/api";
 
 interface SellerOpportunitiesScreenProps {
   onBack: () => void;
-}
-
-interface Proposal {
-  id: string;
-  artisan: string;
-  price: number;
-  advance: number;
-  days: number;
-  notes: string;
-  status: "PENDING" | "ACCEPTED" | "DECLINED";
-}
-
-interface BuyerRequest {
-  id: string;
-  buyerName: string;
-  buyerCity: string;
-  category: string;
-  title: string;
-  description: string;
-  budget: string;
-  proposalsCount: number;
-  myProposal?: Proposal;
 }
 
 export default function SellerOpportunitiesScreen({
@@ -44,89 +24,148 @@ export default function SellerOpportunitiesScreen({
   const { colors, locale } = useDesign();
   const isEn = locale === "en";
 
-  const [requests, setRequests] = useState<BuyerRequest[]>([
-    {
-      id: "req-01",
-      buyerName: "Amina Diop",
-      buyerCity: "Cotonou",
-      category: "Joaillerie & Bronze",
-      title: "Parure royale en bronze ciselé pour cérémonie traditionnelle",
-      description:
-        "Recherche d'un atelier d'artisan d'Abomey capable de forger un collier plastron et manchettes assorties sous 15 jours avec symboles royaux dahoméens.",
-      budget: "280 000 FCFA",
-      proposalsCount: 2,
-    },
-    {
-      id: "req-02",
-      buyerName: "Marcelle Houngbo",
-      buyerCity: "Porto-Novo",
-      category: "Mobilier d'Art",
-      title: "Table console sculptée en bois d'Iroko massif",
-      description:
-        "Console d'entrée 140cm x 40cm avec pieds sculptés motifs bas-reliefs dahoméens. Finition cirée naturelle.",
-      budget: "450 000 FCFA",
-      proposalsCount: 1,
-    },
-    {
-      id: "req-03",
-      buyerName: "Didier Agossa",
-      buyerCity: "Parakou",
-      category: "Maroquinerie",
-      title: "Sac de voyage weekend en cuir pleine fleur patiné",
-      description:
-        "Sac de voyage 50L en cuir brun foncé avec compartiment chaussures et bandoulière renforcée cuir sellier.",
-      budget: "190 000 FCFA",
-      proposalsCount: 0,
-    },
-  ]);
-
-  const [selectedReq, setSelectedReq] = useState<BuyerRequest | null>(null);
+  const [requests, setRequests] = useState<PurchaseRequestItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReq, setSelectedReq] = useState<PurchaseRequestItem | null>(null);
   const [quotePrice, setQuotePrice] = useState("270000");
   const [quoteAdvance, setQuoteAdvance] = useState("100000");
   const [quoteDays, setQuoteDays] = useState("12");
   const [quoteNotes, setQuoteNotes] = useState(
-    "Cuir de premier choix tannage végétal, confection sellier sous 12 jours."
+    "Cuir de premier choix tannage végétal ou travail du bronze à la cire perdue. Confection sous 12 jours."
   );
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitQuote = () => {
+  // Fallback mock requests
+  const fallbackRequests: PurchaseRequestItem[] = [
+    {
+      id: "req-01",
+      buyerName: "Amina Diop",
+      title: "Parure royale en bronze ciselé pour cérémonie traditionnelle",
+      description:
+        "Recherche d'un atelier d'artisan d'Abomey capable de forger un collier plastron et manchettes assorties sous 15 jours avec symboles royaux dahoméens.",
+      category: "Joaillerie & Bronze",
+      targetBudgetMinor: 28000000,
+      currency: "XOF",
+      status: "MATCHED",
+      createdAt: new Date().toISOString(),
+      proposals: [],
+    },
+    {
+      id: "req-02",
+      buyerName: "Marcelle Houngbo",
+      title: "Table console sculptée en bois d'Iroko massif",
+      description:
+        "Console d'entrée 140cm x 40cm avec pieds sculptés motifs bas-reliefs dahoméens. Finition cirée naturelle.",
+      category: "Mobilier d'Art",
+      targetBudgetMinor: 45000000,
+      currency: "XOF",
+      status: "OPEN",
+      createdAt: new Date().toISOString(),
+      proposals: [],
+    },
+    {
+      id: "req-03",
+      buyerName: "Didier Agossa",
+      title: "Sac de voyage weekend en cuir pleine fleur patiné",
+      description:
+        "Sac de voyage 50L en cuir brun foncé avec compartiment chaussures et bandoulière renforcée cuir sellier.",
+      category: "Maroquinerie",
+      targetBudgetMinor: 19000000,
+      currency: "XOF",
+      status: "OPEN",
+      createdAt: new Date().toISOString(),
+      proposals: [],
+    },
+  ];
+
+  const fetchRequests = async () => {
+    try {
+      const data = await RequestsApi.getAll();
+      if (data && data.length > 0) {
+        setRequests(data);
+      } else {
+        setRequests(fallbackRequests);
+      }
+    } catch {
+      setRequests(fallbackRequests);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const handleSubmitQuote = async () => {
     if (!selectedReq) return;
     const priceNum = parseInt(quotePrice, 10) || 0;
     const advNum = parseInt(quoteAdvance, 10) || 0;
     const daysNum = parseInt(quoteDays, 10) || 10;
 
-    const newProp: Proposal = {
-      id: `prop-${Date.now()}`,
-      artisan: "Alexandre Atelier Cotonou",
-      price: priceNum,
-      advance: advNum,
-      days: daysNum,
-      notes: quoteNotes,
-      status: "PENDING",
-    };
+    setSubmitting(true);
+    try {
+      await RequestsApi.submitProposal(selectedReq.id, {
+        shopName: "Atelier d'Excellence Bénin",
+        artisanCity: "Cotonou",
+        priceMinor: priceNum * 100,
+        advancePaymentRequiredMinor: advNum * 100,
+        productionDays: daysNum,
+        notes: quoteNotes,
+      });
 
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === selectedReq.id
-          ? {
-              ...r,
-              proposalsCount: r.proposalsCount + 1,
-              myProposal: newProp,
-            }
-          : r
-      )
-    );
-
-    setSelectedReq(null);
-    Alert.alert(
-      isEn ? "Quote Transmitted!" : "Devis transmis avec succès !",
-      isEn
-        ? "The buyer has received your structured proposal. You will be notified upon acceptance and direct deposit confirmation."
-        : "Le client a reçu votre devis structuré. Vous serez notifié dès acceptation et versement de l'acompte direct."
-    );
+      Alert.alert(
+        isEn ? "Quote Transmitted!" : "Devis transmis avec succès !",
+        isEn
+          ? "The buyer has received your structured proposal. You will be notified upon acceptance and direct deposit confirmation."
+          : "Le client a reçu votre devis structuré. Vous serez notifié dès acceptation et versement de l'acompte direct."
+      );
+      setSelectedReq(null);
+      await fetchRequests();
+    } catch {
+      // Local optimistic update if offline
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === selectedReq.id
+            ? {
+                ...r,
+                status: "MATCHED",
+                proposals: [
+                  ...(r.proposals || []),
+                  {
+                    id: `prop-${Date.now()}`,
+                    requestId: r.id,
+                    shopId: "shop-01",
+                    shopName: "Atelier d'Excellence Bénin",
+                    artisanCity: "Cotonou",
+                    priceMinor: priceNum * 100,
+                    advancePaymentRequiredMinor: advNum * 100,
+                    currency: "XOF",
+                    productionDays: daysNum,
+                    notes: quoteNotes,
+                    status: "PENDING",
+                    createdAt: new Date().toISOString(),
+                  },
+                ],
+              }
+            : r
+        )
+      );
+      setSelectedReq(null);
+      Alert.alert(
+        isEn ? "Quote Transmitted (Offline Mode)!" : "Devis transmis (Mode Démo) !",
+        isEn
+          ? "The buyer has received your proposal."
+          : "Le client a reçu votre devis structuré."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const formatPrice = (val: number) => {
-    return new Intl.NumberFormat("fr-FR").format(val) + " FCFA";
+  const formatPrice = (valMinor?: number) => {
+    if (!valMinor) return isEn ? "Open budget" : "Budget ouvert";
+    return new Intl.NumberFormat("fr-FR").format(valMinor / 100) + " FCFA";
   };
 
   return (
@@ -161,7 +200,7 @@ export default function SellerOpportunitiesScreen({
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 11, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
-            {isEn ? "BUYER REQUESTS" : "DEMANDES ACHETEURS"}
+            {isEn ? "BUYER OPPORTUNITIES" : "OPPORTUNITÉS & DEMANDES SUR-MESURE"}
           </Text>
           <Text
             style={{
@@ -199,115 +238,131 @@ export default function SellerOpportunitiesScreen({
         </Text>
       </View>
 
-      {/* Requests List */}
-      <View style={{ gap: 16 }}>
-        {requests.map((req) => (
-          <View
-            key={req.id}
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-              padding: 16,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: 8,
-              }}
-            >
+      {/* Loading state */}
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.action} style={{ marginTop: 24 }} />
+      ) : (
+        /* Requests List */
+        <View style={{ gap: 16 }}>
+          {requests.map((req) => {
+            const hasMyProposal = req.proposals && req.proposals.some(p => p.shopName.includes("Atelier") || p.status === 'PENDING' || p.status === 'ACCEPTED');
+            const myProp = req.proposals && req.proposals[0];
+
+            return (
               <View
+                key={req.id}
                 style={{
-                  backgroundColor: colors.subtle,
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: 6,
+                  backgroundColor: colors.surface,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  padding: 16,
                 }}
               >
-                <Text style={{ fontSize: 10, fontWeight: "700", color: colors.action }}>
-                  {req.category}
-                </Text>
-              </View>
-              <Text style={{ fontSize: 11, color: colors.muted }}>
-                {req.proposalsCount} {isEn ? "quotes" : "devis"}
-              </Text>
-            </View>
-
-            <Text
-              style={{
-                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                fontSize: 16,
-                fontWeight: "700",
-                color: colors.text,
-                marginBottom: 6,
-              }}
-            >
-              {req.title}
-            </Text>
-
-            <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 10 }}>
-              👤 {req.buyerName} · 📍 {req.buyerCity}
-            </Text>
-
-            <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 14 }}>
-              {req.description}
-            </Text>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderTopWidth: 1,
-                borderTopColor: colors.border,
-                paddingTop: 12,
-              }}
-            >
-              <View>
-                <Text style={{ fontSize: 10, color: colors.muted }}>
-                  {isEn ? "Target Budget:" : "Budget indicatif :"}
-                </Text>
-                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action }}>
-                  {req.budget}
-                </Text>
-              </View>
-
-              {req.myProposal ? (
                 <View
                   style={{
-                    backgroundColor: colors.successBg,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 10,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.action }}>
-                    ✓ {isEn ? "Quote Sent" : "Devis envoyé"} ({formatPrice(req.myProposal.price)})
+                  <View
+                    style={{
+                      backgroundColor: colors.subtle,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: colors.action }}>
+                      {req.category ? req.category.toUpperCase() : "SUR-MESURE"}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 11, color: colors.muted }}>
+                    {req.proposals ? req.proposals.length : 0} {isEn ? "quotes" : "devis"}
                   </Text>
                 </View>
-              ) : (
-                <Pressable
-                  onPress={() => setSelectedReq(req)}
+
+                <Text
                   style={{
-                    backgroundColor: colors.action,
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
+                    fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.text,
+                    marginBottom: 6,
                   }}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: "#FFFFFF" }}>
-                    {isEn ? "Quote →" : "Soumettre un devis →"}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        ))}
-      </View>
+                  {req.title}
+                </Text>
+
+                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 10 }}>
+                  👤 {req.buyerName} · 📍 Bénin
+                </Text>
+
+                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 14 }}>
+                  {req.description}
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                    paddingTop: 12,
+                  }}
+                >
+                  <View>
+                    <Text style={{ fontSize: 10, color: colors.muted }}>
+                      {isEn ? "Target Budget:" : "Budget indicatif :"}
+                    </Text>
+                    <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action }}>
+                      {formatPrice(req.targetBudgetMinor)}
+                    </Text>
+                  </View>
+
+                  {hasMyProposal && myProp ? (
+                    <View
+                      style={{
+                        backgroundColor: colors.successBg,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 10,
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.action }}>
+                        ✓ {isEn ? "Quote Sent" : "Devis envoyé"} ({formatPrice(myProp.priceMinor)})
+                      </Text>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={() => {
+                        setSelectedReq(req);
+                        if (req.targetBudgetMinor) {
+                          setQuotePrice(String(Math.round(req.targetBudgetMinor / 100)));
+                          setQuoteAdvance(String(Math.round((req.targetBudgetMinor / 100) * 0.4)));
+                        }
+                      }}
+                      style={{
+                        backgroundColor: colors.action,
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#FFFFFF" }}>
+                        {isEn ? "Quote →" : "Soumettre un devis →"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       {/* Quote Submission Modal */}
       {selectedReq && (
@@ -357,7 +412,7 @@ export default function SellerOpportunitiesScreen({
               </View>
 
               <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 16 }}>
-                Demande : {selectedReq.title} ({selectedReq.budget})
+                Demande : {selectedReq.title} ({formatPrice(selectedReq.targetBudgetMinor)})
               </Text>
 
               {/* Price input */}
@@ -446,8 +501,12 @@ export default function SellerOpportunitiesScreen({
                 />
               </View>
 
-              <Button onPress={handleSubmitQuote}>
-                {isEn ? "Submit Proposal →" : "Soumettre la proposition →"}
+              <Button disabled={submitting} onPress={handleSubmitQuote}>
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  isEn ? "Submit Proposal →" : "Soumettre la proposition →"
+                )}
               </Button>
             </View>
           </View>

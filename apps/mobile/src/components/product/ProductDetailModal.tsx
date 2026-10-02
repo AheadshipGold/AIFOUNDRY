@@ -316,37 +316,55 @@ export default function ProductDetailModal({
                   {product.title} · {selectedVariant.name}
                 </Text>
 
-                {/* Quantity Stepper */}
-                <View style={[styles.quantityRow, { borderColor: colors.border }]}>
-                  <Text style={[styles.inputLabel, { color: colors.text }]}>{isEn ? "Quantity" : "Quantité"}</Text>
-                  <View style={styles.stepper}>
-                    <TouchableOpacity
-                      style={[styles.stepBtn, { borderColor: colors.border }]}
-                      onPress={() => setQuantity(Math.max(1, quantity - 1))}
-                    >
-                      <Text style={[styles.stepBtnTxt, { color: colors.text }]}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={[styles.stepValue, { color: colors.text }]}>{quantity}</Text>
-                    <TouchableOpacity
-                      style={[styles.stepBtn, { borderColor: colors.border }]}
-                      onPress={() => setQuantity(Math.min(stockAvailable, quantity + 1))}
-                    >
-                      <Text style={[styles.stepBtnTxt, { color: colors.text }]}>+</Text>
-                    </TouchableOpacity>
+                {/* Quantity Stepper (hidden or 1 for digital) */}
+                {product.category === "digital" ? (
+                  <View style={[styles.guaranteeCard, { backgroundColor: colors.canvas, borderColor: colors.border, marginTop: 8 }]}>
+                    <Text style={{ fontSize: 18 }}>⚡</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.guaranteeTitle, { color: colors.text }]}>
+                        {isEn ? "Instant Digital Grant" : "Délivrance Numérique Instantanée"}
+                      </Text>
+                      <Text style={[styles.guaranteeText, { color: colors.muted }]}>
+                        {isEn
+                          ? "Access link and download quota will be unlocked immediately in your Purchases area."
+                          : "Le patron vectoriel et le quota de téléchargement seront débloqués dès validation du paiement MoMo."}
+                      </Text>
+                    </View>
                   </View>
-                </View>
+                ) : (
+                  <>
+                    <View style={[styles.quantityRow, { borderColor: colors.border }]}>
+                      <Text style={[styles.inputLabel, { color: colors.text }]}>{isEn ? "Quantity" : "Quantité"}</Text>
+                      <View style={styles.stepper}>
+                        <TouchableOpacity
+                          style={[styles.stepBtn, { borderColor: colors.border }]}
+                          onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                        >
+                          <Text style={[styles.stepBtnTxt, { color: colors.text }]}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={[styles.stepValue, { color: colors.text }]}>{quantity}</Text>
+                        <TouchableOpacity
+                          style={[styles.stepBtn, { borderColor: colors.border }]}
+                          onPress={() => setQuantity(Math.min(stockAvailable, quantity + 1))}
+                        >
+                          <Text style={[styles.stepBtnTxt, { color: colors.text }]}>+</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
 
-                {/* Delivery Address */}
-                <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
-                  {isEn ? "Delivery Address / Neighborhood *" : "Adresse de Livraison / Quartier *"}
-                </Text>
-                <TextInput
-                  style={[styles.textInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
-                  value={deliveryAddress}
-                  onChangeText={setDeliveryAddress}
-                  placeholder="ex: Cotonou, Haie Vive, Rue 380"
-                  placeholderTextColor={colors.muted}
-                />
+                    {/* Delivery Address */}
+                    <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
+                      {isEn ? "Delivery Address / Neighborhood *" : "Adresse de Livraison / Quartier *"}
+                    </Text>
+                    <TextInput
+                      style={[styles.textInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
+                      value={deliveryAddress}
+                      onChangeText={setDeliveryAddress}
+                      placeholder="ex: Cotonou, Haie Vive, Rue 380"
+                      placeholderTextColor={colors.muted}
+                    />
+                  </>
+                )}
 
                 {/* Buyer Phone */}
                 <Text style={[styles.inputLabel, { color: colors.text, marginTop: 12 }]}>

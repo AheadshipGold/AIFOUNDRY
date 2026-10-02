@@ -152,6 +152,24 @@ export const RequestsApi = {
       }
     );
   },
+
+  async submitProposal(
+    requestId: string,
+    data: {
+      shopId?: string;
+      shopName: string;
+      artisanCity?: string;
+      priceMinor: number;
+      advancePaymentRequiredMinor?: number;
+      productionDays: number;
+      notes: string;
+    }
+  ): Promise<SellerProposalItem> {
+    return request<SellerProposalItem>(`/v1/requests/${requestId}/proposals`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // ---------------------------------------------------------
@@ -408,3 +426,109 @@ export const AuthApi = {
     });
   },
 };
+
+// ---------------------------------------------------------
+// 7. PRODUITS NUMÉRIQUES & DROITS D'ACCÈS (FR-42 à FR-47)
+// ---------------------------------------------------------
+
+export interface DigitalAssetItem {
+  id: string;
+  title: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  checksum: string;
+  version: string;
+  isPublicPreview: boolean;
+  licenseType: string;
+  format: string;
+}
+
+export interface DigitalGrantItem {
+  id: string;
+  orderId: string;
+  orderNumber?: string;
+  assetTitle: string;
+  version: string;
+  mimeType: string;
+  downloadCount: number;
+  maxDownloads: number;
+  remainingDownloads: number;
+  downloadUrl: string;
+  license: string;
+  createdAt: string;
+}
+
+export const DigitalApi = {
+  async getCatalog(): Promise<DigitalAssetItem[]> {
+    return request<DigitalAssetItem[]>('/v1/digital/catalog');
+  },
+
+  async getEntitlements(): Promise<DigitalGrantItem[]> {
+    return request<DigitalGrantItem[]>('/v1/digital/entitlements');
+  },
+
+  async download(id: string): Promise<{
+    title: string;
+    mimeType: string;
+    fileUrl: string;
+    remainingDownloads: number;
+    downloadCount: number;
+  }> {
+    return request(`/v1/digital/download/${id}`, { method: 'POST' });
+  },
+};
+
+// ---------------------------------------------------------
+// 8. LITIGES & SIGNALEMENT D'INCIDENTS (FR-52 à FR-55)
+// ---------------------------------------------------------
+
+export interface IncidentRecord {
+  id: string;
+  orderId: string;
+  orderNumber?: string;
+  reporterName: string;
+  reporterPhone?: string;
+  category: string;
+  title: string;
+  description: string;
+  evidenceUrls: string[];
+  status: 'OPEN' | 'UNDER_REVIEW' | 'ACTION_REQUIRED' | 'PROPOSAL_MADE' | 'RESOLVED' | 'CONTESTED' | 'CLOSED' | string;
+  resolution?: string;
+  proposedOutcome?: string;
+  resolvedAt?: string;
+  createdAt: string;
+}
+
+export const IncidentsApi = {
+  async getAll(): Promise<IncidentRecord[]> {
+    return request<IncidentRecord[]>('/v1/incidents');
+  },
+
+  async getByOrder(orderId: string): Promise<IncidentRecord[]> {
+    return request<IncidentRecord[]>(`/v1/incidents/order/${orderId}`);
+  },
+
+  async create(data: {
+    orderId: string;
+    reporterName: string;
+    reporterPhone?: string;
+    category?: string;
+    title: string;
+    description: string;
+    evidenceUrls?: string[];
+  }): Promise<IncidentRecord> {
+    return request<IncidentRecord>('/v1/incidents', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async resolve(id: string, resolution: string, proposedOutcome?: string): Promise<IncidentRecord> {
+    return request<IncidentRecord>(`/v1/incidents/${id}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ resolution, proposedOutcome }),
+    });
+  },
+};
+
