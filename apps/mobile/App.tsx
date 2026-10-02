@@ -44,11 +44,11 @@ const BottomNav = ({
   ];
 
   const sellerTabs = [
-    { key: "dashboard", label: isEn ? "Today" : "Aujourd'hui", icon: "📊" },
-    { key: "orders", label: isEn ? "Orders" : "Commandes", icon: "📦" },
-    { key: "cashbook", label: isEn ? "Cashbook" : "Caisse", icon: "💰" },
+    { key: "dashboard", label: isEn ? "Today" : "Aujourd'hui", icon: "◈" },
+    { key: "orders", label: isEn ? "Orders" : "Commandes", icon: "☵" },
+    { key: "cashbook", label: isEn ? "Cashbook" : "Caisse", icon: "⚿" },
     { key: "opportunities", label: isEn ? "Requests" : "Demandes", icon: "✦" },
-    { key: "shop", label: isEn ? "Shop" : "Boutique", icon: "🏪" },
+    { key: "shop", label: isEn ? "Atelier" : "Atelier", icon: "🏛" },
   ];
 
   const tabs = universe === "buyer" ? buyerTabs : sellerTabs;
@@ -73,7 +73,7 @@ const BottomNav = ({
             style={[
               styles.navItem,
               isActive && {
-                backgroundColor: isDark ? "rgba(196, 154, 69, 0.15)" : "rgba(13, 46, 38, 0.08)",
+                backgroundColor: isDark ? "rgba(212, 180, 131, 0.16)" : "rgba(13, 74, 56, 0.08)",
                 borderRadius: 16,
               }
             ]} 
@@ -81,8 +81,9 @@ const BottomNav = ({
           >
             <Text 
               style={{ 
-                fontSize: 20, 
-                color: isActive ? colors.action : colors.muted,
+                fontSize: 18, 
+                color: isActive ? (universe === 'seller' ? colors.accent : colors.action) : colors.muted,
+                fontWeight: "800",
                 transform: [{ scale: isActive ? 1.1 : 1 }],
               }}
             >
@@ -92,8 +93,8 @@ const BottomNav = ({
               style={{ 
                 fontSize: 10, 
                 marginTop: 3, 
-                color: isActive ? colors.action : colors.muted,
-                fontWeight: isActive ? "800" : "500",
+                color: isActive ? (universe === 'seller' ? colors.accent : colors.action) : colors.muted,
+                fontWeight: isActive ? "800" : "600",
                 letterSpacing: 0.3,
               }}
             >
@@ -105,7 +106,7 @@ const BottomNav = ({
                   width: 4,
                   height: 4,
                   borderRadius: 2,
-                  backgroundColor: colors.action,
+                  backgroundColor: universe === 'seller' ? colors.accent : colors.action,
                   marginTop: 2,
                 }} 
               />

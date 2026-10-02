@@ -11,6 +11,17 @@ import {
 import { useDesign } from "../../design-system/provider";
 import { SellerApi, CashbookData, SellerDashboardData, AuthApi, type AuthShop } from "../../services/api";
 
+const logoDark = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Dark_Transparent.png");
+const logoLight = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Transparent.png");
+const iconBrandDark = require("../../../assets/brand/Ojarket_01_Icon_UltraPremium_Dark_Transparent.png");
+const iconBrandLight = require("../../../assets/brand/Ojarket_01_Icon_UltraPremium_Transparent.png");
+
+const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
+const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
+const imgArmchair = require("../../../assets/products/armchair.jpg");
+const imgJewelryGold = require("../../../assets/products/jewelry-gold.jpg");
+const imgArtBronze = require("../../../assets/products/art-bronze.jpg");
+
 interface SellerDashboardScreenProps {
   onOpenCashbook: () => void;
   onOpenOrders: () => void;
@@ -72,7 +83,7 @@ export default function SellerDashboardScreen({
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          paddingHorizontal: 18,
+          paddingHorizontal: 20,
           paddingTop: Platform.OS === "android" ? 14 : 10,
           paddingBottom: 12,
           backgroundColor: colors.surface,
@@ -81,37 +92,30 @@ export default function SellerDashboardScreen({
           zIndex: 10,
         }}
       >
-        {/* Brand Crest + Title */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+        {/* Official Brand Logo */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <Image
+            source={isDark ? logoDark : logoLight}
+            style={{ width: 110, height: 26, resizeMode: "contain" }}
+          />
           <View
             style={{
-              width: 24,
-              height: 24,
+              backgroundColor: "rgba(212, 180, 131, 0.18)",
+              paddingHorizontal: 7,
+              paddingVertical: 3,
               borderRadius: 6,
-              backgroundColor: colors.action,
-              alignItems: "center",
-              justifyContent: "center",
               borderWidth: 1,
               borderColor: colors.accent,
             }}
           >
-            <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>✦</Text>
+            <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.5 }}>
+              ATELIER
+            </Text>
           </View>
-          <Text
-            style={{
-              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 17,
-              fontWeight: "800",
-              letterSpacing: 1.5,
-              color: colors.text,
-            }}
-          >
-            OJARKET
-          </Text>
         </View>
 
         {/* Right Controls: Notifications + Avatar + Buyer Switch */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           {/* Notification Bell */}
           <Pressable
             style={({ pressed }) => [{
@@ -128,7 +132,7 @@ export default function SellerDashboardScreen({
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 15 }}>🔔</Text>
+            <Text style={{ fontSize: 14, color: colors.text }}>🔔</Text>
             <View
               style={{
                 position: "absolute",
@@ -137,7 +141,7 @@ export default function SellerDashboardScreen({
                 width: 7,
                 height: 7,
                 borderRadius: 3.5,
-                backgroundColor: "#EF4444",
+                backgroundColor: colors.accent,
                 borderWidth: 1,
                 borderColor: colors.surface,
               }}
@@ -157,8 +161,8 @@ export default function SellerDashboardScreen({
               borderColor: colors.accent,
             }}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
-              AH
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
+              AL
             </Text>
           </View>
 
@@ -166,18 +170,16 @@ export default function SellerDashboardScreen({
           <Pressable
             onPress={onSwitchToBuyer}
             style={({ pressed }) => [{
-              backgroundColor: colors.canvas,
-              borderWidth: 1,
-              borderColor: colors.border,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
+              backgroundColor: colors.action,
+              paddingHorizontal: 12,
+              paddingVertical: 7,
               borderRadius: 16,
-              opacity: pressed ? 0.75 : 1,
+              opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 11, fontWeight: "800", color: colors.action }}>
-              {isEn ? "Buyer 🛍" : "Acheteur 🛍"}
+            <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>
+              {isEn ? "Buyer Space →" : "Acheteur →"}
             </Text>
           </Pressable>
         </View>
@@ -387,40 +389,40 @@ export default function SellerDashboardScreen({
         <View style={{ paddingHorizontal: 20, marginBottom: 26 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             {[
-              { label: isEn ? "Products" : "Produits", icon: "📦", action: onOpenCashbook },
-              { label: isEn ? "Orders" : "Commandes", icon: "📋", action: onOpenOrders },
-              { label: isEn ? "Messages" : "Messages", icon: "💬", action: onOpenOpportunities },
-              { label: isEn ? "My Shop" : "Boutique", icon: "🏪", action: onOpenCashbook },
+              { label: isEn ? "Creations" : "Créations", symbol: "◈", action: onOpenCashbook },
+              { label: isEn ? "Orders" : "Commandes", symbol: "☵", action: onOpenOrders },
+              { label: isEn ? "Bespoke D02" : "Sur-Mesure", symbol: "✦", action: onOpenOpportunities },
+              { label: isEn ? "Atelier" : "Mon Atelier", symbol: "🏛", action: onOpenCashbook },
             ].map((item, idx) => (
               <Pressable
                 key={idx}
                 onPress={item.action}
                 style={({ pressed }) => [{
                   alignItems: "center",
-                  width: 72,
+                  width: 76,
                   opacity: pressed ? 0.75 : 1,
                   transform: [{ scale: pressed ? 0.94 : 1 }],
                 }]}
               >
                 <View
                   style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
+                    width: 56,
+                    height: 56,
+                    borderRadius: 18,
                     backgroundColor: colors.surface,
-                    borderWidth: 1,
-                    borderColor: colors.border,
+                    borderWidth: 1.5,
+                    borderColor: colors.accent,
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: 6,
+                    marginBottom: 7,
                     shadowColor: "#000",
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: isDark ? 0 : 0.04,
-                    shadowRadius: 4,
+                    shadowOpacity: isDark ? 0 : 0.05,
+                    shadowRadius: 5,
                     elevation: 1,
                   }}
                 >
-                  <Text style={{ fontSize: 22 }}>{item.icon}</Text>
+                  <Text style={{ fontSize: 20, color: colors.accent, fontWeight: "900" }}>{item.symbol}</Text>
                 </View>
                 <Text
                   style={{
@@ -466,8 +468,8 @@ export default function SellerDashboardScreen({
                 price: "190 000 FCFA",
                 status: isEn ? "To Prepare" : "En préparation",
                 statusColor: "#D97706",
-                statusBg: "#FEF3C7",
-                icon: "👜",
+                statusBg: "rgba(217, 119, 6, 0.12)",
+                image: imgLeatherTote,
               },
               {
                 id: "CMD-2846",
@@ -477,7 +479,7 @@ export default function SellerDashboardScreen({
                 status: isEn ? "Delivered" : "Livrée",
                 statusColor: colors.action,
                 statusBg: colors.successBg,
-                icon: "⌚",
+                image: imgWatchChrono,
               },
               {
                 id: "CMD-2840",
@@ -487,7 +489,7 @@ export default function SellerDashboardScreen({
                 status: isEn ? "Delivered" : "Livrée",
                 statusColor: colors.action,
                 statusBg: colors.successBg,
-                icon: "🛋",
+                image: imgArmchair,
               },
             ].map((order, i) => (
               <Pressable
@@ -507,20 +509,25 @@ export default function SellerDashboardScreen({
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                 }]}
               >
-                {/* Thumbnail Icon Box */}
+                {/* Real Studio Photography Thumbnail */}
                 <View
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 10,
-                    backgroundColor: colors.canvas,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    width: 52,
+                    height: 52,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    borderWidth: 1.5,
+                    borderColor: colors.accent,
                   }}
                 >
-                  <Text style={{ fontSize: 24 }}>{order.icon}</Text>
+                  <Image
+                    source={order.image}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      resizeMode: "cover",
+                    }}
+                  />
                 </View>
 
                 {/* Info */}
@@ -529,17 +536,17 @@ export default function SellerDashboardScreen({
                     <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
                       #{order.id}
                     </Text>
-                    <View style={{ backgroundColor: order.statusBg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                    <View style={{ backgroundColor: order.statusBg, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ fontSize: 9, fontWeight: "800", color: order.statusColor }}>
                         {order.status}
                       </Text>
                     </View>
                   </View>
-                  <Text style={{ fontSize: 12, color: colors.text, marginTop: 2 }} numberOfLines={1}>
+                  <Text style={{ fontSize: 12, color: colors.text, marginTop: 2, fontWeight: "600" }} numberOfLines={1}>
                     {order.title}
                   </Text>
                   <Text style={{ fontSize: 10, color: colors.muted }}>
-                    {order.client}
+                    Client : {order.client}
                   </Text>
                 </View>
 
