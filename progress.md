@@ -5,6 +5,68 @@ Ce fichier trace toutes les avancées, décisions et implémentations réalisée
 
 ---
 
+## [01 Octobre 2026 - Soir] - Phase : Câblage Mobile Live, Suite de Preuves T01-T06 & Administration Centrale 03B (Agent : Antigravity)
+**Branche :** `codex/ui-design-system-v3`
+
+**Accomplissements majeurs : Câblage complet de l'application mobile, validation des 5 tests de preuve officiels et activation de l'administration centrale**
+1. **Client API Mobile Universel (`apps/mobile/src/services/api.ts`) :**
+   - Implémentation du client HTTP universel adapté au web, simulateur Android (`10.0.2.2`) et terminal physique.
+   - Modules typés : `CatalogApi` (D01), `RequestsApi` (D02), `OrdersApi`, `SellerApi` (FinOps & Caisse).
+   - Gestion robuste avec fallback gracieux hors-ligne.
+2. **Câblage Intégral des Écrans Mobiles sur PostgreSQL :**
+   - `BuyerHomeScreen` : Récupération dynamique des produits artisanaux béninois depuis `/v1/products`.
+   - `SearchScreen` : Recherche en direct et filtrage par catégorie dans PostgreSQL avec debounce.
+   - `PurchasesScreen` : Affichage des commandes réelles et des 3 pistes de suivi (Accord, Paiement Mobile Money USSD, Exécution).
+   - `RequestNeedScreen` : Soumission de demandes sur-mesure D02 persistées en direct dans la base de données.
+   - `SellerDashboardScreen` : Affichage en direct du triptyque financier (Vendu / Encaissé / Restant) et des KPIs de la boutique.
+   - `SellerCashbookScreen` : Consultation du journal de caisse réel et exécution de la clôture journalière transactionnelle.
+   - `SellerOrdersScreen` : Gestion des commandes marchandes et mutation dynamique des statuts d'expédition.
+3. **Exécution & Réussite de la Suite de Preuves T01 à T06 (`Plan_Tests_Et_Portes_V1_3.md`) :**
+   - Création de `apps/api/test/proof_runner.ts` et commande `npm run test:proof -w apps/api`.
+   - **5/5 tests validés avec succès (100% PASS) sur la base de données réelle :**
+     - ✅ **T01/T04 (Isolation multi-boutiques) :** Étanchéité absolue entre Shop A et Shop B (0 fuite de données produit, commande ou caisse).
+     - ✅ **T02 (Règle Vendu ≠ Encaissé) :** Vente à crédit enregistrée sans gonfler la trésorerie liquide ; encaissement MoMo incrémentant fidèlement le solde.
+     - ✅ **T03 (Réservation atomique du dernier SKU) :** 10 requêtes concurrentes simultanées sur 1 unité = exactement 1 succès, 9 rejets, 0 survente.
+     - ✅ **T05 (Cycle D02 sur-mesure) :** Demande acheteur -> devis concurrents -> acceptation -> commande formelle créée et devis tiers déclinés.
+     - ✅ **T06 (Clôture journalière & détection d'écarts) :** Rapprochement physique vs théorique avec signalement d'écart (`ECART_SIGNALE`) et événement immuable `DAY_CLOSED`.
+4. **Activation de l'Administration Centrale (Domaine 03B) :**
+   - Création de `AdminModule`, `AdminController` et `AdminService` dans NestJS.
+   - Routes activées : `/v1/admin/overview`, `/v1/admin/shops`, `/v1/admin/shops/:id/verification`, `/v1/admin/corridors`, `/v1/admin/corridors/:id/toggle`, `/v1/admin/audit-logs`.
+   - Initialisation automatique des 5 corridors de paiement du Bénin (MTN MoMo, Moov Money, Celtiis Cash, Espèces / COD, Virement).
+   - Traçabilité immuable vérifiée en base dans `admin_audit_logs` lors de chaque action opératrice.
+5. **Vérification Globale :**
+   - `npm run typecheck --workspaces` : **0 erreur** sur mobile, api, web, shared, design-system.
+
+---
+
+## [01 Octobre 2026] - Phase : PostgreSQL & Real Database Foundation (Agent : Antigravity)
+**Branche :** `codex/ui-design-system-v3`
+
+**Accomplissements majeurs : Sortie définitive du mode Mock vers la base de données réelle PostgreSQL**
+- **Infrastructure Docker PostgreSQL :** Démarrage du conteneur Docker `aifoundry-postgres` (PostgreSQL 16 Alpine) sur le port 5432, avec healthcheck actif et persistance des volumes.
+- **Synchronisation du Schéma Prisma :** Exécution réussie de `prisma db push` sur la base `aifoundry`. L'ensemble des tables (utilisateurs, boutiques, adhésions, produits, variantes d'offres, demandes d'achat, propositions vendeurs, commandes, lignes de commande, connexions de paiement, écritures de caisse, clôtures journalières, événements financiers) sont synchronisées.
+- **Peuplement Réaliste du Marché Béninois (`prisma/seed.ts`) :** Exécution du script de seed via `tsx` créant :
+  - 4 utilisateurs réels (Amina Diop, Koffi Mensah, Maître Ganvié, Maître Adjaho).
+  - 4 ateliers/boutiques authentiques (Maison Ganvié & Fils à Cotonou, Fonderie Royale d'Abomey, Ébénisterie de la Lagune à Porto-Novo, Tissages Précieux de Bohicon) avec connexions de paiement (MTN MoMo, Moov Money, Espèces / COD).
+  - 4 produits emblématiques artisanaux avec variantes et gestion des stocks (Sac Cabas Grand Marché, Collier Danxomé bronze, Console Assoba Iroko, Cape Kanvo).
+  - Demande sur-mesure D02 avec proposition artisan chiffrée.
+  - Commande test `OJK-2026-0891` avec instructions de paiement Mobile Money USSD générées dynamiquement.
+  - Écritures de caisse FinOps conformes à la règle Vendu ≠ Encaissé et clôture journalière équilibrée.
+- **Remplacement Intégral des Services Mock par Prisma ORM :**
+  - `CatalogService` : Requêtes Prisma réelles avec filtres texte/catégorie et réservation atomique de stock.
+  - `RequestsService` : Persistance réelle des demandes sur-mesure et propositions avec transactions Prisma.
+  - `OrdersService` : Création de commandes transactionnelles avec réservation de stock, liaisons acheteur/boutique et création d'événements financiers `SALE_CREATED` et `PAYMENT_CONFIRMED`.
+  - `SellerService` : Calcul dynamique des KPIs marchands, agrégation de caisse, enregistrement d'encaissements/décaissements et clôture journalière transactionnelle avec calcul d'écart.
+- **Compilation & Qualité :**
+  - Configuration de `rootDir: "src"` et `include: ["src/**/*"]` dans `tsconfig.json` pour garantir une structure d'artefact propre sans collision.
+  - `npm run typecheck -w apps/api` : **0 erreur**.
+  - `npm run build -w apps/api` (`nest build`) : **0 erreur**.
+- **Serveur API en direct & Validation Endpoints :**
+  - Serveur NestJS démarré sur le port 3001 connecté en direct à PostgreSQL (`✅ [PrismaService] Connected to database`).
+  - Validation HTTP des 5 routes principales (`/v1/products`, `/v1/requests`, `/v1/orders`, `/v1/seller/cashbook`, `/v1/seller/dashboard`) avec renvoi des données réelles de la base.
+
+---
+
 ## [29 Septembre 2026] - Phase : Backend Foundation V3 (Agent : Antigravity)
 **Branche :** `antigravity/backend-foundation-v3` (Worktree séparé)
 

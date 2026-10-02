@@ -36,6 +36,13 @@ model User {
   @@map("users")
 }
 
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
 model Shop {
   id            String           @id @default(uuid())
   slug          String           @unique
@@ -46,6 +53,8 @@ model Shop {
   country       String           @default("Bénin")
   currency      String           @default("XOF")
   isVerified    Boolean          @default(false)
+  kycStatus     KycStatus        @default(PENDING)
+  kycNotes      String?
   ownerId       String
   owner         User             @relation("ShopOwner", fields: [ownerId], references: [id])
   createdAt     DateTime         @default(now())
@@ -211,21 +220,22 @@ enum ProposalStatus {
 }
 
 model SellerProposal {
-  id                 String          @id @default(uuid())
-  requestId          String
-  shopId             String
-  offerVariantId     String?
-  priceMinor         Int
-  currency           String          @default("XOF")
-  productionDays     Int             @default(7)
-  proposalNotes      String
-  status             ProposalStatus  @default(PENDING)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  id                          String          @id @default(uuid())
+  requestId                   String
+  shopId                      String
+  offerVariantId              String?
+  priceMinor                  Int
+  advancePaymentRequiredMinor Int             @default(0)
+  currency                    String          @default("XOF")
+  productionDays              Int             @default(7)
+  proposalNotes               String
+  status                      ProposalStatus  @default(PENDING)
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
 
-  request            PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  shop               Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  variant            OfferVariant?   @relation(fields: [offerVariantId], references: [id])
+  request                     PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  shop                        Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  variant                     OfferVariant?   @relation(fields: [offerVariantId], references: [id])
 
   @@map("seller_proposals")
 }
@@ -235,10 +245,25 @@ model SellerProposal {
 // ==============================================================================
 
 enum PaymentStatus {
+  NOT_STARTED
+  DECLARED
   PENDING
-  SETTLED_TO_MERCHANT
+  PARTIALLY_PAID
+  CONFIRMED
   FAILED
+  REFUND_PENDING
   REFUNDED
+  CANCELLED
+  REVIEW_REQUIRED
+}
+
+enum VerificationSource {
+  PROVIDER
+  SELLER_MANUAL
+  COD
+  PICKUP
+  BANK_MANUAL
+  UNKNOWN
 }
 
 enum FulfillmentStatus {
@@ -256,27 +281,37 @@ enum PaymentChannel {
   CARD
   DIRECT_TRANSFER
   CASH_ON_DELIVERY
+  PICKUP
 }
 
 model Order {
-  id                String            @id @default(uuid())
-  shopId            String
-  buyerId           String
-  orderNumber       String            @unique
-  totalAmountMinor  Int
-  currency          String            @default("XOF")
-  paymentStatus     PaymentStatus     @default(PENDING)
-  fulfillmentStatus FulfillmentStatus @default(PENDING)
-  paymentChannel    PaymentChannel    @default(MTN_MOMO)
-  deliveryAddress   String?
-  notes             String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id                     String             @id @default(uuid())
+  shopId                 String
+  buyerId                String
+  orderNumber            String             @unique
+  totalAmountMinor       Int
+  grossSaleAmountMinor   Int
+  amountReceivedMinor    Int                @default(0)
+  amountOutstandingMinor Int                @default(0)
+  refundAmountMinor      Int                @default(0)
+  netCollectedMinor      Int                @default(0)
+  currency               String             @default("XOF")
+  paymentStatus          PaymentStatus      @default(PENDING)
+  verificationSource     VerificationSource @default(UNKNOWN)
+  fulfillmentStatus      FulfillmentStatus  @default(PENDING)
+  paymentChannel         PaymentChannel     @default(MTN_MOMO)
+  isDigital              Boolean            @default(false)
+  deliveryAddress        String?
+  notes                  String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  shop              Shop              @relation(fields: [shopId], references: [id])
-  buyer             User              @relation(fields: [buyerId], references: [id])
-  lines             OrderLine[]
-  reservations      Reservation[]
+  shop                   Shop               @relation(fields: [shopId], references: [id])
+  buyer                  User               @relation(fields: [buyerId], references: [id])
+  lines                  OrderLine[]
+  reservations           Reservation[]
+  financialEvents        FinancialEvent[]
+  digitalEntitlements    DigitalEntitlement[]
 
   @@map("orders")
 }
@@ -312,7 +347,7 @@ model ShopPaymentConnection {
 }
 
 // ==============================================================================
-// 5. FINOPS CASHBOOK & DAY CLOSURES (S43 / S44)
+// 5. MERCHANT FINANCIAL OPERATIONS & IMMUTABLE CASHBOOK (S43 - S47)
 // ==============================================================================
 
 enum EntryType {
@@ -321,41 +356,182 @@ enum EntryType {
   VENTE_A_CREDIT
 }
 
+enum FinancialEventType {
+  SALE_CREATED
+  PAYMENT_DECLARED
+  PAYMENT_CONFIRMED
+  PARTIAL_PAYMENT_CONFIRMED
+  COD_COLLECTED
+  REFUND_REQUESTED
+  REFUND_CONFIRMED
+  ADJUSTMENT_POSTED
+  DAY_CLOSED
+}
+
+model FinancialEvent {
+  id          String             @id @default(uuid())
+  shopId      String
+  orderId     String?
+  eventType   FinancialEventType
+  amountMinor Int
+  currency    String             @default("XOF")
+  source      VerificationSource @default(SELLER_MANUAL)
+  channel     PaymentChannel     @default(MTN_MOMO)
+  reference   String?
+  notes       String?
+  createdAt   DateTime           @default(now())
+
+  order       Order?             @relation(fields: [orderId], references: [id])
+
+  @@map("financial_events")
+}
+
 model CashbookEntry {
-  id            String         @id @default(uuid())
+  id            String             @id @default(uuid())
   shopId        String
   type          EntryType
   amountMinor   Int
-  currency      String         @default("XOF")
-  channel       PaymentChannel @default(MTN_MOMO)
+  currency      String             @default("XOF")
+  channel       PaymentChannel     @default(MTN_MOMO)
   reference     String
   notes         String?
-  entryDate     DateTime       @default(now())
+  entryDate     DateTime           @default(now())
   dayClosureId  String?
 
-  shop          Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  dayClosure    DayClosure?    @relation(fields: [dayClosureId], references: [id])
+  shop          Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  dayClosure    DayClosure?        @relation(fields: [dayClosureId], references: [id])
 
   @@map("cashbook_entries")
 }
 
 model DayClosure {
-  id                String          @id @default(uuid())
-  shopId            String
-  closureDate       DateTime
-  totalVenduMinor   Int
+  id                 String          @id @default(uuid())
+  shopId             String
+  closureDate        DateTime
+  totalVenduMinor    Int
   totalEncaisseMinor Int
-  totalRestantMinor Int
-  varianceMinor     Int             @default(0)
-  closedBy          String
-  status            String          @default("BALANCED")
-  notes             String?
-  closedAt          DateTime        @default(now())
+  totalRestantMinor  Int
+  varianceMinor      Int             @default(0)
+  closedBy           String
+  status             String          @default("BALANCED")
+  breakdown          Json?
+  auditNotes         String?
+  closedAt           DateTime        @default(now())
 
-  shop              Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  entries           CashbookEntry[]
+  shop               Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  entries            CashbookEntry[]
 
   @@unique([shopId, closureDate])
   @@map("day_closures")
 }
+
+// ==============================================================================
+// 6. DIGITAL ASSETS & LICENSES (FR-42 to FR-47)
+// ==============================================================================
+
+model DigitalAsset {
+  id              String               @id @default(uuid())
+  title           String
+  fileUrl         String
+  fileSize        Int
+  mimeType        String
+  checksum        String
+  version         String               @default("1.0.0")
+  isPublicPreview Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+
+  entitlements    DigitalEntitlement[]
+
+  @@map("digital_assets")
+}
+
+model DigitalEntitlement {
+  id             String        @id @default(uuid())
+  userId         String
+  orderId        String
+  digitalAssetId String
+  status         String        @default("ACTIVE")
+  downloadCount  Int           @default(0)
+  maxDownloads   Int           @default(10)
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+
+  order          Order         @relation(fields: [orderId], references: [id])
+  asset          DigitalAsset  @relation(fields: [digitalAssetId], references: [id])
+
+  @@map("digital_entitlements")
+}
+
+// ==============================================================================
+// 7. CENTRAL ADMINISTRATION DOMAIN (03B_ADMINISTRATION)
+// ==============================================================================
+
+enum AdminRole {
+  PLATFORM_OWNER
+  OPERATIONS_ADMIN
+  MERCHANT_REVIEWER
+  CONTENT_MODERATOR
+  FINANCE_OPERATOR
+  TECH_OPERATOR
+}
+
+model AdminUser {
+  id         String      @id @default(uuid())
+  email      String      @unique
+  name       String
+  role       AdminRole   @default(OPERATIONS_ADMIN)
+  mfaEnabled Boolean     @default(true)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+
+  auditLogs  AdminAuditLog[]
+
+  @@map("admin_users")
+}
+
+model AdminAuditLog {
+  id             String    @id @default(uuid())
+  adminId        String
+  action         String
+  targetResource String
+  targetId       String
+  beforeState    Json?
+  afterState     Json?
+  ipAddress      String?
+  createdAt      DateTime  @default(now())
+
+  admin          AdminUser @relation(fields: [adminId], references: [id])
+
+  @@map("admin_audit_logs")
+}
+
+model PaymentCorridorRule {
+  id                String         @id @default(uuid())
+  countryCode       String         @default("BJ")
+  currency          String         @default("XOF")
+  channel           PaymentChannel
+  isEnabled         Boolean        @default(false)
+  denyByDefault     Boolean        @default(true)
+  requiredKycLevel  String         @default("STANDARD")
+  minAmountMinor    Int            @default(100)
+  maxAmountMinor    Int            @default(500000000)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([countryCode, channel])
+  @@map("payment_corridor_rules")
+}
+
+model OtpToken {
+  id         String   @id @default(uuid())
+  identifier String
+  code       String
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([identifier])
+  @@map("otp_tokens")
+}
+
 

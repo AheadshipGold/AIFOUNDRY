@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { OrdersService, OrderRecord } from './orders.service';
 
 @Controller('v1/orders')
@@ -6,17 +6,17 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  getAll(): OrderRecord[] {
+  async getAll(): Promise<OrderRecord[]> {
     return this.ordersService.findAll();
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string): OrderRecord {
+  async getOne(@Param('id') id: string): Promise<OrderRecord> {
     return this.ordersService.findById(id);
   }
 
   @Post()
-  create(
+  async create(
     @Body()
     body: {
       buyerName: string;
@@ -25,19 +25,19 @@ export class OrdersController {
       paymentChannel: 'MTN_MOMO' | 'MOOV_MONEY' | 'CELTIIS_CASH' | 'CARD' | 'CASH_ON_DELIVERY';
       items: Array<{ variantId: string; quantity: number }>;
     },
-  ): OrderRecord {
+  ): Promise<OrderRecord> {
     return this.ordersService.createOrder(body);
   }
 
   @Patch(':id/status')
-  updateStatus(
+  async updateStatus(
     @Param('id') id: string,
     @Body()
     body: {
       paymentStatus?: 'PENDING' | 'SETTLED_TO_MERCHANT' | 'FAILED';
       fulfillmentStatus?: 'PENDING' | 'PREPARING' | 'SHIPPED' | 'DELIVERED';
     },
-  ): OrderRecord {
+  ): Promise<OrderRecord> {
     return this.ordersService.updateStatus(id, body);
   }
 }

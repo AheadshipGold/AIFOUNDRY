@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CatalogService, ProductItem } from './catalog.service';
 
 @Controller('v1/products')
@@ -6,15 +6,15 @@ export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}
 
   @Get()
-  getProducts(
+  async getProducts(
     @Query('q') query?: string,
     @Query('category') category?: string,
-  ): ProductItem[] {
+  ): Promise<ProductItem[]> {
     return this.catalogService.findAll(query, category);
   }
 
   @Get(':id')
-  getProduct(@Param('id') id: string): ProductItem {
+  async getProduct(@Param('id') id: string): Promise<ProductItem> {
     return this.catalogService.findById(id);
   }
 }

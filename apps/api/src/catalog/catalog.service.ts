@@ -1,4 +1,5 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface ProductVariant {
   id: string;
@@ -32,129 +33,119 @@ export interface ProductItem {
 
 @Injectable()
 export class CatalogService {
-  private products: ProductItem[] = [
-    {
-      id: 'prod-01',
-      title: 'Sac Cabas Grand Marché — Cuir Ébène & Laiton Massif',
-      description: 'Pièce emblématique façonnée à la main par l\'Atelier Ganvié. Cuir pleine fleur tanné végétal avec surpiqûres sellier traditionnelles et ferrures en laiton poli.',
-      category: 'maroquinerie',
-      artisanShop: {
-        id: 'shop-01',
-        name: 'Maison Ganvié & Fils',
-        city: 'Cotonou',
-        country: 'Bénin',
-        verified: true,
-      },
-      priceMinor: 18500000,
-      currency: 'XOF',
-      stockOnHand: 4,
-      image: '/reference-assets/market-tote.png',
-      tags: ['Cabas', 'Cuir Pleine Fleur', 'Série Limitée'],
-      materials: ['Cuir pleine fleur', 'Laiton artisanal', 'Doublure coton indigo'],
-      variants: [
-        { id: 'var-01-ebene', sku: 'GAN-CAB-EBN-01', name: 'Cuir Ébène / Bouclerie Or Mat', priceMinor: 18500000, stockOnHand: 3, stockReserved: 0 },
-        { id: 'var-01-cognac', sku: 'GAN-CAB-CGN-02', name: 'Cuir Cognac / Bouclerie Laiton Brossé', priceMinor: 19500000, stockOnHand: 1, stockReserved: 0 },
-      ],
-    },
-    {
-      id: 'prod-02',
-      title: 'Collier Pectoral Reine Danxomé — Bronze à Cire Perdue',
-      description: 'Inspiré des parures d\'apparat des souveraines royales. Chaque maillon est coulé selon le procédé ancestral de la cire perdue dans les ateliers d\'Abomey.',
-      category: 'joaillerie',
-      artisanShop: {
-        id: 'shop-02',
-        name: 'Fonderie Royale d\'Abomey',
-        city: 'Abomey',
-        country: 'Bénin',
-        verified: true,
-      },
-      priceMinor: 32000000,
-      currency: 'XOF',
-      stockOnHand: 2,
-      image: '/reference-assets/market-tote.png',
-      tags: ['Joaillerie', 'Bronze Royal', 'Patrimoine'],
-      materials: ['Bronze noble', 'Cire perdue', 'Finition satinée'],
-      variants: [
-        { id: 'var-02-medium', sku: 'ROY-COL-MED-01', name: 'Longueur 42cm / Finition Antique', priceMinor: 32000000, stockOnHand: 2, stockReserved: 0 },
-      ],
-    },
-    {
-      id: 'prod-03',
-      title: 'Console Assoba — Bois d\'Iroko Centenaire & Marbre Noir',
-      description: 'Table console architecturale taillée dans un bloc massif d\'iroko sélectionné avec plateau incrusté de marbre minéral.',
-      category: 'mobilier',
-      artisanShop: {
-        id: 'shop-03',
-        name: 'Ébénisterie de la Lagune',
-        city: 'Porto-Novo',
-        country: 'Bénin',
-        verified: true,
-      },
-      priceMinor: 65000000,
-      currency: 'XOF',
-      stockOnHand: 1,
-      image: '/reference-assets/market-tote.png',
-      tags: ['Mobilier', 'Iroko Massif', 'Architecture'],
-      materials: ['Iroko massif', 'Marbre noir', 'Cire naturelle d\'abeille'],
-      variants: [
-        { id: 'var-03-large', sku: 'EBE-ASSO-140', name: 'Longueur 140cm x Profondeur 40cm', priceMinor: 65000000, stockOnHand: 1, stockReserved: 0 },
-      ],
-    },
-    {
-      id: 'prod-04',
-      title: 'Cape Tissée Kanvo Impérial — Soie d\'Araignée & Coton Bio',
-      description: 'Étoffe royale tissée au métier traditionnel à double peigne par les maîtres tisserands de Bohicon.',
-      category: 'mode',
-      artisanShop: {
-        id: 'shop-04',
-        name: 'Tissages Précieux de Bohicon',
-        city: 'Bohicon',
-        country: 'Bénin',
-        verified: true,
-      },
-      priceMinor: 24000000,
-      currency: 'XOF',
-      stockOnHand: 3,
-      image: '/reference-assets/market-tote.png',
-      tags: ['Kanvo', 'Tissage Royal', 'Couture'],
-      materials: ['Coton biologique filé main', 'Fils dorés', 'Teinture indigo naturelle'],
-      variants: [
-        { id: 'var-04-unique', sku: 'TIS-KANV-IND-01', name: 'Taille Unique Réversible', priceMinor: 24000000, stockOnHand: 3, stockReserved: 0 },
-      ],
-    },
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll(query?: string, category?: string): ProductItem[] {
-    return this.products.filter(item => {
-      const matchesCat = category && category !== 'all' ? item.category === category : true;
-      const matchesQuery = query
-        ? item.title.toLowerCase().includes(query.toLowerCase()) ||
-          item.description.toLowerCase().includes(query.toLowerCase()) ||
-          item.artisanShop.name.toLowerCase().includes(query.toLowerCase())
-        : true;
-      return matchesCat && matchesQuery;
-    });
+  private mapToProductItem(product: any): ProductItem {
+    const variants: ProductVariant[] = product.variants.map((v: any) => ({
+      id: v.id,
+      sku: v.sku,
+      name: v.name,
+      priceMinor: v.priceMinor,
+      stockOnHand: v.stockOnHand,
+      stockReserved: v.stockReserved,
+    }));
+
+    const stockOnHand = variants.reduce((acc, v) => acc + v.stockOnHand, 0);
+    const priceMinor = variants.length > 0 ? variants[0].priceMinor : 0;
+    const currency = variants.length > 0 ? product.variants[0].currency : 'XOF';
+
+    return {
+      id: product.id,
+      title: product.title,
+      description: product.description || '',
+      category: product.category,
+      artisanShop: {
+        id: product.shop.id,
+        name: product.shop.name,
+        city: product.shop.city,
+        country: product.shop.country,
+        verified: product.shop.isVerified,
+      },
+      priceMinor,
+      currency,
+      stockOnHand,
+      image: product.images && product.images.length > 0 ? product.images[0] : '',
+      tags: [],
+      materials: [],
+      variants,
+    };
   }
 
-  findById(id: string): ProductItem {
-    const item = this.products.find(p => p.id === id);
-    if (!item) {
+  async findAll(query?: string, category?: string): Promise<ProductItem[]> {
+    const where: any = {
+      shop: {
+        isVerified: true,
+        kycStatus: 'VERIFIED',
+      },
+    };
+
+    if (category && category !== 'all') {
+      where.category = category;
+    }
+
+    if (query) {
+      where.OR = [
+        { title: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { shop: { name: { contains: query, mode: 'insensitive' } } },
+      ];
+    }
+
+    const products = await this.prisma.product.findMany({
+      where,
+      include: {
+        shop: true,
+        variants: true,
+      },
+    });
+
+    return products.map(p => this.mapToProductItem(p));
+  }
+
+  async findById(id: string): Promise<ProductItem> {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        shop: true,
+        variants: true,
+      },
+    });
+
+    if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
-    return item;
+
+    return this.mapToProductItem(product);
   }
 
-  reserveVariantStock(variantId: string, qty: number): boolean {
-    for (const prod of this.products) {
-      const v = prod.variants.find(item => item.id === variantId);
-      if (v) {
-        if (v.stockOnHand - v.stockReserved >= qty) {
-          v.stockReserved += qty;
-          return true;
-        }
-        return false;
-      }
+  async reserveVariantStock(variantId: string, qty: number): Promise<boolean> {
+    const variant = await this.prisma.offerVariant.findUnique({
+      where: { id: variantId },
+    });
+
+    if (!variant) {
+      return false;
     }
-    return false;
+
+    const availableStock = variant.stockOnHand - variant.stockReserved;
+    if (availableStock < qty) {
+      return false;
+    }
+
+    // Atomic update using optimistic concurrency control
+    const result = await this.prisma.offerVariant.updateMany({
+      where: {
+        id: variantId,
+        stockOnHand: variant.stockOnHand,
+        stockReserved: variant.stockReserved,
+      },
+      data: {
+        stockReserved: {
+          increment: qty,
+        },
+      },
+    });
+
+    return result.count > 0;
   }
 }
