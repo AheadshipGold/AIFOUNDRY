@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Share,
 } from "react-native";
 import { useDesign } from "../../design-system/provider";
 import { OrdersApi, type ProductItem, type AuthUser, type OrderRecord } from "../../services/api";
@@ -188,7 +189,21 @@ export default function ProductDetailModal({
               <Text style={[styles.closeTxt, { color: colors.muted }]}>✕</Text>
             </TouchableOpacity>
             <Text style={[styles.topBarBrand, { color: colors.action }]}>OJARKET CERTIFIED</Text>
-            <View style={{ width: 28 }} />
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  await Share.share({
+                    title: product.title,
+                    message: `${product.title} - ${formattedPrice} FCFA sur Ojarket (Artisanat d'Excellence du Bénin)\nDécouvrez la création : https://ojarket.bj/p/${product.id || 'creations'}`,
+                    url: `https://ojarket.bj/p/${product.id || 'creations'}`,
+                  });
+                } catch {}
+              }}
+              style={styles.closeBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={{ fontSize: 16 }}>📤</Text>
+            </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
