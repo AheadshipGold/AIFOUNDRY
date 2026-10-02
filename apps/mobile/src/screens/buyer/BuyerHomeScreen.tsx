@@ -23,8 +23,12 @@ interface BuyerHomeScreenProps {
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
 const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
 const imgArmchair = require("../../../assets/products/armchair.jpg");
+const imgJewelryGold = require("../../../assets/products/jewelry-gold.jpg");
+const imgArtBronze = require("../../../assets/products/art-bronze.jpg");
 const logoDark = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Dark_Transparent.png");
 const logoLight = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Transparent.png");
+const iconBrandDark = require("../../../assets/brand/Ojarket_01_Icon_UltraPremium_Dark_Transparent.png");
+const iconBrandLight = require("../../../assets/brand/Ojarket_01_Icon_UltraPremium_Transparent.png");
 
 const CATALOG = [
   {
@@ -65,39 +69,39 @@ const CATALOG = [
   },
   {
     id: "prod-4",
-    title: "Tenture Bogolan",
-    subtitle: "Soie sauvage · Pigments",
-    seller: "Studio Djoliba",
-    price: 36000,
+    title: "Buste Royal Dahomey en Bronze",
+    subtitle: "Bronze noble ciselé à la flamme",
+    seller: "Fonderie Royale d'Abomey",
+    price: 195000,
     currency: "XOF",
-    rating: 4.9,
+    rating: 5.0,
     reviews: 89,
-    image: imgLeatherTote,
-    category: "fashion",
+    image: imgArtBronze,
+    category: "digital",
   },
   {
     id: "prod-5",
-    title: "Bague Sculpturale Or",
-    subtitle: "Or 18K · Tourmaline",
+    title: "Bague Sculpturale Or & Émeraude",
+    subtitle: "Or jaune 18K · Émeraude ovale",
     seller: "Orfèvrerie Ashanti",
-    price: 95000,
+    price: 320000,
     currency: "XOF",
     rating: 4.9,
     reviews: 31,
-    image: imgWatchChrono,
-    category: "watches",
+    image: imgJewelryGold,
+    category: "fashion",
   },
   {
     id: "prod-6",
-    title: "Traité de Modélisme",
-    subtitle: "Patrons échelle 1:1",
-    seller: "Studio Éditions",
-    price: 6500,
+    title: "Tenture Bogolan & Soie",
+    subtitle: "Soie sauvage · Pigments d'argile",
+    seller: "Studio Djoliba",
+    price: 36000,
     currency: "XOF",
-    rating: 4.7,
+    rating: 4.8,
     reviews: 215,
-    image: imgArmchair,
-    category: "digital",
+    image: imgLeatherTote,
+    category: "fashion",
   },
 ];
 
@@ -108,10 +112,17 @@ function formatXOF(price: number, currency = "FCFA") {
 function mapApiProduct(prod: ProductItem) {
   let image = imgLeatherTote;
   const cat = (prod.category || "").toLowerCase();
-  if (cat.includes("joaillerie") || cat.includes("watches") || cat.includes("bijoux") || cat.includes("horlogerie")) image = imgWatchChrono;
-  else if (cat.includes("mobilier") || cat.includes("home") || cat.includes("deco") || cat.includes("fauteuil")) image = imgArmchair;
-  else if (cat.includes("mode") || cat.includes("fashion") || cat.includes("art")) image = imgLeatherTote;
-  else if (cat.includes("maroquinerie") || cat.includes("leather")) image = imgLeatherTote;
+  if (cat.includes("watch") || cat.includes("montre") || cat.includes("horlog")) {
+    image = imgWatchChrono;
+  } else if (cat.includes("home") || cat.includes("mobilier") || cat.includes("deco") || cat.includes("fauteuil")) {
+    image = imgArmchair;
+  } else if (cat.includes("jewel") || cat.includes("bijou") || cat.includes("or") || cat.includes("bague")) {
+    image = imgJewelryGold;
+  } else if (cat.includes("art") || cat.includes("bronze") || cat.includes("sculpt") || cat.includes("digital")) {
+    image = imgArtBronze;
+  } else if (cat.includes("leather") || cat.includes("maroquinerie") || cat.includes("sac")) {
+    image = imgLeatherTote;
+  }
   
   return {
     id: prod.id,
@@ -197,12 +208,12 @@ export default function BuyerHomeScreen({
   };
 
   const categories = [
-    { id: "all", label: isEn ? "All" : "Tout", icon: "❖" },
-    { id: "watches", label: isEn ? "Watches" : "Montres", icon: "◷" },
-    { id: "leather", label: isEn ? "Bags" : "Sacs", icon: "⌗" },
-    { id: "fashion", label: isEn ? "Jewels" : "Bijoux", icon: "💎" },
-    { id: "home", label: isEn ? "Home" : "Maison", icon: "⌂" },
-    { id: "digital", label: isEn ? "Art" : "Art", icon: "✦" },
+    { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true },
+    { id: "watches", label: isEn ? "Watches" : "Montres", image: imgWatchChrono, isAll: false },
+    { id: "leather", label: isEn ? "Leather" : "Maroquinerie", image: imgLeatherTote, isAll: false },
+    { id: "fashion", label: isEn ? "Jewelry" : "Bijoux d'Art", image: imgJewelryGold, isAll: false },
+    { id: "home", label: isEn ? "Home" : "Mobilier & Déco", image: imgArmchair, isAll: false },
+    { id: "digital", label: isEn ? "Sculptures" : "Art & Bronze", image: imgArtBronze, isAll: false },
   ];
 
   const filtered = products;
@@ -420,8 +431,8 @@ export default function BuyerHomeScreen({
                 onPress={() => setActiveCat(c.id)}
                 style={({ pressed }) => [{
                   alignItems: "center",
-                  width: 62,
-                  opacity: pressed ? 0.8 : 1,
+                  width: 68,
+                  opacity: pressed ? 0.85 : 1,
                   transform: [{ scale: pressed ? 0.95 : 1 }],
                 }]}
               >
@@ -430,33 +441,54 @@ export default function BuyerHomeScreen({
                     width: 58,
                     height: 58,
                     borderRadius: 29,
-                    backgroundColor: isActive ? colors.action : colors.surface,
-                    borderWidth: 1.5,
+                    borderWidth: isActive ? 2 : 1,
                     borderColor: isActive ? colors.accent : colors.border,
+                    backgroundColor: isActive ? "rgba(212, 180, 131, 0.18)" : colors.surface,
                     alignItems: "center",
                     justifyContent: "center",
                     marginBottom: 6,
-                    shadowColor: isActive ? colors.action : "#000",
+                    overflow: "hidden",
+                    shadowColor: isActive ? colors.accent : "#000",
                     shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: isActive ? 0.3 : 0.05,
-                    shadowRadius: 5,
+                    shadowOpacity: isActive ? 0.35 : 0.06,
+                    shadowRadius: 6,
                     elevation: isActive ? 4 : 1,
+                    padding: isActive ? 2 : 0,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      color: isActive ? "#FFFFFF" : colors.text,
-                    }}
-                  >
-                    {c.icon}
-                  </Text>
+                  {c.isAll ? (
+                    <View
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: 27,
+                        backgroundColor: isActive ? colors.action : colors.surface,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Image
+                        source={isDark ? iconBrandDark : iconBrandLight}
+                        style={{ width: 28, height: 28, resizeMode: "contain" }}
+                      />
+                    </View>
+                  ) : (
+                    <Image
+                      source={c.image}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: 27,
+                        resizeMode: "cover",
+                      }}
+                    />
+                  )}
                 </View>
                 <Text
                   style={{
                     fontSize: 11,
-                    fontWeight: isActive ? "800" : "500",
-                    color: isActive ? colors.action : colors.muted,
+                    fontWeight: isActive ? "800" : "600",
+                    color: isActive ? (isDark ? colors.accent : colors.action) : colors.muted,
                     textAlign: "center",
                   }}
                   numberOfLines={1}

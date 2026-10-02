@@ -297,22 +297,36 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid var(--oj-color-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.oj-cat-icon-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
 }
 
 .oj-cat-item:hover .oj-cat-icon-circle {
   background-color: var(--oj-color-surface);
-  border-color: var(--oj-color-action);
+  border-color: var(--oj-color-accent);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(7, 93, 73, 0.1);
+  box-shadow: 0 6px 16px rgba(212, 180, 131, 0.2);
+}
+
+.oj-cat-item:hover .oj-cat-icon-circle img {
+  transform: scale(1.08);
 }
 
 .oj-cat-item.active .oj-cat-icon-circle {
-  border-color: var(--oj-color-action);
-  background-color: var(--oj-color-action);
-  color: var(--oj-color-onAction);
-  box-shadow: 0 4px 14px rgba(7, 93, 73, 0.25);
+  border: 2px solid var(--oj-color-accent);
+  background-color: rgba(212, 180, 131, 0.15);
+  box-shadow: 0 4px 16px rgba(212, 180, 131, 0.35);
+  transform: scale(1.04);
 }
 
 .oj-cat-label {

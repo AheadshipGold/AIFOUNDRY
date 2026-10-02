@@ -114,36 +114,36 @@ const CATALOG: Product[] = [
   },
   {
     id: "prod-4",
-    title: "Tenture Murale Bogolan",
-    subtitle: "Soie sauvage · Pigments d'argile",
-    category: "fashion",
-    price: 36000,
+    title: "Buste Royal Dahomey en Bronze",
+    subtitle: "Bronze noble · Cire perdue d'Abomey",
+    category: "digital",
+    price: 195000,
     currency: "XOF",
-    rating: 4.9,
+    rating: 5.0,
     reviewsCount: 89,
     seller: {
-      name: "Studio Djoliba",
-      city: "Bamako",
+      name: "Fonderie Royale d'Abomey",
+      city: "Abomey",
       verified: true,
-      rating: 4.8,
-      salesCount: 340,
-      initials: "SD",
+      rating: 5.0,
+      salesCount: 140,
+      initials: "FA",
     },
-    image: "/products/leather-tote.jpg",
+    image: "/products/art-bronze.jpg",
     description:
-      "Œuvre textile unique aux pigments d'argile fermentée, mêlant motifs géométriques ancestraux et lisière de soie sauvage filée à la main.",
-    stock: 7,
+      "Sculpture royale en bronze massif patiné à l'or et à la cire perdue, issue des ateliers de fonte ancestraux du plateau d'Abomey.",
+    stock: 2,
     variants: [
-      { name: "Noir & Ocre", color: "#2B241F" },
-      { name: "Indigo Profond", color: "#1D283E" },
+      { name: "Bronze Doré Patiné", color: "#B8860B" },
+      { name: "Bronze Noir Antique", color: "#2B241F" },
     ],
   },
   {
     id: "prod-5",
-    title: "Bague Sculpturale Or 18K",
-    subtitle: "Or jaune · Tourmaline verte",
-    category: "watches",
-    price: 95000,
+    title: "Bague Sculpturale Or 18K & Émeraude",
+    subtitle: "Or jaune 18K · Émeraude ovale",
+    category: "fashion",
+    price: 320000,
     currency: "XOF",
     rating: 4.9,
     reviewsCount: 31,
@@ -155,7 +155,7 @@ const CATALOG: Product[] = [
       salesCount: 210,
       initials: "OA",
     },
-    image: "/products/watch-chrono.jpg",
+    image: "/products/jewelry-gold.jpg",
     description:
       "Anneau en or jaune brossé martelé à la flamme, serti d'une tourmaline verte taille émeraude issue de gisements responsables certifiés.",
     stock: 4,
@@ -602,12 +602,12 @@ function MainMarketplaceView() {
   };
 
   const categories = [
-    { id: "all", label: isEn ? "All" : "Tout", icon: <IconSearch /> },
-    { id: "leather", label: isEn ? "Bags" : "Sacs", icon: <IconBag /> },
-    { id: "watches", label: isEn ? "Watches" : "Montres", icon: <IconWatch /> },
-    { id: "fashion", label: isEn ? "Art" : "Art", icon: <IconPalette /> },
-    { id: "home", label: isEn ? "Home" : "Maison", icon: <IconLamp /> },
-    { id: "digital", label: isEn ? "Digital" : "Numérique", icon: <IconBook /> },
+    { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true },
+    { id: "watches", label: isEn ? "Watches" : "Montres", image: "/products/watch-chrono.jpg", isAll: false },
+    { id: "leather", label: isEn ? "Bags" : "Maroquinerie", image: "/products/leather-tote.jpg", isAll: false },
+    { id: "fashion", label: isEn ? "Jewelry" : "Bijoux d'Art", image: "/products/jewelry-gold.jpg", isAll: false },
+    { id: "home", label: isEn ? "Home" : "Mobilier d'Art", image: "/products/armchair.jpg", isAll: false },
+    { id: "digital", label: isEn ? "Sculptures" : "Art & Bronze", image: "/products/art-bronze.jpg", isAll: false },
   ];
 
   return (
@@ -892,7 +892,25 @@ function MainMarketplaceView() {
                     className={`oj-cat-item ${activeCategory === cat.id ? "active" : ""}`}
                     onClick={() => setActiveCategory(cat.id)}
                   >
-                    <span className="oj-cat-icon-circle">{cat.icon}</span>
+                    <span className="oj-cat-icon-circle">
+                      {cat.isAll ? (
+                        <img
+                          src={
+                            isDark
+                              ? "/brand/Ojarket_01_Icon_UltraPremium_Dark_Transparent.png"
+                              : "/brand/Ojarket_01_Icon_UltraPremium_Transparent.png"
+                          }
+                          alt="Tout"
+                          style={{ width: "32px", height: "32px", objectFit: "contain" }}
+                        />
+                      ) : (
+                        <img
+                          src={cat.image || ""}
+                          alt={cat.label}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      )}
+                    </span>
                     <span className="oj-cat-label">{cat.label}</span>
                   </button>
                 ))}
