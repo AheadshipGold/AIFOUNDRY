@@ -179,35 +179,26 @@ const MainNavigator = () => {
 
   // Guest-aware actions: these require authentication
   const switchToSeller = useCallback(() => {
-    if (!requireAuth('switchToSeller')) return;
-    
-    if (currentUser?.shops && currentUser.shops.length > 0) {
-      setUniverse("seller");
-      setCurrentScreen("dashboard");
-    } else {
-      setShowOnboarding(true);
-    }
-  }, [currentUser, requireAuth]);
+    setUniverse("seller");
+    setCurrentScreen("dashboard");
+  }, []);
 
-  const switchToBuyer = () => {
+  const switchToBuyer = useCallback(() => {
     setUniverse("buyer");
     setCurrentScreen("home");
-  };
+  }, []);
 
   const handleOpenNeed = useCallback(() => {
-    if (!requireAuth('need')) return;
     setCurrentScreen("need");
-  }, [requireAuth]);
+  }, []);
 
   const handleOpenPurchases = useCallback(() => {
-    if (!requireAuth('purchases')) return;
     setCurrentScreen("purchases");
-  }, [requireAuth]);
+  }, []);
 
   const handleOpenProfile = useCallback(() => {
-    if (!requireAuth('profile')) return;
     setCurrentScreen("profile");
-  }, [requireAuth]);
+  }, []);
 
   const handleLogout = useCallback(async () => {
     await clearSession();
@@ -346,12 +337,7 @@ const MainNavigator = () => {
       <BottomNav 
         universe={universe} 
         currentScreen={currentScreen} 
-        setCurrentScreen={(screen) => {
-          if (universe === 'buyer' && (screen === 'need' || screen === 'purchases' || screen === 'profile')) {
-            if (!requireAuth(screen)) return;
-          }
-          setCurrentScreen(screen);
-        }} 
+        setCurrentScreen={(screen) => setCurrentScreen(screen)} 
       />
 
       {/* Auth Modal */}
