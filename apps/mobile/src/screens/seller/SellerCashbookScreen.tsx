@@ -178,65 +178,78 @@ export default function SellerCashbookScreen({
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.canvas }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {/* Pinned Fixed Header */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          marginBottom: 20,
+          paddingHorizontal: 20,
+          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingBottom: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
           gap: 12,
+          zIndex: 10,
         }}
       >
         <Pressable
           onPress={onBack}
-          style={{
+          style={({ pressed }) => [{
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: colors.surface,
+            backgroundColor: colors.canvas,
             borderWidth: 1,
             borderColor: colors.border,
             alignItems: "center",
             justifyContent: "center",
-          }}
+            opacity: pressed ? 0.7 : 1,
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          }]}
         >
-          <Text style={{ fontSize: 16, color: colors.text }}>←</Text>
+          <Text style={{ fontSize: 16, color: colors.action, fontWeight: "700" }}>←</Text>
         </Pressable>
         <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
+            {isEn ? "FINANCIAL OVERVIEW" : "VUE FINANCIÈRE"}
+          </Text>
           <Text
             style={{
               fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: "700",
               color: colors.text,
             }}
           >
             {isEn ? "Cashbook" : "Caisse & Journal"}
           </Text>
-          <Text style={{ fontSize: 11, color: colors.accent, fontWeight: "800" }}>
-            {isEn ? "FINANCIAL OVERVIEW" : "VUE FINANCIÈRE"}
-          </Text>
         </View>
 
         <Pressable
           onPress={() => setShowCollectModal(true)}
-          style={{
+          style={({ pressed }) => [{
             backgroundColor: colors.action,
             paddingHorizontal: 12,
             paddingVertical: 8,
             borderRadius: 10,
-          }}
+            opacity: pressed ? 0.8 : 1,
+            transform: [{ scale: pressed ? 0.96 : 1 }],
+          }]}
         >
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>
             {isEn ? "+ Record Sale" : "+ Encaisser"}
           </Text>
         </Pressable>
       </View>
+
+      {/* Scrollable Content */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
 
       {loading ? (
         <View style={{ padding: 40, alignItems: "center" }}>
@@ -510,6 +523,7 @@ export default function SellerCashbookScreen({
           {isEn ? "Close the Day →" : "Clôturer la journée →"}
         </Button>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

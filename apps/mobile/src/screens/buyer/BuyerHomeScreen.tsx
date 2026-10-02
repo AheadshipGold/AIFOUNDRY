@@ -194,12 +194,8 @@ export default function BuyerHomeScreen({
   const filtered = products;
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.canvas }}
-      contentContainerStyle={{ paddingBottom: 110 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ==================== TOP BAR ==================== */}
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {/* ==================== PINNED FIXED TOP BAR ==================== */}
       <View
         style={{
           flexDirection: "row",
@@ -207,7 +203,11 @@ export default function BuyerHomeScreen({
           alignItems: "center",
           paddingHorizontal: 20,
           paddingTop: Platform.OS === "android" ? 14 : 10,
-          paddingBottom: 10,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
+          zIndex: 10,
         }}
       >
         <Image
@@ -218,14 +218,16 @@ export default function BuyerHomeScreen({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Pressable
             onPress={() => setLocale(isEn ? "fr" : "en")}
-            style={{
+            style={({ pressed }) => [{
               paddingHorizontal: 10,
               paddingVertical: 4,
               borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: colors.surface,
-            }}
+              opacity: pressed ? 0.7 : 1,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            }]}
           >
             <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text }}>
               {isEn ? "FR" : "EN"}
@@ -234,7 +236,7 @@ export default function BuyerHomeScreen({
 
           <Pressable
             onPress={() => setMode(isDark ? "light" : "dark")}
-            style={{
+            style={({ pressed }) => [{
               width: 32,
               height: 32,
               borderRadius: 16,
@@ -243,7 +245,9 @@ export default function BuyerHomeScreen({
               backgroundColor: colors.surface,
               alignItems: "center",
               justifyContent: "center",
-            }}
+              opacity: pressed ? 0.7 : 1,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            }]}
           >
             <Text style={{ fontSize: 13, color: colors.text }}>
               {isDark ? "☼" : "☾"}
@@ -252,7 +256,7 @@ export default function BuyerHomeScreen({
 
           <Pressable
             onPress={onOpenCart}
-            style={{
+            style={({ pressed }) => [{
               width: 34,
               height: 34,
               borderRadius: 17,
@@ -261,18 +265,26 @@ export default function BuyerHomeScreen({
               borderColor: colors.border,
               alignItems: "center",
               justifyContent: "center",
-            }}
+              opacity: pressed ? 0.7 : 1,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            }]}
           >
             <Text style={{ fontSize: 15, color: colors.text }}>🛍</Text>
           </Pressable>
         </View>
       </View>
 
-      {/* ==================== EDITORIAL LEAD ==================== */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 }}>
-        <Text
-          style={{
-            fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+      {/* ==================== SCROLLABLE CONTENT ==================== */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ==================== EDITORIAL LEAD ==================== */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12 }}>
+          <Text
+            style={{
+              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
             fontSize: 26,
             fontWeight: "700",
             color: colors.text,
@@ -1007,5 +1019,6 @@ export default function BuyerHomeScreen({
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }

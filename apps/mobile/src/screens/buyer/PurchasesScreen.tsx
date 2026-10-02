@@ -575,111 +575,149 @@ export default function PurchasesScreen({
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
       {/* Header Area */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        {onBack && (
-          <Pressable onPress={onBack} style={{ marginBottom: 12 }}>
-            <Text style={{ color: colors.action, fontSize: 15, fontWeight: '600' }}>{isEn ? '← Back' : '← Retour'}</Text>
-          </Pressable>
-        )}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontFamily: headerFont, fontSize: 24, fontWeight: '700', color: colors.text }}>
-            {isEn ? 'My Purchases & Tracking' : 'Mes Achats & Suivi'}
-          </Text>
+      <View
+        style={{
+          paddingHorizontal: 20,
+          paddingTop: Platform.OS === 'android' ? 14 : 10,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
+          zIndex: 10,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {onBack && (
+              <Pressable
+                onPress={onBack}
+                style={({ pressed }) => [{
+                  padding: 6,
+                  borderRadius: 8,
+                  backgroundColor: colors.canvas,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.7 : 1,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                }]}
+              >
+                <Text style={{ fontSize: 16, color: colors.action, fontWeight: '700' }}>←</Text>
+              </Pressable>
+            )}
+            <Text style={{ fontFamily: headerFont, fontSize: 20, fontWeight: '700', color: colors.text }}>
+              {isEn ? 'Purchases & Tracking' : 'Mes Achats & Suivi'}
+            </Text>
+          </View>
+
           {onOpenNeed && (
             <Pressable
               onPress={onOpenNeed}
-              style={{
+              style={({ pressed }) => [{
                 backgroundColor: colors.action,
                 paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-              }}
+                paddingVertical: 7,
+                borderRadius: 10,
+                opacity: pressed ? 0.8 : 1,
+                transform: [{ scale: pressed ? 0.96 : 1 }],
+              }]}
             >
-              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>
-                {isEn ? '+ New Request' : '+ Exprimer un besoin'}
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 11 }}>
+                {isEn ? '+ Request' : '+ Besoin'}
               </Text>
             </Pressable>
           )}
         </View>
+
+        {/* 4 Tabs: Orders, Digital Grants, Bespoke Requests, History */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 }}
+        >
+          <Pressable
+            onPress={() => setActiveTab('orders')}
+            style={({ pressed }) => [{
+              paddingVertical: 7,
+              paddingHorizontal: 14,
+              borderRadius: 20,
+              backgroundColor: activeTab === 'orders' ? colors.action : colors.canvas,
+              borderWidth: 1,
+              borderColor: activeTab === 'orders' ? colors.action : colors.border,
+              alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            }]}
+          >
+            <Text style={{ color: activeTab === 'orders' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
+              {isEn ? `Orders (${orders ? orders.length : 2})` : `Commandes (${orders ? orders.length : 2})`}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab('digital')}
+            style={({ pressed }) => [{
+              paddingVertical: 7,
+              paddingHorizontal: 14,
+              borderRadius: 20,
+              backgroundColor: activeTab === 'digital' ? colors.action : colors.canvas,
+              borderWidth: 1,
+              borderColor: activeTab === 'digital' ? colors.action : colors.border,
+              alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            }]}
+          >
+            <Text style={{ color: activeTab === 'digital' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
+              ✨ {isEn ? `Digital (${digitalGrants ? digitalGrants.length : 1})` : `Numérique (${digitalGrants ? digitalGrants.length : 1})`}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab('requests')}
+            style={({ pressed }) => [{
+              paddingVertical: 7,
+              paddingHorizontal: 14,
+              borderRadius: 20,
+              backgroundColor: activeTab === 'requests' ? colors.action : colors.canvas,
+              borderWidth: 1,
+              borderColor: activeTab === 'requests' ? colors.action : colors.border,
+              alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            }]}
+          >
+            <Text style={{ color: activeTab === 'requests' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
+              {isEn ? `Quotes (${requests ? requests.length : 2})` : `Devis (${requests ? requests.length : 2})`}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab('history')}
+            style={({ pressed }) => [{
+              paddingVertical: 7,
+              paddingHorizontal: 14,
+              borderRadius: 20,
+              backgroundColor: activeTab === 'history' ? colors.action : colors.canvas,
+              borderWidth: 1,
+              borderColor: activeTab === 'history' ? colors.action : colors.border,
+              alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            }]}
+          >
+            <Text style={{ color: activeTab === 'history' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
+              {isEn ? 'History' : 'Historique'}
+            </Text>
+          </Pressable>
+        </ScrollView>
       </View>
 
-      {/* 4 Tabs: Orders, Digital Grants, Bespoke Requests, History */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}
-      >
-        <Pressable
-          onPress={() => setActiveTab('orders')}
-          style={{
-            paddingVertical: 8,
-            paddingHorizontal: 14,
-            borderRadius: 20,
-            backgroundColor: activeTab === 'orders' ? colors.action : colors.surface,
-            borderWidth: 1,
-            borderColor: activeTab === 'orders' ? colors.action : colors.border,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: activeTab === 'orders' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-            {isEn ? `Orders (${orders ? orders.length : 2})` : `Commandes (${orders ? orders.length : 2})`}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setActiveTab('digital')}
-          style={{
-            paddingVertical: 8,
-            paddingHorizontal: 14,
-            borderRadius: 20,
-            backgroundColor: activeTab === 'digital' ? colors.action : colors.surface,
-            borderWidth: 1,
-            borderColor: activeTab === 'digital' ? colors.action : colors.border,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: activeTab === 'digital' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-            ✨ {isEn ? `Digital & Patterns (${digitalGrants ? digitalGrants.length : 1})` : `Patrons & Numérique (${digitalGrants ? digitalGrants.length : 1})`}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setActiveTab('requests')}
-          style={{
-            paddingVertical: 8,
-            paddingHorizontal: 14,
-            borderRadius: 20,
-            backgroundColor: activeTab === 'requests' ? colors.action : colors.surface,
-            borderWidth: 1,
-            borderColor: activeTab === 'requests' ? colors.action : colors.border,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: activeTab === 'requests' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-            {isEn ? `Requests & Quotes (${requests ? requests.length : 2})` : `Demandes & Devis (${requests ? requests.length : 2})`}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setActiveTab('history')}
-          style={{
-            paddingVertical: 8,
-            paddingHorizontal: 14,
-            borderRadius: 20,
-            backgroundColor: activeTab === 'history' ? colors.action : colors.surface,
-            borderWidth: 1,
-            borderColor: activeTab === 'history' ? colors.action : colors.border,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: activeTab === 'history' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-            {isEn ? 'History' : 'Historique'}
-          </Text>
-        </Pressable>
-      </ScrollView>
-
       {/* Content */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? (
           <ActivityIndicator size="large" color={colors.action} style={{ marginTop: 40 }} />
         ) : activeTab === 'history' ? (

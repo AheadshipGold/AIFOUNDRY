@@ -153,43 +153,47 @@ export default function RequestNeedScreen({
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.canvas }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {/* Pinned Fixed Header */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          marginBottom: 18,
+          paddingHorizontal: 20,
+          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingBottom: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
           gap: 12,
+          zIndex: 10,
         }}
       >
         <Pressable
           onPress={onBack}
-          style={{
+          style={({ pressed }) => [{
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: colors.surface,
+            backgroundColor: colors.canvas,
             borderWidth: 1,
             borderColor: colors.border,
             alignItems: "center",
             justifyContent: "center",
-          }}
+            opacity: pressed ? 0.7 : 1,
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          }]}
         >
-          <Text style={{ fontSize: 16, color: colors.text }}>←</Text>
+          <Text style={{ fontSize: 16, color: colors.action, fontWeight: "700" }}>←</Text>
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
-            {isEn ? "BESPOKE ARTISAN ORDER" : "CRÉATION SUR-MESURE D02"}
+          <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
+            {isEn ? "BESPOKE ARTISAN ORDER" : "CRÉATION SUR-MESURE"}
           </Text>
           <Text
             style={{
               fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: "700",
               color: colors.text,
             }}
@@ -199,270 +203,284 @@ export default function RequestNeedScreen({
         </View>
       </View>
 
-      <Text
-        style={{
-          fontSize: 13,
-          color: colors.muted,
-          lineHeight: 19,
-          marginBottom: 16,
-        }}
+      {/* Scrollable Content */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
       >
-        {isEn
-          ? "Cannot find your ideal piece in the catalog? Post your custom requirements and receive direct quotes from certified master ateliers in Benin."
-          : "Vous ne trouvez pas la création idéale ? Décrivez votre pièce sur-mesure et recevez des devis directs d'ateliers d'art certifiés au Bénin."}
-      </Text>
+        <Text
+          style={{
+            fontSize: 13,
+            color: colors.muted,
+            lineHeight: 19,
+            marginBottom: 16,
+          }}
+        >
+          {isEn
+            ? "Cannot find your ideal piece in the catalog? Post your custom requirements and receive direct quotes from certified master ateliers in Benin."
+            : "Vous ne trouvez pas la création idéale ? Décrivez votre pièce sur-mesure et recevez des devis directs d'ateliers d'art certifiés au Bénin."}
+        </Text>
 
-      {/* Preset Inspiration Chips */}
-      <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, marginBottom: 8 }}>
-        {isEn ? "Inspirations & Crafts" : "Exemples de créations artisanales"}
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {PRESET_INSPIRATIONS.map((item) => (
+        {/* Preset Inspiration Chips */}
+        <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, marginBottom: 8 }}>
+          {isEn ? "Inspirations & Crafts" : "Exemples de créations artisanales"}
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {PRESET_INSPIRATIONS.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleApplyPreset(item)}
+                style={({ pressed }) => [{
+                  backgroundColor: colors.surface,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  opacity: pressed ? 0.75 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                }]}
+              >
+                <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
+                <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>{item.title}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* AI Assistant Card */}
+        <View
+          style={{
+            backgroundColor: colors.successBg,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.action,
+            padding: 14,
+            marginBottom: 20,
+            flexDirection: "row",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              backgroundColor: colors.action,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#FFFFFF", fontSize: 16 }}>✦</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
+              {isEn ? "AI Structured Assistance" : "Assistance IA Cadrage"}
+            </Text>
+            <Text style={{ fontSize: 11, color: colors.muted }}>
+              {isEn
+                ? "Refine and structure your prompt for artisan workshops."
+                : "Structure votre demande avec les bons termes d'atelier."}
+            </Text>
+          </View>
+          <Pressable
+            onPress={handleAiAssist}
+            disabled={isAiStructuring}
+            style={({ pressed }) => [{
+              backgroundColor: colors.action,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 12,
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            }]}
+          >
+            {isAiStructuring ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={{ fontSize: 11, fontWeight: "700", color: "#fff" }}>
+                ✦ Optimiser
+              </Text>
+            )}
+          </Pressable>
+        </View>
+
+        {/* Category Selection */}
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "700",
+            color: colors.text,
+            marginBottom: 8,
+          }}
+        >
+          {isEn ? "Craft Category *" : "Métier d'artisanat *"}
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+          {categories.map((c) => (
             <Pressable
-              key={item.id}
-              onPress={() => handleApplyPreset(item)}
-              style={{
-                backgroundColor: colors.surface,
-                paddingHorizontal: 12,
+              key={c.id}
+              onPress={() => setCategory(c.id)}
+              style={({ pressed }) => [{
+                paddingHorizontal: 14,
                 paddingVertical: 8,
-                borderRadius: 12,
+                borderRadius: 20,
+                backgroundColor: category === c.id ? colors.action : colors.surface,
                 borderWidth: 1,
-                borderColor: colors.border,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-              }}
+                borderColor: category === c.id ? colors.action : colors.border,
+                opacity: pressed ? 0.8 : 1,
+                transform: [{ scale: pressed ? 0.96 : 1 }],
+              }]}
             >
-              <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
-              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>{item.title}</Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: category === c.id ? "#FFFFFF" : colors.text,
+                }}
+              >
+                {c.label}
+              </Text>
             </Pressable>
           ))}
         </View>
-      </ScrollView>
 
-      {/* AI Assistant Card */}
-      <View
-        style={{
-          backgroundColor: colors.successBg,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: colors.action,
-          padding: 14,
-          marginBottom: 20,
-          flexDirection: "row",
-          gap: 12,
-          alignItems: "center",
-        }}
-      >
-        <View
+        {/* Custom Prompt Description */}
+        <Text
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 10,
+            fontSize: 12,
+            fontWeight: "700",
+            color: colors.text,
+            marginBottom: 6,
+          }}
+        >
+          {isEn ? "Detailed Description *" : "Description de la création souhaitée *"}
+        </Text>
+        <TextInput
+          style={{
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 12,
+            padding: 14,
+            fontSize: 14,
+            color: colors.text,
+            backgroundColor: colors.surface,
+            minHeight: 120,
+            textAlignVertical: "top",
+            lineHeight: 20,
+            marginBottom: 16,
+          }}
+          value={description}
+          onChangeText={setDescription}
+          placeholder={
+            isEn
+              ? "e.g. A handmade leather briefcase in cognac leather with brass buckles and laptop sleeve..."
+              : "ex: Un sac cabas en cuir pleine fleur avec anses renforcées et gravure sur mesure..."
+          }
+          placeholderTextColor={colors.muted}
+          multiline
+        />
+
+        {/* Structured AI Guidance Badge if available */}
+        {aiSuggestions && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.action,
+              padding: 12,
+              marginBottom: 16,
+              gap: 4,
+            }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.action }}>
+              ✓ SPÉCIFICATION TECHNIQUE STRUCTURÉE
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.text }}>
+              • Matière : {aiSuggestions.materials}
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.text }}>
+              • Délai conseillé : {aiSuggestions.timeframe}
+            </Text>
+          </View>
+        )}
+
+        {/* Indicative Budget & Location */}
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, marginBottom: 6 }}>
+              {isEn ? "Target Budget (FCFA)" : "Budget indicatif (FCFA)"}
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 10,
+                padding: 12,
+                fontSize: 14,
+                fontWeight: "700",
+                color: colors.action,
+                backgroundColor: colors.surface,
+              }}
+              value={budget}
+              onChangeText={setBudget}
+              placeholder="75 000 FCFA"
+              placeholderTextColor={colors.muted}
+            />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, marginBottom: 6 }}>
+              {isEn ? "Delivery City" : "Lieu de livraison"}
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 10,
+                padding: 12,
+                fontSize: 14,
+                color: colors.text,
+                backgroundColor: colors.surface,
+              }}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Cotonou, Bénin"
+              placeholderTextColor={colors.muted}
+            />
+          </View>
+        </View>
+
+        {/* Submit CTA */}
+        <Pressable
+          style={({ pressed }) => [{
             backgroundColor: colors.action,
+            borderRadius: 14,
+            paddingVertical: 16,
             alignItems: "center",
             justifyContent: "center",
-          }}
+            opacity: isSubmitting ? 0.6 : pressed ? 0.85 : 1,
+            transform: [{ scale: pressed && !isSubmitting ? 0.98 : 1 }],
+          }]}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
         >
-          <Text style={{ color: "#FFFFFF", fontSize: 16 }}>✦</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
-            {isEn ? "AI Structured Assistance" : "Assistance IA Cadrage"}
-          </Text>
-          <Text style={{ fontSize: 11, color: colors.muted }}>
-            {isEn
-              ? "Refine and structure your prompt for artisan workshops."
-              : "Structure votre demande avec les bons termes d'atelier."}
-          </Text>
-        </View>
-        <Pressable
-          onPress={handleAiAssist}
-          disabled={isAiStructuring}
-          style={{
-            backgroundColor: colors.action,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 12,
-          }}
-        >
-          {isAiStructuring ? (
-            <ActivityIndicator size="small" color="#fff" />
+          {isSubmitting ? (
+            <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ fontSize: 11, fontWeight: "700", color: "#fff" }}>
-              ✦ Optimiser
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+              {isEn ? "Submit Request to Ateliers →" : "Diffuser aux Ateliers d'Art →"}
             </Text>
           )}
         </Pressable>
-      </View>
-
-      {/* Category Selection */}
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: "700",
-          color: colors.text,
-          marginBottom: 8,
-        }}
-      >
-        {isEn ? "Craft Category *" : "Métier d'artisanat *"}
-      </Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-        {categories.map((c) => (
-          <Pressable
-            key={c.id}
-            onPress={() => setCategory(c.id)}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 20,
-              backgroundColor: category === c.id ? colors.action : colors.surface,
-              borderWidth: 1,
-              borderColor: category === c.id ? colors.action : colors.border,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: category === c.id ? "#FFFFFF" : colors.text,
-              }}
-            >
-              {c.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* Custom Prompt Description */}
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: "700",
-          color: colors.text,
-          marginBottom: 6,
-        }}
-      >
-        {isEn ? "Detailed Description *" : "Description de la création souhaitée *"}
-      </Text>
-      <TextInput
-        style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: 12,
-          padding: 14,
-          fontSize: 14,
-          color: colors.text,
-          backgroundColor: colors.surface,
-          minHeight: 120,
-          textAlignVertical: "top",
-          lineHeight: 20,
-          marginBottom: 16,
-        }}
-        value={description}
-        onChangeText={setDescription}
-        placeholder={
-          isEn
-            ? "e.g. A handmade leather briefcase in cognac leather with brass buckles and laptop sleeve..."
-            : "ex: Un sac cabas en cuir pleine fleur avec anses renforcées et gravure sur mesure..."
-        }
-        placeholderTextColor={colors.muted}
-        multiline
-      />
-
-      {/* Structured AI Guidance Badge if available */}
-      {aiSuggestions && (
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: colors.action,
-            padding: 12,
-            marginBottom: 16,
-            gap: 4,
-          }}
-        >
-          <Text style={{ fontSize: 11, fontWeight: "700", color: colors.action }}>
-            ✓ SPÉCIFICATION TECHNIQUE STRUCTURÉE
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.text }}>
-            • Matière : {aiSuggestions.materials}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.text }}>
-            • Délai conseillé : {aiSuggestions.timeframe}
-          </Text>
-        </View>
-      )}
-
-      {/* Indicative Budget & Location */}
-      <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, marginBottom: 6 }}>
-            {isEn ? "Target Budget (FCFA)" : "Budget indicatif (FCFA)"}
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 10,
-              padding: 12,
-              fontSize: 14,
-              fontWeight: "700",
-              color: colors.action,
-              backgroundColor: colors.surface,
-            }}
-            value={budget}
-            onChangeText={setBudget}
-            placeholder="75 000 FCFA"
-            placeholderTextColor={colors.muted}
-          />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, marginBottom: 6 }}>
-            {isEn ? "Delivery City" : "Lieu de livraison"}
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 10,
-              padding: 12,
-              fontSize: 14,
-              color: colors.text,
-              backgroundColor: colors.surface,
-            }}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="Cotonou, Bénin"
-            placeholderTextColor={colors.muted}
-          />
-        </View>
-      </View>
-
-      {/* Submit CTA */}
-      <Pressable
-        style={{
-          backgroundColor: colors.action,
-          borderRadius: 14,
-          paddingVertical: 16,
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: isSubmitting ? 0.6 : 1,
-        }}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-            {isEn ? "Submit Request to Ateliers →" : "Diffuser aux Ateliers d'Art →"}
-          </Text>
-        )}
-      </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

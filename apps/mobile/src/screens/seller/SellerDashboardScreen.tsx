@@ -79,56 +79,63 @@ export default function SellerDashboardScreen({
   const isVerified = activeShop?.isVerified ?? false;
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.canvas }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Top Header */}
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {/* Fixed Top Header */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
+          alignItems: "center",
+          paddingHorizontal: 20,
+          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingBottom: 12,
+          backgroundColor: colors.surface,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          zIndex: 10,
         }}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, fontWeight: "800", color: colors.accent, letterSpacing: 1.2 }}>
+          <Text style={{ fontSize: 10, fontWeight: "800", color: colors.accent, letterSpacing: 1.2 }}>
             {isEn ? "YOUR SHOP TODAY" : "VOTRE BOUTIQUE AUJOURD'HUI"}
           </Text>
           <Text
             style={{
               fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: "700",
               color: colors.text,
-              marginTop: 4,
+              marginTop: 2,
             }}
           >
             {shopName}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.muted }}>
-            {shopCity}{shopCraft ? ` · ${shopCraft}` : ''}
           </Text>
         </View>
 
         <Pressable
           onPress={onSwitchToBuyer}
-          style={{
-            backgroundColor: colors.surface,
+          style={({ pressed }) => [{
+            backgroundColor: colors.canvas,
             borderWidth: 1,
             borderColor: colors.border,
             paddingHorizontal: 12,
             paddingVertical: 6,
-            borderRadius: 20,
-          }}
+            borderRadius: 16,
+            opacity: pressed ? 0.7 : 1,
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          }]}
         >
-          <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text }}>
+          <Text style={{ fontSize: 11, fontWeight: "700", color: colors.action }}>
             {isEn ? "Buyer Mode →" : "Mode Acheteur →"}
           </Text>
         </Pressable>
       </View>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
 
       {/* KYC Status Banner — dynamic based on real shop status */}
       {kycStatus === 'VERIFIED' ? (
@@ -342,5 +349,6 @@ export default function SellerDashboardScreen({
         </Button>
       </View>
     </ScrollView>
+    </View>
   );
 }

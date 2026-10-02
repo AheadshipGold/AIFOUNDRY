@@ -31,11 +31,12 @@ const BottomNav = ({
   currentScreen: string; 
   setCurrentScreen: (s: string) => void;
 }) => {
-  const { colors, locale } = useDesign();
+  const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
+  const isDark = mode === "dark";
 
   const buyerTabs = [
-    { key: "home", label: isEn ? "Discover" : "Découvrir", icon: "⌂" },
+    { key: "home", label: isEn ? "Discover" : "Découvrir", icon: "❖" },
     { key: "search", label: isEn ? "Search" : "Rechercher", icon: "🔍" },
     { key: "need", label: isEn ? "Requests" : "Demandes", icon: "✦" },
     { key: "purchases", label: isEn ? "Purchases" : "Achats", icon: "🛍" },
@@ -53,26 +54,62 @@ const BottomNav = ({
   const tabs = universe === "buyer" ? buyerTabs : sellerTabs;
 
   return (
-    <View style={[styles.navContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+    <View 
+      style={[
+        styles.navContainer, 
+        { 
+          backgroundColor: colors.surface, 
+          borderTopColor: colors.border,
+          shadowColor: isDark ? "#000" : "#151E1C",
+        }
+      ]}
+    >
       {tabs.map((tab) => {
         const isActive = currentScreen === tab.key;
         return (
           <TouchableOpacity 
             key={tab.key} 
-            style={styles.navItem} 
+            activeOpacity={0.7}
+            style={[
+              styles.navItem,
+              isActive && {
+                backgroundColor: isDark ? "rgba(196, 154, 69, 0.15)" : "rgba(13, 46, 38, 0.08)",
+                borderRadius: 16,
+              }
+            ]} 
             onPress={() => setCurrentScreen(tab.key)}
           >
-            <Text style={{ fontSize: 24, color: isActive ? colors.action : colors.muted }}>
+            <Text 
+              style={{ 
+                fontSize: 20, 
+                color: isActive ? colors.action : colors.muted,
+                transform: [{ scale: isActive ? 1.1 : 1 }],
+              }}
+            >
               {tab.icon}
             </Text>
-            <Text style={{ 
-              fontSize: 10, 
-              marginTop: 4, 
-              color: isActive ? colors.action : colors.muted,
-              fontWeight: isActive ? "bold" : "normal"
-            }}>
+            <Text 
+              style={{ 
+                fontSize: 10, 
+                marginTop: 3, 
+                color: isActive ? colors.action : colors.muted,
+                fontWeight: isActive ? "800" : "500",
+                letterSpacing: 0.3,
+              }}
+            >
               {tab.label}
             </Text>
+            {isActive && (
+              <View 
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: colors.action,
+                  marginTop: 2,
+                }} 
+              />
+            )}
           </TouchableOpacity>
         );
       })}
@@ -247,9 +284,11 @@ const MainNavigator = () => {
           return <PurchasesScreen 
             onBack={() => setCurrentScreen("home")} 
             onContactSupport={() => {}} 
+            onOpenNeed={handleOpenNeed}
           />;
         case "profile":
           return <ProfileScreen 
+            onBack={() => setCurrentScreen("home")}
             onSwitchToSeller={switchToSeller} 
             onOpenPurchases={handleOpenPurchases} 
             onOpenRequests={handleOpenNeed} 
@@ -304,22 +343,25 @@ const MainNavigator = () => {
       <View style={styles.screenContainer}>
         {renderScreen()}
       </View>
-      <BottomNav universe={universe} currentScreen={currentScreen} setCurrentScreen={(screen) => {
-        // Guest can freely browse home and search, but other tabs require auth
-        if (universe === 'buyer' && (screen === 'need' || screen === 'purchases' || screen === 'profile')) {
-          if (!requireAuth(screen)) return;
-        }
-        setCurrentScreen(screen);
-      }} />
+      <BottomNav 
+        universe={universe} 
+        currentScreen={currentScreen} 
+        setCurrentScreen={(screen) => {
+          if (universe === 'buyer' && (screen === 'need' || screen === 'purchases' || screen === 'profile')) {
+            if (!requireAuth(screen)) return;
+          }
+          setCurrentScreen(screen);
+        }} 
+      />
 
-      {/* Auth Modal — shown only when an action requires login */}
+      {/* Auth Modal */}
       <AuthModal
         visible={showAuthModal}
         onClose={() => { setShowAuthModal(false); setPendingAction(null); }}
         onAuthenticated={handleAuthenticated}
       />
 
-      {/* Seller Onboarding — shown when authenticated user wants to become seller */}
+      {/* Seller Onboarding */}
       <SellerOnboardingModal
         visible={showOnboarding}
         onClose={() => setShowOnboarding(false)}
@@ -356,21 +398,31 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    maxHeight: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    overflow: 'hidden',
   },
   screenContainer: {
     flex: 1,
+    overflow: 'hidden',
   },
   navContainer: {
     flexDirection: "row",
-    paddingBottom: Platform.OS === "ios" ? 20 : 12,
-    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 20 : 10,
+    paddingTop: 8,
     borderTopWidth: 1,
     justifyContent: "space-around",
     alignItems: "center",
+    elevation: 8,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
   navItem: {
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 60,
-  }
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 54,
+  },
 });

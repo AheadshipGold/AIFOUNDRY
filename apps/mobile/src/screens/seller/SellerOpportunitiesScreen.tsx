@@ -169,43 +169,47 @@ export default function SellerOpportunitiesScreen({
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.canvas }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {/* Pinned Fixed Header */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          marginBottom: 20,
+          paddingHorizontal: 20,
+          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingBottom: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
           gap: 12,
+          zIndex: 10,
         }}
       >
         <Pressable
           onPress={onBack}
-          style={{
+          style={({ pressed }) => [{
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: colors.surface,
+            backgroundColor: colors.canvas,
             borderWidth: 1,
             borderColor: colors.border,
             alignItems: "center",
             justifyContent: "center",
-          }}
+            opacity: pressed ? 0.7 : 1,
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          }]}
         >
-          <Text style={{ fontSize: 16, color: colors.text }}>←</Text>
+          <Text style={{ fontSize: 16, color: colors.action, fontWeight: "700" }}>←</Text>
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
-            {isEn ? "BUYER OPPORTUNITIES" : "OPPORTUNITÉS & DEMANDES SUR-MESURE"}
+          <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
+            {isEn ? "BUYER OPPORTUNITIES" : "OPPORTUNITÉS SUR-MESURE"}
           </Text>
           <Text
             style={{
               fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: "700",
               color: colors.text,
             }}
@@ -215,28 +219,34 @@ export default function SellerOpportunitiesScreen({
         </View>
       </View>
 
-      {/* Intro banner */}
-      <View
-        style={{
-          backgroundColor: colors.surface,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: colors.border,
-          padding: 16,
-          marginBottom: 20,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.action,
-        }}
+      {/* Scrollable Content */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-          {isEn ? "Direct Artisan Quotes" : "Devis d'Atelier en Direct"}
-        </Text>
-        <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}>
-          {isEn
-            ? "Respond to qualified buyer requests. State your total price, mandatory advance deposit, and delivery lead time."
-            : "Répondez aux besoins exprimés par les clients. Définissez votre prix net, votre acompte direct et votre délai de confection."}
-        </Text>
-      </View>
+        {/* Intro banner */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 16,
+            marginBottom: 20,
+            borderLeftWidth: 4,
+            borderLeftColor: colors.action,
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+            {isEn ? "Direct Artisan Quotes" : "Devis d'Atelier en Direct"}
+          </Text>
+          <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}>
+            {isEn
+              ? "Respond to qualified buyer requests. State your total price, mandatory advance deposit, and delivery lead time."
+              : "Répondez aux besoins exprimés par les clients. Définissez votre prix net, votre acompte direct et votre délai de confection."}
+          </Text>
+        </View>
 
       {/* Loading state */}
       {loading ? (
@@ -512,6 +522,7 @@ export default function SellerOpportunitiesScreen({
           </View>
         </Modal>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
