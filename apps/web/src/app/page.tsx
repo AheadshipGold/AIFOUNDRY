@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { DesignProvider, useDesign } from "../design-system/provider";
 import { translations, Locale } from "@aifoundry/shared";
@@ -330,11 +330,61 @@ export default function MasterOjarketPage() {
   );
 }
 
+export interface AuthSessionUser {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  role: "BUYER" | "SELLER" | "ADMIN";
+  shopName?: string;
+  shopInitials?: string;
+}
+
+const DEMO_BUYER_USER: AuthSessionUser = {
+  id: "usr-buyer-01",
+  name: "Amina Diop",
+  phone: "+229 97 00 00 01",
+  email: "amina.diop@client.bj",
+  role: "BUYER",
+};
+
+const DEMO_SELLER_USER: AuthSessionUser = {
+  id: "usr-seller-01",
+  name: "Alexandre Laurent",
+  phone: "+229 90 00 00 02",
+  email: "alexandre@maisonlaurent.bj",
+  role: "SELLER",
+  shopName: "Maison Laurent",
+  shopInitials: "ML",
+};
+
+const DEMO_ADMIN_USER: AuthSessionUser = {
+  id: "usr-admin-01",
+  name: "Superviseur Plateforme",
+  phone: "+229 90 00 00 00",
+  email: "admin@ojarket.bj",
+  role: "ADMIN",
+};
+
 function MainMarketplaceView() {
   const { locale, setLocale, theme, setMode } = useDesign();
   const isEn = locale === "en";
   const isDark = theme === "dark";
   const t = translations[(locale as Locale) || "fr"];
+
+  // Authentication & Gating state
+  const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [sellerGateModalOpen, setSellerGateModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Auth form state
+  const [authRoleTab, setAuthRoleTab] = useState<"BUYER" | "SELLER" | "ADMIN">("BUYER");
+  const [authIdentifier, setAuthIdentifier] = useState("+229 97 00 00 01");
+  const [authOtp, setAuthOtp] = useState("");
+  const [authStep, setAuthStep] = useState<"phone" | "otp">("phone");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const [universe, setUniverse] = useState<"buyer" | "seller">("buyer");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -351,6 +401,52 @@ function MainMarketplaceView() {
   const [needCategory, setNeedCategory] = useState("leather");
   const [needSubmitted, setNeedSubmitted] = useState(false);
   const [aiStructuring, setAiStructuring] = useState(false);
+
+  // Load session on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ojarket_web_user");
+      if (saved) {
+        setCurrentUser(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
+
+  const handleLogin = (user: AuthSessionUser) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem("ojarket_web_user", JSON.stringify(user));
+    } catch {}
+    setAuthModalOpen(false);
+    setSellerGateModalOpen(false);
+    setAuthError("");
+    setAuthStep("phone");
+    if (user.role === "SELLER") {
+      setUniverse("seller");
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem("ojarket_web_user");
+    } catch {}
+    setUserMenuOpen(false);
+    setUniverse("buyer");
+  };
+
+  const handleSelectUniverse = (target: "buyer" | "seller") => {
+    if (target === "buyer") {
+      setUniverse("buyer");
+    } else {
+      // Check if user is authenticated as seller or admin
+      if (currentUser && (currentUser.role === "SELLER" || currentUser.role === "ADMIN")) {
+        setUniverse("seller");
+      } else {
+        setSellerGateModalOpen(true);
+      }
+    }
+  };
 
   // D02 Buyer proposals & comparison modal state
   const [buyerRequestsModalOpen, setBuyerRequestsModalOpen] = useState(false);
@@ -554,23 +650,32 @@ function MainMarketplaceView() {
             <div className="oj-universe-pill">
               <button
                 className={`oj-pill-opt ${universe === "buyer" ? "active" : ""}`}
-                onClick={() => setUniverse("buyer")}
+                onClick={() => handleSelectUniverse("buyer")}
               >
                 {t.nav.buyerUniverse}
               </button>
               <button
                 className={`oj-pill-opt ${universe === "seller" ? "active" : ""}`}
-                onClick={() => setUniverse("seller")}
+                onClick={() => handleSelectUniverse("seller")}
               >
                 {t.nav.sellerUniverse}
               </button>
-              <Link
-                href="/admin"
-                className="oj-pill-opt"
-                style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center" }}
-              >
-                {t.nav.admin}
-              </Link>
+              {currentUser?.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="oj-pill-opt"
+                  style={{
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontWeight: 700,
+                    color: "var(--oj-color-accent)",
+                  }}
+                >
+                  <span>👑</span> {t.nav.admin}
+                </Link>
+              )}
             </div>
 
             <button
@@ -582,7 +687,6 @@ function MainMarketplaceView() {
               {locale.toUpperCase()}
             </button>
 
-
             <button className="oj-icon-btn" onClick={() => setMode(isDark ? "light" : "dark")}>
               {isDark ? "☼" : "☾"}
             </button>
@@ -591,6 +695,154 @@ function MainMarketplaceView() {
               <button className="oj-icon-btn" onClick={() => setCartOpen(true)} aria-label="Panier" style={{ position: "relative" }}>
                 <IconCart />
                 {cartCount > 0 && <span className="oj-cart-badge">{cartCount}</span>}
+              </button>
+            )}
+
+            {/* User Account / Auth Gate Control */}
+            {currentUser ? (
+              <div style={{ position: "relative" }}>
+                <button
+                  className="oj-btn-secondary"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  style={{
+                    height: "38px",
+                    padding: "0 12px",
+                    borderRadius: "var(--oj-radius-pill)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    borderColor: currentUser.role === "ADMIN" ? "var(--oj-color-accent)" : "var(--oj-color-border)",
+                    backgroundColor: "var(--oj-color-surface)",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "22px",
+                      height: "22px",
+                      borderRadius: "11px",
+                      backgroundColor: currentUser.role === "ADMIN" ? "var(--oj-color-accent)" : "var(--oj-color-action)",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {currentUser.role === "ADMIN" ? "👑" : currentUser.shopInitials || currentUser.name.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span style={{ maxWidth: "110px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {currentUser.name}
+                  </span>
+                  <span style={{ fontSize: "10px", color: "var(--oj-color-muted)" }}>▼</span>
+                </button>
+
+                {userMenuOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "44px",
+                      right: 0,
+                      width: "230px",
+                      backgroundColor: "var(--oj-color-surface)",
+                      borderRadius: "var(--oj-radius-card)",
+                      border: "1px solid var(--oj-color-border)",
+                      boxShadow: "var(--oj-shadow-lg)",
+                      padding: "14px",
+                      zIndex: 200,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                    }}
+                  >
+                    <div style={{ paddingBottom: "8px", borderBottom: "1px solid var(--oj-color-border)" }}>
+                      <div style={{ fontWeight: 700, fontSize: "13px", color: "var(--oj-color-text)" }}>{currentUser.name}</div>
+                      <div style={{ fontSize: "11px", color: "var(--oj-color-accent)", fontWeight: 600, marginTop: "2px" }}>
+                        {currentUser.role === "ADMIN"
+                          ? "👑 Super Administrateur"
+                          : currentUser.role === "SELLER"
+                          ? `👑 Maître Artisan · ${currentUser.shopName || "Atelier"}`
+                          : "✦ Client Privilège"}
+                      </div>
+                    </div>
+
+                    {currentUser.role === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        style={{
+                          textDecoration: "none",
+                          color: "var(--oj-color-accent)",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                          padding: "8px 10px",
+                          borderRadius: "8px",
+                          backgroundColor: "rgba(212, 180, 131, 0.15)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        👑 Panel Administration →
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        handleSelectUniverse(universe === "buyer" ? "seller" : "buyer");
+                        setUserMenuOpen(false);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        padding: "6px 8px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        color: "var(--oj-color-text)",
+                        borderRadius: "6px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {universe === "buyer" ? "Basculer vers Atelier Vendeur ↗" : "Basculer vers Espace Découverte ↗"}
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        padding: "6px 8px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        color: "var(--oj-color-errorFg)",
+                        borderRadius: "6px",
+                        borderTop: "1px solid var(--oj-color-border)",
+                        paddingTop: "8px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Se déconnecter ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                className="oj-btn-secondary"
+                onClick={() => setAuthModalOpen(true)}
+                style={{
+                  height: "38px",
+                  padding: "0 16px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  borderRadius: "var(--oj-radius-pill)",
+                }}
+              >
+                {isEn ? "Sign In" : "Se connecter"}
               </button>
             )}
           </div>
@@ -1934,8 +2186,8 @@ function MainMarketplaceView() {
           <div>
             <h4 className="oj-footer-col-title">{isEn ? "Sell" : "Vendre"}</h4>
             <ul className="oj-footer-links">
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setUniverse("seller"); }}>{isEn ? "Seller Pro" : "Espace Vendeur Pro"}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setUniverse("seller"); }}>{isEn ? "Cashbook" : "Livre de caisse"}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleSelectUniverse("seller"); }}>{isEn ? "Seller Pro" : "Espace Vendeur Pro"}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleSelectUniverse("seller"); }}>{isEn ? "Cashbook" : "Livre de caisse"}</a></li>
             </ul>
           </div>
           <div>
@@ -1983,21 +2235,21 @@ function MainMarketplaceView() {
             icon: <IconPlus />,
             active: universe === "seller",
             onClick: () => {
-              setUniverse("seller");
+              handleSelectUniverse("seller");
               window.scrollTo({ top: 0, behavior: "smooth" });
             },
           },
           {
-            label: isEn ? "Messages" : "Messages",
-            icon: <IconMessage />,
-            active: false,
-            onClick: () => alert(isEn ? "No new messages" : "Aucun nouveau message"),
-          },
-          {
-            label: isEn ? "Profile" : "Profil",
+            label: isEn ? "Account" : "Connexion",
             icon: <IconUser />,
             active: false,
-            onClick: () => setMode(isDark ? "light" : "dark"),
+            onClick: () => {
+              if (currentUser) {
+                setUserMenuOpen(true);
+              } else {
+                setAuthModalOpen(true);
+              }
+            },
           },
         ].map((item, i) => (
           <button
@@ -2010,6 +2262,337 @@ function MainMarketplaceView() {
           </button>
         ))}
       </nav>
+
+      {/* ==================== SELLER ACCESS GATE MODAL ==================== */}
+      {sellerGateModalOpen && (
+        <div className="oj-modal-overlay" onClick={() => setSellerGateModalOpen(false)}>
+          <div
+            className="oj-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              padding: "36px 32px",
+              maxWidth: "480px",
+              borderRadius: "var(--oj-radius-section)",
+              backgroundColor: "var(--oj-color-surface)",
+              border: "1px solid rgba(212, 180, 131, 0.4)",
+              boxShadow: "var(--oj-shadow-lg)",
+            }}
+          >
+            <button
+              onClick={() => setSellerGateModalOpen(false)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "none",
+                border: "none",
+                fontSize: "20px",
+                cursor: "pointer",
+                color: "var(--oj-color-text)",
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "28px",
+                  backgroundColor: "rgba(212, 180, 131, 0.15)",
+                  border: "1.5px solid var(--oj-color-accent)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 16px",
+                  fontSize: "24px",
+                }}
+              >
+                👑
+              </div>
+              <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)", letterSpacing: "0.14em" }}>
+                {isEn ? "ARTISAN & MERCHANT ACCESS" : "ESPACE ATELIER & VENDEUR"}
+              </span>
+              <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", margin: "8px 0 10px", color: "var(--oj-color-text)" }}>
+                {isEn ? "Protected Artisan Space" : "Accès Réservé aux Maîtres Artisans"}
+              </h2>
+              <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.5", margin: 0 }}>
+                {isEn
+                  ? "Sign in with your verified merchant account to manage your orders, direct Mobile Money payments, and bespoke requests."
+                  : "Connectez-vous avec votre compte marchand pour gérer vos commandes, vos encaissements Mobile Money et vos devis sur-mesure."}
+              </p>
+            </div>
+
+            {/* Quick Demo Connect */}
+            <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", marginBottom: "20px", border: "1px solid var(--oj-color-border)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--oj-color-accent)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  ⚡ Accès Immédiat Démo
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--oj-color-muted)" }}>Maison Laurent</span>
+              </div>
+              <p style={{ fontSize: "13px", color: "var(--oj-color-text)", margin: "0 0 12px", lineHeight: "1.4" }}>
+                Accédez instantanément au tableau de bord, au carnet de commandes et au livre de caisse d'Alexandre Laurent.
+              </p>
+              <button
+                className="oj-btn-primary"
+                onClick={() => handleLogin(DEMO_SELLER_USER)}
+                style={{ width: "100%", height: "42px", fontSize: "13px" }}
+              >
+                Entrer dans l'Atelier (Maison Laurent) →
+              </button>
+            </div>
+
+            {/* Custom Phone / OTP Login */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (authStep === "phone") {
+                  setAuthStep("otp");
+                } else {
+                  handleLogin({
+                    id: `usr-seller-${Date.now()}`,
+                    name: "Alexandre Laurent",
+                    phone: authIdentifier,
+                    role: "SELLER",
+                    shopName: "Atelier d'Art",
+                    shopInitials: "AA",
+                  });
+                }
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px", color: "var(--oj-color-text)" }}>
+                  {isEn ? "Merchant Phone Number / Email" : "Numéro Marchand (Bénin / UEMOA) ou Email"}
+                </label>
+                <input
+                  type="text"
+                  value={authIdentifier}
+                  onChange={(e) => setAuthIdentifier(e.target.value)}
+                  placeholder="+229 90 00 00 02"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "var(--oj-radius-field)",
+                    border: "1px solid var(--oj-color-border)",
+                    backgroundColor: "var(--oj-color-subtle)",
+                    color: "var(--oj-color-text)",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+
+              {authStep === "otp" && (
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px", color: "var(--oj-color-text)" }}>
+                    {isEn ? "SMS Verification Code (OTP)" : "Code de Vérification SMS (OTP)"}
+                  </label>
+                  <input
+                    type="text"
+                    value={authOtp}
+                    onChange={(e) => setAuthOtp(e.target.value)}
+                    placeholder="123456"
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: "var(--oj-radius-field)",
+                      border: "1px solid var(--oj-color-border)",
+                      backgroundColor: "var(--oj-color-subtle)",
+                      color: "var(--oj-color-text)",
+                      fontSize: "14px",
+                      letterSpacing: "4px",
+                      textAlign: "center",
+                      fontWeight: 700,
+                    }}
+                  />
+                  <small style={{ color: "var(--oj-color-muted)", fontSize: "11px", display: "block", marginTop: "4px" }}>
+                    Code démo test : 123456
+                  </small>
+                </div>
+              )}
+
+              <button type="submit" className="oj-btn-secondary" style={{ width: "100%", height: "42px", fontSize: "13px" }}>
+                {authStep === "phone" ? (isEn ? "Receive Login Code →" : "Recevoir mon code d'accès →") : (isEn ? "Verify & Enter →" : "Vérifier et Accéder →")}
+              </button>
+            </form>
+
+            <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid var(--oj-color-border)", textAlign: "center" }}>
+              <span style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>
+                Vous n'avez pas encore d'atelier certifié ?{" "}
+              </span>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert(isEn ? "Merchant onboarding application form opened." : "Formulaire de candidature Maître Artisan ouvert.");
+                }}
+                style={{ color: "var(--oj-color-accent)", fontWeight: 700, fontSize: "13px", textDecoration: "none" }}
+              >
+                Déposer une candidature →
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== GENERAL AUTH MODAL (Buyer / Seller / Admin) ==================== */}
+      {authModalOpen && (
+        <div className="oj-modal-overlay" onClick={() => setAuthModalOpen(false)}>
+          <div
+            className="oj-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              padding: "36px 32px",
+              maxWidth: "480px",
+              borderRadius: "var(--oj-radius-section)",
+              backgroundColor: "var(--oj-color-surface)",
+              border: "1px solid var(--oj-color-border)",
+              boxShadow: "var(--oj-shadow-lg)",
+            }}
+          >
+            <button
+              onClick={() => setAuthModalOpen(false)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "none",
+                border: "none",
+                fontSize: "20px",
+                cursor: "pointer",
+                color: "var(--oj-color-text)",
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)", letterSpacing: "0.14em" }}>
+                OJARKET · AUTHENTIFICATION
+              </span>
+              <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", margin: "8px 0 8px", color: "var(--oj-color-text)" }}>
+                {isEn ? "Account Sign In" : "Connexion à votre Espace"}
+              </h2>
+              <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", margin: 0 }}>
+                {isEn ? "Select your profile to access your personalized space." : "Sélectionnez votre profil pour accéder à votre univers dédié."}
+              </p>
+            </div>
+
+            {/* Role Select Tabs */}
+            <div
+              style={{
+                display: "flex",
+                backgroundColor: "var(--oj-color-subtle)",
+                borderRadius: "var(--oj-radius-pill)",
+                padding: "4px",
+                marginBottom: "20px",
+                gap: "4px",
+              }}
+            >
+              {[
+                { id: "BUYER", label: "🛍️ Acheteur" },
+                { id: "SELLER", label: "👑 Artisan" },
+                { id: "ADMIN", label: "🛡️ Admin" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setAuthRoleTab(tab.id as any);
+                    setAuthStep("phone");
+                    if (tab.id === "BUYER") setAuthIdentifier("+229 97 00 00 01");
+                    if (tab.id === "SELLER") setAuthIdentifier("+229 90 00 00 02");
+                    if (tab.id === "ADMIN") setAuthIdentifier("admin@ojarket.bj");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "8px 0",
+                    border: "none",
+                    borderRadius: "var(--oj-radius-pill)",
+                    backgroundColor: authRoleTab === tab.id ? "var(--oj-color-surface)" : "transparent",
+                    color: authRoleTab === tab.id ? "var(--oj-color-text)" : "var(--oj-color-muted)",
+                    fontWeight: authRoleTab === tab.id ? 700 : 500,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    boxShadow: authRoleTab === tab.id ? "var(--oj-shadow-sm)" : "none",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* One-Click Fast Login for the Selected Role */}
+            <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", marginBottom: "20px", border: "1px solid var(--oj-color-border)" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--oj-color-accent)", textTransform: "uppercase", marginBottom: "4px", letterSpacing: "0.08em" }}>
+                ⚡ Profil Démo Rapide
+              </div>
+              <div style={{ fontWeight: 700, fontSize: "14px", color: "var(--oj-color-text)", marginBottom: "2px" }}>
+                {authRoleTab === "BUYER" && "Amina Diop (Client Privilège · Cotonou)"}
+                {authRoleTab === "SELLER" && "Alexandre Laurent (Maison Laurent · Maroquinerie)"}
+                {authRoleTab === "ADMIN" && "Superviseur Plateforme (Direction Ojarket)"}
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--oj-color-muted)", marginBottom: "12px" }}>
+                {authRoleTab === "BUYER" && "Accès commandes acheteur, favoris et demandes sur-mesure."}
+                {authRoleTab === "SELLER" && "Accès atelier vendeur, tableau de bord, FinOps et devis."}
+                {authRoleTab === "ADMIN" && "Supervision multi-marchand, corridors KYC et grand livre."}
+              </div>
+              <button
+                className="oj-btn-primary"
+                onClick={() => {
+                  if (authRoleTab === "BUYER") handleLogin(DEMO_BUYER_USER);
+                  if (authRoleTab === "SELLER") handleLogin(DEMO_SELLER_USER);
+                  if (authRoleTab === "ADMIN") handleLogin(DEMO_ADMIN_USER);
+                }}
+                style={{ width: "100%", height: "40px", fontSize: "13px" }}
+              >
+                Se connecter en tant que {authRoleTab === "BUYER" ? "Acheteur" : (authRoleTab === "SELLER" ? "Artisan Vendeur" : "Administrateur")} →
+              </button>
+            </div>
+
+            {/* Custom Input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (authRoleTab === "BUYER") handleLogin(DEMO_BUYER_USER);
+                else if (authRoleTab === "SELLER") handleLogin(DEMO_SELLER_USER);
+                else handleLogin(DEMO_ADMIN_USER);
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px", color: "var(--oj-color-text)" }}>
+                  {authRoleTab === "ADMIN" ? "Email Superviseur" : "Numéro de téléphone / Email"}
+                </label>
+                <input
+                  type="text"
+                  value={authIdentifier}
+                  onChange={(e) => setAuthIdentifier(e.target.value)}
+                  placeholder={authRoleTab === "ADMIN" ? "admin@ojarket.bj" : "+229 97 00 00 00"}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "var(--oj-radius-field)",
+                    border: "1px solid var(--oj-color-border)",
+                    backgroundColor: "var(--oj-color-subtle)",
+                    color: "var(--oj-color-text)",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+
+              <button type="submit" className="oj-btn-secondary" style={{ width: "100%", height: "40px", fontSize: "13px" }}>
+                Valider la connexion →
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { translations, Locale } from "@aifoundry/shared";
 import "../../design-system/styles.css";
 import "../landing.css";
+
+export interface AuthSessionUser {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  role: "BUYER" | "SELLER" | "ADMIN";
+  shopName?: string;
+  shopInitials?: string;
+}
+
+const DEMO_ADMIN_USER: AuthSessionUser = {
+  id: "usr-admin-01",
+  name: "Superviseur Plateforme",
+  phone: "+229 90 00 00 00",
+  email: "admin@ojarket.bj",
+  role: "ADMIN",
+};
 
 interface CorridorRule {
   id: string;
@@ -52,6 +70,14 @@ export default function AdminPage() {
     "overview" | "shops" | "corridors" | "d02" | "finops" | "audit"
   >("overview");
 
+  // Admin Session & Security Gate State
+  const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("admin@ojarket.bj");
+  const [loginPasscode, setLoginPasscode] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
   // Filters
   const [shopSearch, setShopSearch] = useState("");
   const [shopFilter, setShopFilter] = useState<string>("ALL");
@@ -59,6 +85,40 @@ export default function AdminPage() {
 
   const isDark = theme === "dark";
   const isEn = locale === "en";
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ojarket_web_user");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setCurrentUser(parsed);
+      }
+    } catch {}
+    setAuthChecked(true);
+  }, []);
+
+  const handleAdminLogin = (userToLogin: AuthSessionUser = DEMO_ADMIN_USER) => {
+    setLoginLoading(true);
+    setLoginError("");
+    setTimeout(() => {
+      setLoginLoading(false);
+      if (userToLogin.role !== "ADMIN") {
+        setLoginError(isEn ? "Access denied. Administrator privileges required." : "Accès refusé. Privilèges Administrateur requis.");
+        return;
+      }
+      setCurrentUser(userToLogin);
+      try {
+        localStorage.setItem("ojarket_web_user", JSON.stringify(userToLogin));
+      } catch {}
+    }, 300);
+  };
+
+  const handleAdminLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem("ojarket_web_user");
+    } catch {}
+  };
 
   const [corridors, setCorridors] = useState<CorridorRule[]>([
     {
@@ -323,6 +383,303 @@ export default function AdminPage() {
   const pendingKycsCount = shops.filter((s) => s.status === "PENDING_KYC").length;
   const activeCorridorsCount = corridors.filter((c) => c.isEnabled).length;
 
+  // Render Luxury Security Gate Wall if unauthenticated or not an admin
+  if (authChecked && (!currentUser || currentUser.role !== "ADMIN")) {
+    return (
+      <div
+        className={`oj-admin-app ${isDark ? "theme-dark" : "theme-light"}`}
+        data-theme={theme}
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "var(--oj-color-bg)",
+        }}
+      >
+        {/* Gate Topbar */}
+        <header className="oj-admin-topbar" style={{ justifyContent: "space-between" }}>
+          <Link href="/" className="oj-admin-brand-wrap">
+            <img
+              src={
+                isDark
+                  ? "/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Dark_Transparent.png"
+                  : "/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Transparent.png"
+              }
+              alt="Ojarket"
+              className="oj-admin-brand-logo"
+            />
+            <span className="oj-admin-os-pill">SECURITY GATE</span>
+          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={() => setLocale(locale === "fr" ? "en" : "fr")}
+              className="oj-admin-toggle-btn"
+              style={{ width: "auto", padding: "0 10px", fontSize: "11px", fontWeight: 700 }}
+            >
+              {locale === "fr" ? "FR" : "EN"}
+            </button>
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="oj-admin-toggle-btn"
+              title={isDark ? "Mode Jour" : "Mode Nuit"}
+            >
+              {isDark ? "☼" : "☾"}
+            </button>
+            <Link
+              href="/"
+              className="oj-btn-secondary"
+              style={{
+                height: "34px",
+                padding: "0 14px",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                textDecoration: "none",
+              }}
+            >
+              <span>←</span>
+              <span>{isEn ? "Back to Marketplace" : "Retour à la vitrine"}</span>
+            </Link>
+          </div>
+        </header>
+
+        {/* Gate Card Content */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "40px 20px",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              backgroundColor: "var(--oj-color-surface)",
+              border: "1px solid var(--oj-color-border)",
+              borderRadius: "var(--oj-radius-card)",
+              boxShadow: "var(--oj-shadow-lg)",
+              padding: "36px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                backgroundColor: "rgba(173, 132, 85, 0.15)",
+                color: "var(--oj-color-accent)",
+                fontSize: "24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px auto",
+                border: "1px solid var(--oj-color-accent)",
+              }}
+            >
+              🔐
+            </div>
+
+            <h2
+              style={{
+                fontFamily: "var(--oj-font-editorial)",
+                fontSize: "22px",
+                fontWeight: 700,
+                color: "var(--oj-color-text)",
+                margin: "0 0 8px 0",
+              }}
+            >
+              {isEn ? "Platform Supervision OS" : "Supervision Administrative"}
+            </h2>
+
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--oj-color-muted)",
+                lineHeight: 1.5,
+                margin: "0 0 24px 0",
+              }}
+            >
+              {isEn
+                ? "This console is strictly restricted to verified Ojarket compliance supervisors and platform operators. Deny-by-default security policy enforced."
+                : "Accès strictement restreint aux superviseurs et officiers de conformité Ojarket. Politique de sécurité Deny-by-Default active."}
+            </p>
+
+            {loginError && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(220, 38, 38, 0.1)",
+                  border: "1px solid var(--oj-color-errorFg)",
+                  color: "var(--oj-color-errorFg)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  marginBottom: "16px",
+                  textAlign: "left",
+                }}
+              >
+                ⚠️ {loginError}
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (loginEmail === "admin@ojarket.bj") {
+                  handleAdminLogin(DEMO_ADMIN_USER);
+                } else {
+                  setLoginError(
+                    isEn
+                      ? "Unrecognized administrative credentials."
+                      : "Identifiants administratifs non reconnus."
+                  );
+                }
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "var(--oj-color-muted)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {isEn ? "ADMINISTRATOR IDENTIFIER" : "IDENTIFIANT SUPERVISEUR"}
+                </label>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="admin@ojarket.bj"
+                  required
+                  style={{
+                    width: "100%",
+                    height: "44px",
+                    padding: "0 14px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--oj-color-border)",
+                    backgroundColor: "var(--oj-color-bg)",
+                    color: "var(--oj-color-text)",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "var(--oj-color-muted)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {isEn ? "SECURITY ACCESS CODE" : "CODE D'ACCÈS DE SÉCURITÉ"}
+                </label>
+                <input
+                  type="password"
+                  value={loginPasscode}
+                  onChange={(e) => setLoginPasscode(e.target.value)}
+                  placeholder="••••••••"
+                  style={{
+                    width: "100%",
+                    height: "44px",
+                    padding: "0 14px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--oj-color-border)",
+                    backgroundColor: "var(--oj-color-bg)",
+                    color: "var(--oj-color-text)",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="oj-btn-primary"
+                style={{
+                  width: "100%",
+                  height: "46px",
+                  borderRadius: "8px",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  marginTop: "6px",
+                  cursor: loginLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {loginLoading
+                  ? isEn
+                    ? "Authenticating..."
+                    : "Authentification..."
+                  : isEn
+                  ? "Unlock Console →"
+                  : "Déverrouiller la Console →"}
+              </button>
+            </form>
+
+            <div
+              style={{
+                marginTop: "20px",
+                paddingTop: "20px",
+                borderTop: "1px solid var(--oj-color-border)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "var(--oj-color-muted)",
+                  marginBottom: "10px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {isEn ? "Fast Demo Access" : "Accès Démo Instantané"}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAdminLogin(DEMO_ADMIN_USER)}
+                className="oj-btn-secondary"
+                style={{
+                  width: "100%",
+                  height: "42px",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>👑</span>
+                <span>
+                  {isEn
+                    ? "Login as Supervisor (admin@ojarket.bj)"
+                    : "Connexion Superviseur Plateforme (admin@ojarket.bj)"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`oj-admin-app ${isDark ? "theme-dark" : "theme-light"}`}
@@ -378,11 +735,11 @@ export default function AdminPage() {
         </div>
 
         <div className="oj-admin-topbar-right">
-          {/* Platform Role Pill */}
+          {/* Platform Role Pill with Connected User */}
           <span
             style={{
               fontSize: "11px",
-              padding: "4px 8px",
+              padding: "4px 10px",
               borderRadius: "20px",
               backgroundColor: "rgba(173, 132, 85, 0.15)",
               color: "var(--oj-color-accent)",
@@ -390,11 +747,13 @@ export default function AdminPage() {
               letterSpacing: "0.5px",
               display: "flex",
               alignItems: "center",
-              gap: "4px",
+              gap: "6px",
             }}
           >
             <span>👑</span>
-            <span className="oj-admin-role-text">PLATFORM_OWNER</span>
+            <span className="oj-admin-role-text">
+              {currentUser?.name || "SUPERADMIN"}
+            </span>
           </span>
 
           {/* Language Switch */}
@@ -432,6 +791,26 @@ export default function AdminPage() {
             <span>←</span>
             <span>{isEn ? "Store" : "Vitrine"}</span>
           </Link>
+
+          {/* Déconnexion Admin Button */}
+          <button
+            onClick={handleAdminLogout}
+            className="oj-btn-secondary"
+            title={isEn ? "Log out of Administration" : "Déconnexion de l'administration"}
+            style={{
+              height: "34px",
+              padding: "0 12px",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              color: "var(--oj-color-errorFg)",
+              borderColor: "var(--oj-color-border)",
+            }}
+          >
+            <span>⏻</span>
+            <span className="oj-desktop-badge">{isEn ? "Logout" : "Déconnexion"}</span>
+          </button>
         </div>
       </header>
 
