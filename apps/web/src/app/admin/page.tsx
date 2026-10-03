@@ -5,24 +5,9 @@ import Link from "next/link";
 import { translations, Locale } from "@aifoundry/shared";
 import "../../design-system/styles.css";
 import "../landing.css";
+import { AuthApi, getStoredToken, getStoredUser, clearSession, type AuthUser } from "../../lib/api";
 
-export interface AuthSessionUser {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  role: "BUYER" | "SELLER" | "ADMIN";
-  shopName?: string;
-  shopInitials?: string;
-}
-
-const DEMO_ADMIN_USER: AuthSessionUser = {
-  id: "usr-admin-01",
-  name: "Superviseur Plateforme",
-  phone: "+229 90 00 00 00",
-  email: "admin@ojarket.bj",
-  role: "ADMIN",
-};
+export type AuthSessionUser = AuthUser;
 
 interface CorridorRule {
   id: string;
@@ -87,37 +72,60 @@ export default function AdminPage() {
   const isEn = locale === "en";
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("ojarket_web_user");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setCurrentUser(parsed);
-      }
-    } catch {}
-    setAuthChecked(true);
+    const cachedUser = getStoredUser();
+    if (cachedUser) {
+      setCurrentUser(cachedUser);
+    }
+    const token = getStoredToken();
+    if (token) {
+      AuthApi.getMe()
+        .then((user) => {
+          if (user) {
+            setCurrentUser(user);
+          }
+        })
+        .catch(() => {
+          clearSession();
+          setCurrentUser(null);
+        })
+        .finally(() => {
+          setAuthChecked(true);
+        });
+    } else {
+      setAuthChecked(true);
+    }
   }, []);
 
-  const handleAdminLogin = (userToLogin: AuthSessionUser = DEMO_ADMIN_USER) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoginLoading(true);
     setLoginError("");
-    setTimeout(() => {
-      setLoginLoading(false);
-      if (userToLogin.role !== "ADMIN") {
-        setLoginError(isEn ? "Access denied. Administrator privileges required." : "Accès refusé. Privilèges Administrateur requis.");
+    try {
+      const res = await AuthApi.loginWithEmail(loginEmail, loginPasscode);
+      if (res.user.role !== "ADMIN") {
+        setLoginError(
+          isEn
+            ? "Access denied. Administrator privileges required."
+            : "Accès refusé. Privilèges Administrateur requis."
+        );
         return;
       }
-      setCurrentUser(userToLogin);
-      try {
-        localStorage.setItem("ojarket_web_user", JSON.stringify(userToLogin));
-      } catch {}
-    }, 300);
+      setCurrentUser(res.user);
+    } catch (err: any) {
+      setLoginError(
+        err.message ||
+          (isEn
+            ? "Invalid administrative credentials."
+            : "Identifiants administratifs non reconnus.")
+      );
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   const handleAdminLogout = () => {
+    AuthApi.logout();
     setCurrentUser(null);
-    try {
-      localStorage.removeItem("ojarket_web_user");
-    } catch {}
   };
 
   const [corridors, setCorridors] = useState<CorridorRule[]>([
@@ -528,18 +536,7 @@ export default function AdminPage() {
             )}
 
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (loginEmail === "admin@ojarket.bj") {
-                  handleAdminLogin(DEMO_ADMIN_USER);
-                } else {
-                  setLoginError(
-                    isEn
-                      ? "Unrecognized administrative credentials."
-                      : "Identifiants administratifs non reconnus."
-                  );
-                }
-              }}
+              onSubmit={handleAdminLogin}
               style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}
             >
               <div>
@@ -592,6 +589,7 @@ export default function AdminPage() {
                   value={loginPasscode}
                   onChange={(e) => setLoginPasscode(e.target.value)}
                   placeholder="••••••••"
+                  required
                   style={{
                     width: "100%",
                     height: "44px",
@@ -630,54 +628,11 @@ export default function AdminPage() {
                   : "Déverrouiller la Console →"}
               </button>
             </form>
-
-            <div
-              style={{
-                marginTop: "20px",
-                paddingTop: "20px",
-                borderTop: "1px solid var(--oj-color-border)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  color: "var(--oj-color-muted)",
-                  marginBottom: "10px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                {isEn ? "Fast Demo Access" : "Accès Démo Instantané"}
-              </div>
-              <button
-                type="button"
-                onClick={() => handleAdminLogin(DEMO_ADMIN_USER)}
-                className="oj-btn-secondary"
-                style={{
-                  width: "100%",
-                  height: "42px",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                }}
-              >
-                <span>👑</span>
-                <span>
-                  {isEn
-                    ? "Login as Supervisor (admin@ojarket.bj)"
-                    : "Connexion Superviseur Plateforme (admin@ojarket.bj)"}
-                </span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
     );
+
   }
 
   return (
