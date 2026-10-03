@@ -85,7 +85,7 @@ export class AuthController {
   ) {
     const userId = await this.extractUserId(req, authHeader, explicitUserId);
     if (!userId) {
-      throw new UnauthorizedException('Authentification requise pour enregistrer un atelier');
+      throw new UnauthorizedException('Authentification requise pour enregistrer une boutique');
     }
     return this.authService.registerSeller(userId, dto);
   }

@@ -57,7 +57,7 @@ const BottomNav = ({
     { key: "orders", label: isEn ? "Orders" : "Commandes", icon: "☵" },
     { key: "cashbook", label: isEn ? "Cashbook" : "Caisse", icon: "⚿" },
     { key: "opportunities", label: isEn ? "Requests" : "Demandes", icon: "✦" },
-    { key: "shop", label: isEn ? "Atelier" : "Atelier", icon: "🏛" },
+    { key: "shop", label: isEn ? "Shop" : "Boutique", icon: "🏪" },
   ];
 
   const tabs = universe === "buyer" ? buyerTabs : sellerTabs;

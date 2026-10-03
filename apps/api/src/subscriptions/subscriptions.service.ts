@@ -37,7 +37,7 @@ export interface SubscriptionRecord {
 export const PLAN_TIERS: Record<PlanTier, PlanFeatureDefinition> = {
   DECOUVERTE_FREE: {
     tier: PlanTier.DECOUVERTE_FREE,
-    title: 'Plan Découverte Atelier (Gratuit)',
+    title: 'Plan Découverte Boutique (Gratuit)',
     priceMonthlyMinor: 0,
     priceAnnualMinor: 0,
     maxProducts: 5,
@@ -45,7 +45,7 @@ export const PLAN_TIERS: Record<PlanTier, PlanFeatureDefinition> = {
     hasFecExport: false,
     hasVipConcierge: false,
     featuresList: [
-      'Jusqu’à 5 créations en vitrine',
+      'Jusqu’à 5 produits en vitrine',
       'Livre de caisse direct (S43-S47)',
       'Réception des paiements MTN MoMo / Moov (*880# / *155#)',
       '0% de commission sur les ventes',
@@ -53,7 +53,7 @@ export const PLAN_TIERS: Record<PlanTier, PlanFeatureDefinition> = {
   },
   ATELIER_PRO: {
     tier: PlanTier.ATELIER_PRO,
-    title: 'Plan Atelier Pro',
+    title: 'Plan Boutique Pro',
     priceMonthlyMinor: 1500000, // 15 000 FCFA
     priceAnnualMinor: 15000000, // 150 000 FCFA (2 mois offerts)
     maxProducts: 9999,
@@ -61,16 +61,16 @@ export const PLAN_TIERS: Record<PlanTier, PlanFeatureDefinition> = {
     hasFecExport: true,
     hasVipConcierge: false,
     featuresList: [
-      'Créations & variantes illimitées',
-      'Accès prioritaire aux demandes sur-mesure clients (D02)',
-      'Badge Maître Artisan Vérifié',
+      'Produits & variantes illimités',
+      'Accès prioritaire aux demandes et devis clients (D02)',
+      'Badge Commerçant / Boutique Vérifiée',
       'Export comptable FEC / FinOps certifié',
-      'Comptes multi-artisans d’atelier (gérants & apprentis)',
+      'Comptes multi-utilisateurs de boutique (gérants & vendeurs)',
     ],
   },
   MAISON_D_ART_PRESTIGE: {
     tier: PlanTier.MAISON_D_ART_PRESTIGE,
-    title: "Plan Maison d'Art & Prestige",
+    title: "Plan Grande Enseigne & Prestige",
     priceMonthlyMinor: 4500000, // 45 000 FCFA
     priceAnnualMinor: 45000000, // 450 000 FCFA
     maxProducts: 9999,
@@ -78,10 +78,10 @@ export const PLAN_TIERS: Record<PlanTier, PlanFeatureDefinition> = {
     hasFecExport: true,
     hasVipConcierge: true,
     featuresList: [
-      'Toutes les options de l’Atelier Pro',
+      'Toutes les options de la Boutique Pro',
       'Conciergerie dédiée 7j/7 & arbitrage VIP',
-      'Mise en avant éditoriale sur la vitrine Web mondiale',
-      'Gestion des guides numériques & masterclasses protégées',
+      'Mise en avant éditoriale sur la vitrine Web',
+      'Gestion des guides et fichiers numériques protégés',
       'Support multi-devises & corridors régionaux',
     ],
   },
@@ -173,7 +173,7 @@ export class SubscriptionsService {
       return {
         id: `sub-${Date.now()}`,
         shopId: dto.shopId,
-        shopName: 'Atelier Certifié',
+        shopName: 'Boutique Certifiée',
         planTier: dto.planTier,
         status: SubscriptionStatus.ACTIVE,
         billingSource: dto.billingSource || BillingSource.MTN_MOMO,
@@ -213,7 +213,7 @@ export class SubscriptionsService {
     return {
       id: sub.id,
       shopId: sub.shopId,
-      shopName: sub.shop?.name || 'Atelier',
+      shopName: sub.shop?.name || 'Boutique',
       planTier: sub.planTier,
       status: sub.status,
       billingSource: sub.billingSource,
@@ -237,7 +237,7 @@ export class SubscriptionsService {
     return {
       id: 'sub-mock-01',
       shopId,
-      shopName: "Atelier d'Excellence Cotonou",
+      shopName: "Boutique d'Excellence Cotonou",
       planTier: PlanTier.ATELIER_PRO,
       status: SubscriptionStatus.ACTIVE,
       billingSource: BillingSource.MTN_MOMO,

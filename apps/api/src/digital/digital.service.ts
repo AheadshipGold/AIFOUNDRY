@@ -52,7 +52,7 @@ export class DigitalService {
         checksum: a.checksum,
         version: a.version,
         isPublicPreview: a.isPublicPreview,
-        licenseType: 'Licence Commerciale Artisanale Standard · Usage Personnel & Atelier',
+        licenseType: 'Licence Commerciale Marchande Standard · Usage Personnel & Professionnel',
         format: a.mimeType.includes('pdf') ? 'PDF Haute Définition' : 'Fichier Numérique',
       }));
     } catch {
@@ -86,7 +86,7 @@ export class DigitalService {
         maxDownloads: e.maxDownloads,
         remainingDownloads: Math.max(0, e.maxDownloads - e.downloadCount),
         downloadUrl: `/v1/digital/download/${e.id}`,
-        license: 'Licence Maître Artisan · Droit de confection illimité',
+        license: 'Licence Commerciale Marchande · Droit d’exploitation',
         createdAt: e.createdAt.toISOString(),
       }));
     } catch {
@@ -136,9 +136,9 @@ export class DigitalService {
       }
       // Fallback demo grant
       return {
-        title: 'Traité de Modélisme & Patrons Échelle 1:1',
+        title: 'Guide & Fichier Numérique Téléchargeable',
         mimeType: 'application/pdf',
-        fileUrl: 'https://ojarket.bj/downloads/traite-modelisme-v1.pdf',
+        fileUrl: 'https://ojarket.bj/downloads/guide-numerique-v1.pdf',
         remainingDownloads: 9,
         downloadCount: 1,
       };
@@ -149,14 +149,14 @@ export class DigitalService {
     return [
       {
         id: 'asset-01',
-        title: 'Traité de Modélisme & Patrons Échelle 1:1 - Sac Cabas Royal',
-        fileUrl: 'https://ojarket.bj/downloads/patrons-cabas-royal.pdf',
+        title: 'Guide Professionnel & Fichiers Techniques - Maroquinerie',
+        fileUrl: 'https://ojarket.bj/downloads/guide-maroquinerie.pdf',
         fileSize: 14500000,
         mimeType: 'application/pdf',
         checksum: 'sha256-a8f89e24',
         version: '2.1.0',
         isPublicPreview: true,
-        licenseType: 'Licence Artisanale Privée',
+        licenseType: 'Licence Commerciale Marchande',
         format: 'PDF Vectoriel A0/A4',
       },
       {
@@ -187,7 +187,7 @@ export class DigitalService {
         maxDownloads: 10,
         remainingDownloads: 9,
         downloadUrl: '/v1/digital/download/grant-01',
-        license: 'Licence Confection Atelier Individuel',
+        license: 'Licence Commerciale Marchande Standard',
         createdAt: new Date().toISOString(),
       },
     ];

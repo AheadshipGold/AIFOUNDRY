@@ -31,7 +31,7 @@ export default function StandaloneBespokePage() {
     {
       id: "req-01",
       title: "Parure de haute joaillerie en bronze ciselé",
-      description: "Recherche d'un atelier d'artisan joaillier capable de forger un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
+      description: "Recherche d'une boutique ou d'un joaillier capable de fournir un ensemble plastron et manchettes assorties sous 15 jours en bronze noble poli.",
       category: "joaillerie",
       targetBudgetMinor: 28000000,
       currency: "XOF",
@@ -74,13 +74,13 @@ export default function StandaloneBespokePage() {
     setTimeout(() => {
       const isJewelry = /bijou|collier|bague|bronze|or/i.test(promptInput);
       const isFurniture = /table|meuble|console|bois|iroko/i.test(promptInput);
-      const cat = isJewelry ? "Joaillerie Royale" : isFurniture ? "Mobilier d'Art" : "Maroquinerie d'Excellence";
+      const cat = isJewelry ? "Joaillerie & Bijoux" : isFurniture ? "Mobilier & Décoration" : "Maroquinerie & Accessoires";
       const estBudget = isJewelry ? 320000 : isFurniture ? 650000 : 185000;
 
       setAiStructuredPreview({
-        refinedTitle: `Création Sur-Mesure : ${cat.toUpperCase()}`,
+        refinedTitle: `Demande Spécifique : ${cat.toUpperCase()}`,
         category: cat,
-        materials: ["Matière première locale sélectionnée", "Finitions main d'artisan"],
+        materials: ["Matériaux sélectionnés", "Finitions soignées vérifiées"],
         estimatedDays: 14,
         priceEstimateFCFA: estBudget,
         targetBoutiques: ["Fonderie Royale d'Abomey", "Maison Ganvié & Fils"],
@@ -150,7 +150,7 @@ export default function StandaloneBespokePage() {
             <div className="brand-symbol">Ọ</div>
             <div className="brand-text-block">
               <span className="brand-title">OJAR盤KET</span>
-              <span className="brand-sub">RÉSEAU SUR-MESURE & ARTISANAT (D02)</span>
+              <span className="brand-sub">RÉSEAU DEVIS & COMMANDES SPÉCIFIQUES (D02)</span>
             </div>
           </Link>
           <div className="landing-header-actions">
@@ -165,14 +165,14 @@ export default function StandaloneBespokePage() {
       <main className="landing-container" style={{ padding: "48px 24px", maxWidth: "1200px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", maxWidth: "720px", margin: "0 auto 48px" }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: "#AD8455", letterSpacing: "0.15em", textTransform: "uppercase" }}>
-            MODULE DE MATCHING D02 · COMMANDE SPÉCIALE
+            MODULE DE MATCHING D02 · DEVIS & COMMANDE SPÉCIALE
           </div>
           <h1 style={{ margin: "12px 0 16px", fontSize: "36px", color: "var(--oj-text-primary)", fontFamily: "Playfair Display, Georgia, serif" }}>
-            L&apos;Artisanat d&apos;Excellence Façonné Selon Vos Désirs
+            Devis & Commandes Personnalisées Selon Vos Exigences
           </h1>
           <p style={{ fontSize: "15px", color: "var(--oj-text-secondary)", lineHeight: 1.7 }}>
-            Vous ne trouvez pas la création exacte dans notre catalogue ? Déposez votre cahier des charges. Notre moteur
-            assiste la structuration technique de votre besoin et le soumet directement aux maîtres ateliers certifiés.
+            Vous ne trouvez pas le produit exact dans notre catalogue ? Déposez votre demande. Notre moteur
+            assiste la structuration de votre besoin et le soumet directement aux boutiques et vendeurs partenaires.
           </p>
         </div>
 
@@ -188,17 +188,17 @@ export default function StandaloneBespokePage() {
             }}
           >
             <h3 style={{ margin: "0 0 20px", fontSize: "20px", color: "var(--oj-text-primary)" }}>
-              Exprimer votre besoin artisanal
+              Exprimer votre besoin produit / devis
             </h3>
 
             {submitSuccess ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
                 <div style={{ fontSize: "44px", marginBottom: "12px" }}>🕊️</div>
                 <h4 style={{ fontSize: "18px", color: "#075D49", margin: "0 0 8px" }}>
-                  Votre demande a été transmise aux ateliers !
+                  Votre demande a été transmise aux boutiques !
                 </h4>
                 <p style={{ fontSize: "14px", color: "var(--oj-text-secondary)", lineHeight: 1.6 }}>
-                  Les maîtres artisans consultent votre cahier des charges. Leurs propositions chiffrées apparaîtront
+                  Les commerçants et vendeurs consultent votre demande. Leurs offres chiffrées apparaîtront
                   ci-contre et vous seront notifiées par WhatsApp.
                 </p>
                 <button
@@ -225,7 +225,7 @@ export default function StandaloneBespokePage() {
                     required
                     value={promptInput}
                     onChange={(e) => setPromptInput(e.target.value)}
-                    placeholder="Ex: Je souhaite une malle de voyage en cuir patiné havane avec ferrures dorées gravées à mes initiales 'O.K.', dimensions environ 60x40cm, livrable sous 3 semaines..."
+                    placeholder="Ex: Je souhaite une commande spécifique de maroquinerie avec ferrures dorées gravées, dimensions environ 60x40cm, livrable sous 3 semaines..."
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -276,7 +276,7 @@ export default function StandaloneBespokePage() {
                       {aiStructuredPreview.refinedTitle}
                     </div>
                     <div style={{ fontSize: "12px", color: "var(--oj-text-secondary)", marginTop: "4px" }}>
-                      Délai estimé : {aiStructuredPreview.estimatedDays} jours · Ateliers ciblés : {aiStructuredPreview.targetBoutiques.join(", ")}
+                      Délai estimé : {aiStructuredPreview.estimatedDays} jours · Boutiques ciblées : {aiStructuredPreview.targetBoutiques.join(", ")}
                     </div>
                   </div>
                 )}
@@ -329,7 +329,7 @@ export default function StandaloneBespokePage() {
                   className="btn-portal-primary"
                   style={{ width: "100%", padding: "14px", fontSize: "15px" }}
                 >
-                  Diffuser le besoin aux artisans du réseau
+                  Diffuser le besoin aux boutiques partenaires
                 </button>
               </form>
             )}
@@ -339,7 +339,7 @@ export default function StandaloneBespokePage() {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h3 style={{ margin: 0, fontSize: "20px", color: "var(--oj-text-primary)" }}>
-                Demandes & Offres des Artisans
+                Demandes & Offres des Boutiques
               </h3>
               <span style={{ fontSize: "12px", fontWeight: 700, color: "#075D49", backgroundColor: "rgba(16, 185, 129, 0.12)", padding: "4px 10px", borderRadius: "12px" }}>
                 {requests.length} demandes actives
@@ -400,7 +400,7 @@ export default function StandaloneBespokePage() {
                   {r.proposals && r.proposals.length > 0 && (
                     <div style={{ marginTop: "16px", borderTop: "1px solid var(--oj-border)", paddingTop: "14px" }}>
                       <div style={{ fontSize: "11px", fontWeight: 700, color: "#075D49", letterSpacing: "0.08em", marginBottom: "8px" }}>
-                        PROPOSITION D&apos;ATELIER
+                        OFFRE / DEVIS DE LA BOUTIQUE
                       </div>
                       {r.proposals.map((p) => (
                         <div

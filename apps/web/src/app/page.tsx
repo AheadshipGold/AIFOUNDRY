@@ -574,7 +574,7 @@ function MainMarketplaceView() {
           price: 430000,
           advance: 200000,
           days: 21,
-          notes: "Bois d'Iroko séché 3 ans. Sculptures réalisées par maître ébéniste.",
+          notes: "Bois d'Iroko séché 3 ans. Finitions soignées réalisées par un ébéniste qualifié.",
           status: "PENDING",
         }
       ],
@@ -688,8 +688,8 @@ function MainMarketplaceView() {
               className="oj-search-input"
               placeholder={
                 isEn
-                  ? "Search for products, artisans..."
-                  : "Rechercher un produit, une marque..."
+                  ? "Search for products, stores, brands..."
+                  : "Rechercher un produit, une boutique, une marque..."
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1023,7 +1023,7 @@ function MainMarketplaceView() {
 
             {filteredProducts.length === 0 ? (
               <div style={{ textAlign: "center", padding: "64px 0", color: "var(--oj-color-muted)" }}>
-                <p>{isEn ? "No items matching your query." : "Aucune création ne correspond."}</p>
+                <p>{isEn ? "No products matching your query." : "Aucun produit ne correspond."}</p>
                 <button className="oj-btn-secondary" onClick={() => { setActiveCategory("all"); setSearchQuery(""); }}>
                   {isEn ? "Reset filters" : "Réinitialiser"}
                 </button>
@@ -1134,8 +1134,8 @@ function MainMarketplaceView() {
                   products: ["/products/leather-tote.jpg", "/products/armchair.jpg"],
                 },
                 {
-                  name: "Atelier Horlogerie",
-                  initials: "AH",
+                  name: "Maison Horlogerie",
+                  initials: "MH",
                   rating: 4.9,
                   reviews: 186,
                   verified: true,
@@ -1180,15 +1180,15 @@ function MainMarketplaceView() {
           <section className="oj-section">
             <div className="oj-demand-banner">
               <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
-                {isEn ? "BESPOKE NETWORK" : "RÉSEAU SUR-MESURE"}
+                {isEn ? "CUSTOM ORDERS & QUOTES" : "DEVIS & COMMANDES SPÉCIFIQUES"}
               </span>
               <h2 className="oj-demand-title">
-                {isEn ? "Cannot find the ideal creation?" : "Vous ne trouvez pas la création idéale ?"}
+                {isEn ? "Looking for a specific product or bulk order?" : "Vous cherchez un produit spécifique ou sur-mesure ?"}
               </h2>
               <p className="oj-demand-subtitle">
                 {isEn
-                  ? "Describe your needs. Certified artisans will submit tailored proposals with clear timelines."
-                  : "Décrivez votre besoin sur-mesure. Les maîtres artisans certifiés vous soumettront directement leurs propositions personnalisées avec délais et devis clairs."}
+                  ? "Describe your need. Verified partner stores will submit tailored proposals with clear timelines."
+                  : "Décrivez votre besoin. Les boutiques et vendeurs partenaires vous soumettront directement leurs propositions personnalisées avec délais et devis clairs."}
               </p>
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "16px" }}>
                 <button className="oj-btn-primary" onClick={() => setNeedModalOpen(true)}>
@@ -1581,8 +1581,8 @@ function MainMarketplaceView() {
             </h2>
             <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: "0 0 24px" }}>
               {isEn
-                ? "Describe what you are looking for. Our network will transmit it to qualified artisans."
-                : "Décrivez la pièce que vous recherchez. Notre réseau la transmettra aux artisans qualifiés."}
+                ? "Describe what you are looking for. Our network will transmit it to verified stores."
+                : "Décrivez le produit que vous recherchez. Notre réseau le transmettra aux boutiques partenaires."}
             </p>
 
             <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
@@ -1603,10 +1603,10 @@ function MainMarketplaceView() {
                 <div style={{ fontSize: "48px", marginBottom: "16px", color: "var(--oj-color-action)" }}>✓</div>
                 <h3>{isEn ? "Request submitted!" : "Demande transmise !"}</h3>
                 <p style={{ color: "var(--oj-color-muted)" }}>
-                  {isEn ? "Artisans will respond with proposals." : "Les ateliers vous répondront avec leurs devis et délais."}
+                  {isEn ? "Stores will respond with proposals." : "Les boutiques vous répondront avec leurs devis et délais."}
                 </p>
                 <button className="oj-btn-primary" onClick={() => { setNeedSubmitted(false); setNeedModalOpen(false); }}>
-                  {isEn ? "Back to collection" : "Retour aux créations"}
+                  {isEn ? "Back to catalog" : "Retour au catalogue"}
                 </button>
               </div>
             ) : (
@@ -1703,15 +1703,15 @@ function MainMarketplaceView() {
               ✕
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
-              {isEn ? "BESPOKE S06 — COMPARISON & ACCEPTANCE" : "SUR-MESURE S06 — COMPARATEUR DE DEVIS"}
+              {isEn ? "QUOTES & PROPOSALS — COMPARISON & ACCEPTANCE" : "DEVIS & OFFRES — COMPARATEUR DE PROPOSITIONS"}
             </span>
             <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", margin: "8px 0 8px" }}>
-              {isEn ? "My Bespoke Demands & Artisan Proposals" : "Mes Demandes & Devis Artisans Reçus"}
+              {isEn ? "My Demands & Store Proposals Received" : "Mes Demandes & Devis / Offres Reçues"}
             </h2>
             <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: "0 0 24px" }}>
               {isEn
-                ? "Compare proposals received from verified ateliers. Choose the best offer to convert it into a confirmed workshop order."
-                : "Comparez les devis détaillés soumis par nos ateliers vérifiés. Sélectionnez la meilleure offre pour la convertir en commande atelier."}
+                ? "Compare proposals received from verified partner stores. Choose the best offer to convert it into a confirmed order."
+                : "Comparez les devis détaillés soumis par nos boutiques partenaires vérifiées. Sélectionnez la meilleure offre pour la convertir en commande ferme."}
             </p>
 
             {proposalAccepted && (
@@ -1719,8 +1719,8 @@ function MainMarketplaceView() {
                 <strong>✓ {isEn ? "Proposal Accepted!" : "Devis accepté avec succès !"}</strong>
                 <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
                   {isEn
-                    ? "Workshop order OJK-SURMESURE-8921 created. The artisan has been notified to start crafting upon receipt of direct deposit via Mobile Money."
-                    : "Commande atelier n° OJK-SURMESURE-8921 créée. L'atelier a été notifié pour amorcer la confection dès versement direct de l'acompte."}
+                    ? "Order OJK-CMD-8921 created. The store has been notified to process the order upon receipt of direct deposit via Mobile Money."
+                    : "Commande n° OJK-CMD-8921 créée. La boutique a été notifiée pour préparer la commande dès versement direct de l'acompte."}
                 </p>
               </div>
             )}
@@ -1759,7 +1759,7 @@ function MainMarketplaceView() {
 
                   {req.proposals.length === 0 ? (
                     <div style={{ background: "var(--oj-color-subtle)", padding: "12px 16px", borderRadius: "8px", fontSize: "13px", color: "var(--oj-color-muted)" }}>
-                      {isEn ? "Awaiting proposals from workshops..." : "En attente de réponses des ateliers partenaires..."}
+                      {isEn ? "Awaiting proposals from stores..." : "En attente de réponses des boutiques partenaires..."}
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
@@ -1846,10 +1846,10 @@ function MainMarketplaceView() {
               ✕
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
-              {isEn ? "ARTISAN PROPOSAL (S27)" : "DEVIS ATELIER SUR-MESURE (S27)"}
+              {isEn ? "STORE PROPOSAL (S27)" : "DEVIS & OFFRE COMMERÇANTE (S27)"}
             </span>
             <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "22px", margin: "8px 0 8px" }}>
-              {isEn ? "Submit Artisan Quote" : "Soumettre un devis artisan"}
+              {isEn ? "Submit Store Quote" : "Soumettre une offre / devis boutique"}
             </h2>
             <div style={{ background: "var(--oj-color-subtle)", padding: "12px 16px", borderRadius: "var(--oj-radius-field)", marginBottom: "20px", fontSize: "13px" }}>
               <strong>{selectedRequestForQuote.title}</strong>
@@ -1880,7 +1880,7 @@ function MainMarketplaceView() {
                       if (r.id === selectedRequestForQuote.id) {
                         const newProp = {
                           id: `prop-${Date.now()}`,
-                          artisan: "Alexandre Cuir Prestige",
+                          artisan: "Alexandre Maroquinerie",
                           city: "Cotonou",
                           price: priceNum,
                           advance: advNum,
@@ -1937,7 +1937,7 @@ function MainMarketplaceView() {
 
                 <div style={{ marginBottom: "16px" }}>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
-                    {isEn ? "Execution Lead Time (Days) *" : "Délai de fabrication (jours) *"}
+                    {isEn ? "Execution Lead Time (Days) *" : "Délai de préparation & livraison (jours) *"}
                   </label>
                   <input
                     type="number"
@@ -1954,7 +1954,7 @@ function MainMarketplaceView() {
 
                 <div style={{ marginBottom: "24px" }}>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
-                    {isEn ? "Workshop Notes & Specifications *" : "Spécifications & Engagements atelier *"}
+                    {isEn ? "Store Notes & Specifications *" : "Spécifications & Engagements boutique *"}
                   </label>
                   <textarea
                     rows={3}
@@ -2232,7 +2232,7 @@ function MainMarketplaceView() {
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", color: "var(--oj-color-muted)" }}>
                 <p>{isEn ? "Your cart is empty." : "Votre panier est vide."}</p>
                 <button className="oj-btn-primary" onClick={() => setCartOpen(false)}>
-                  {isEn ? "Discover creations" : "Découvrir les créations"}
+                  {isEn ? "Discover products" : "Découvrir les produits"}
                 </button>
               </div>
             ) : (
@@ -2266,7 +2266,7 @@ function MainMarketplaceView() {
                         marginBottom: "12px",
                       }}
                     >
-                      ⚡ <strong>Livraison Numérique Immédiate :</strong> Les traités et patrons d'atelier sont délivrés instantanément avec licence artisanale après paiement.
+                      ⚡ <strong>Livraison Numérique Immédiate :</strong> Les guides et fichiers numériques sont délivrés instantanément avec licence commerciale après validation.
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
@@ -2284,8 +2284,8 @@ function MainMarketplaceView() {
                       alert(
                         hasDigital
                           ? (isEn
-                              ? "Order placed! Your digital files and download license are now available in your space."
-                              : "Commande validée ! Vos fichiers numériques et licences d'atelier sont immédiatement accessibles.")
+                              ? "Order placed! Your digital files and commercial license are now available in your space."
+                              : "Commande validée ! Vos fichiers numériques et licences commerciales sont immédiatement accessibles.")
                           : (isEn ? "Order placed successfully!" : "Commande enregistrée avec succès !")
                       );
                       setCart([]);
@@ -2312,8 +2312,8 @@ function MainMarketplaceView() {
             />
             <p className="oj-footer-tagline">
               {isEn
-                ? "The exceptional marketplace connecting passionate buyers with verified master artisans."
-                : "Le marché d'exception reliant les acheteurs passionnés et les maîtres artisans vérifiés."}
+                ? "The modern e-commerce marketplace connecting buyers with verified merchants and stores."
+                : "Le marché moderne reliant acheteurs et commerçants & boutiques vérifiés."}
             </p>
           </div>
           <div>

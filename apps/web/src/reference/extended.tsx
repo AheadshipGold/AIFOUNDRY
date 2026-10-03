@@ -382,7 +382,7 @@ export function OrdersView() {
   );
   return (
     <>
-      <p className="ref-kicker">Atelier Naya · {c.orders}</p>
+      <p className="ref-kicker">Boutique Naya · {c.orders}</p>
       <h1>{c.ordersTitle}</h1>
       <p className="ref-lead">{c.ordersLead}</p>
       <div className="ref-filters">
@@ -493,7 +493,7 @@ export function CashbookView() {
   ];
   return (
     <>
-      <p className="ref-kicker">Atelier Naya · {c.cashbook}</p>
+      <p className="ref-kicker">Boutique Naya · {c.cashbook}</p>
       <h1>{c.cashTitle}</h1>
       <p className="ref-lead">{c.cashLead}</p>
       <div className="ref-metrics">

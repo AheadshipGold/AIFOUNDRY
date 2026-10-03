@@ -60,19 +60,19 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Ojarket a besoin d'accéder à l'appareil photo pour photographier vos créations et scanner les codes de vérification."
+          "cameraPermission": "Ojarket a besoin d'accéder à l'appareil photo pour photographier vos produits et scanner les codes de vérification."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Ojarket a besoin d'accéder à vos photos pour enrichir le catalogue de votre atelier."
+          "photosPermission": "Ojarket a besoin d'accéder à vos photos pour enrichir le catalogue de votre boutique."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Ojarket utilise votre position pour vous afficher les ateliers et créateurs d'artisanat les plus proches à Cotonou et au Bénin."
+          "locationAlwaysAndWhenInUsePermission": "Ojarket utilise votre position pour vous afficher les boutiques et commerces les plus proches à Cotonou et au Bénin."
         }
       ],
       [

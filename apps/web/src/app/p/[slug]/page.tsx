@@ -56,7 +56,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: 72 }}>✨</span>
                 <p style={{ marginTop: 16, color: '#C49A45', fontWeight: 700, fontSize: 13, letterSpacing: 1.5 }}>
-                  PIÈCE ARTISANALE CERTIFIÉE
+                  PRODUIT CERTIFIÉ OJARKET
                 </p>
               </div>
             </div>
@@ -68,10 +68,10 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
                   RÉFÉRENCE #{slug.toUpperCase()}
                 </div>
                 <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 12px 0', lineHeight: 1.2 }}>
-                  Création d'Excellence Dahoméenne
+                  Produit & Article de Qualité Supérieure
                 </h1>
                 <p style={{ color: 'rgba(250,249,246,0.7)', fontSize: 15, lineHeight: 1.6, margin: '0 0 24px 0' }}>
-                  Œuvre artisanale façonnée au Bénin. Confectionnée avec des matières premières nobles et selon un savoir-faire générationnel certifié par Ojarket.
+                  Produit vendu et garanti par nos commerçants et boutiques vérifiés sur Ojarket. Finitions soignées et conformité commerciale assurée.
                 </p>
 
                 <div style={{ padding: 16, backgroundColor: '#0D2E26', borderRadius: 14, marginBottom: 24 }}>
@@ -120,7 +120,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
 
       {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '40px 24px', color: 'rgba(250,249,246,0.5)', fontSize: 13 }}>
-        © 2026 Ojarket · Marketplace de Luxe & d'Artisanat d'Excellence · Cotonou, Bénin
+        © 2026 Ojarket · Marketplace E-Commerce & Merchant OS · Cotonou, Bénin
       </footer>
     </div>
   );

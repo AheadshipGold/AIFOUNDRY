@@ -64,7 +64,7 @@ export default function StandaloneSellerDashboard() {
             id: o.id,
             orderNumber: o.orderNumber,
             buyerName: o.buyerName,
-            itemTitle: o.lines?.[0]?.itemTitle || "Création d'artisan",
+            itemTitle: o.lines?.[0]?.itemTitle || "Article de boutique",
             totalFcfa: Math.round(o.totalAmountMinor / 100),
             paymentChannel: o.paymentChannel,
             paymentStatus: o.paymentStatus,

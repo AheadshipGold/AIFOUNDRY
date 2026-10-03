@@ -257,7 +257,7 @@ export class SellerService {
   async recordCollection(dto: any, userId?: string) {
     const { shopId, amountMinor, channel, reference, notes, currency = 'XOF', orderId } = dto;
     const targetShopId = await this.resolveShopId(shopId, userId);
-    if (!targetShopId) throw new NotFoundException('Atelier introuvable pour enregistrer cet encaissement');
+    if (!targetShopId) throw new NotFoundException('Boutique introuvable pour enregistrer cet encaissement');
 
     return this.prisma.$transaction(async (tx) => {
       const entry = await tx.cashbookEntry.create({
@@ -292,7 +292,7 @@ export class SellerService {
   async closeDay(dto: any, userId?: string) {
     const { shopId, physicalCashMinor = 0, closedBy, notes } = dto;
     const targetShopId = await this.resolveShopId(shopId, userId);
-    if (!targetShopId) throw new NotFoundException('Atelier introuvable pour effectuer la clôture');
+    if (!targetShopId) throw new NotFoundException('Boutique introuvable pour effectuer la clôture');
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);

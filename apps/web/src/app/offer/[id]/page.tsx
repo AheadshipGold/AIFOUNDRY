@@ -39,13 +39,13 @@ const PRODUCTS_DATABASE: Record<string, ProductDetail> = {
     rating: 4.95,
     reviewsCount: 38,
     stockCount: 4,
-    description: "Pièce maîtresse de la maroquinerie béninoise contemporaine. Façonné dans les ateliers historiques de Ganvié à partir de cuir pleine fleur tanné aux écorces végétales et doté de bouclerie en laiton massif forgée au creuset.",
+    description: "Pièce maîtresse de la maroquinerie béninoise contemporaine. Façonné avec soin à Ganvié à partir de cuir pleine fleur tanné aux écorces végétales et doté de bouclerie en laiton massif forgée au creuset.",
     details: [
       "Cuir de taureau pleine fleur 2.2 mm d'épaisseur",
       "Bouclerie exclusive en laiton massif coulé au sable",
       "Surpiqûres sellier traditionnelles au fil de lin ciré",
       "Poche intérieure zippée pour passeport et smartphone",
-      "Certificat d'authenticité signé par le maître maroquinier"
+      "Certificat d'authenticité signé par le maroquinier"
     ],
     materials: ["Cuir pleine fleur", "Laiton massif", "Fil de lin ciré", "Doublure coton indigo"],
     dimensions: "Hauteur: 38 cm · Largeur: 44 cm · Profondeur: 16 cm",
@@ -62,13 +62,13 @@ const PRODUCTS_DATABASE: Record<string, ProductDetail> = {
     priceFcfa: 320000,
     priceEur: 488,
     image: "/reference-assets/market-tote.png",
-    artisan: "Atelier d'Art & Fonderie",
+    artisan: "Fonderie d'Art & Métaux",
     city: "Abomey",
-    leadTime: "Pièce unique d'artisan",
+    leadTime: "Pièce soignée · Édition limitée",
     rating: 5.0,
     reviewsCount: 14,
     stockCount: 2,
-    description: "Création joaillière d'exception sculptée à la main. Chaque maillon est modelé avec finesse puis coulé dans un bronze noble selon les techniques traditionnelles des maîtres fondeurs.",
+    description: "Bijou joaillier d'exception sculpté avec minutie. Chaque maillon est modelé avec finesse puis coulé dans un bronze noble selon les techniques traditionnelles des maîtres fondeurs.",
     details: [
       "Fonte de précision au feu selon le savoir-faire des maîtres fondeurs",
       "Alliage cuivre-étain haute pureté sans nickel",
@@ -248,7 +248,7 @@ export default function StandaloneOfferPage() {
                   letterSpacing: "0.05em",
                 }}
               >
-                ✓ AUTHENTIFIÉ PAR L&apos;ATELIER
+                ✓ BOUTIQUE CERTIFIÉE OJARKET
               </div>
             </div>
 
@@ -283,13 +283,13 @@ export default function StandaloneOfferPage() {
                     {product.artisan}
                   </h4>
                   <p style={{ margin: 0, fontSize: "13px", color: "var(--oj-text-secondary)" }}>
-                    Maître Artisan · {product.city}, Bénin
+                    Commerçant Vérifié · {product.city}, Bénin
                   </p>
                 </div>
               </div>
               <p style={{ margin: "14px 0 0", fontSize: "13px", color: "var(--oj-text-secondary)", lineHeight: 1.6 }}>
-                Chaque création vendue sur Ojarket est expédiée directement depuis l&apos;atelier de l&apos;artisan avec son
-                certificat de traçabilité numéroté.
+                Chaque produit vendu sur Ojarket est expédié directement depuis la boutique du commerçant avec son
+                certificat de traçabilité certifié.
               </p>
             </div>
           </div>
@@ -418,8 +418,8 @@ export default function StandaloneOfferPage() {
                     Commande {orderSuccess.orderNumber} Enregistrée !
                   </h3>
                   <p style={{ fontSize: "14px", color: "var(--oj-text-secondary)", lineHeight: 1.6 }}>
-                    Conformément aux décisions du fondateur, votre paiement s&apos;effectue directement sur le compte marchand
-                    de l&apos;artisan :
+                    Conformément aux modalités du marché, votre paiement s&apos;effectue directement sur le compte marchand
+                    de la boutique :
                   </p>
                   <div
                     style={{
@@ -431,7 +431,7 @@ export default function StandaloneOfferPage() {
                       textAlign: "left",
                     }}
                   >
-                    <div style={{ fontSize: "12px", color: "#AD8455", fontWeight: 700 }}>COMPTE MARCHAND ARTISAN</div>
+                    <div style={{ fontSize: "12px", color: "#AD8455", fontWeight: 700 }}>COMPTE MARCHAND BOUTIQUE</div>
                     <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--oj-text-primary)", marginTop: "4px" }}>
                       {orderSuccess.paymentInstructions?.merchantName} ({orderSuccess.paymentInstructions?.merchantAccount})
                     </div>

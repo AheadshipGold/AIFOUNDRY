@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'Ojarket — Le Marché d’Excellence | West-Africa-First & International Commerce',
-  description: 'Marketplace d’exception et Merchant Commerce OS : artisanat de prestige, expression de besoins sur-mesure et gestion financière de caisse sans faille.',
+  title: 'Ojarket — Marketplace E-Commerce & Merchant OS | Bénin & West Africa',
+  description: 'Marketplace marchande moderne et Merchant Commerce OS : boutiques vérifiées, catalogue de produits et gestion financière de caisse en temps réel.',
   icons: {
     icon: '/brand/Ojarket_04_Favicon_512_Transparent.png',
     apple: '/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png',

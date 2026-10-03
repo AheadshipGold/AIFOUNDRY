@@ -453,13 +453,13 @@ export class AuthService {
   }
 
   /**
-   * Register an artisan seller shop
+   * Register a seller boutique/shop
    */
   async registerSeller(userId: string, dto: RegisterSellerDto) {
     const shopName = dto.shopName ? dto.shopName.trim() : '';
-    const craftType = dto.craftType ? dto.craftType.trim() : 'Artisanat';
+    const craftType = dto.craftType ? dto.craftType.trim() : 'Commerce Général';
     if (!shopName) {
-      throw new BadRequestException("Le nom de la boutique ou de l'atelier est obligatoire");
+      throw new BadRequestException("Le nom de la boutique est obligatoire");
     }
 
     const baseSlug = shopName
@@ -524,7 +524,7 @@ export class AuthService {
           isVerified: shop.isVerified,
           kycStatus: shop.kycStatus,
         },
-        message: "Atelier enregistré avec succès. Votre dossier est en attente d'approbation KYC.",
+        message: "Boutique enregistrée avec succès. Votre dossier est en attente d'approbation KYC.",
       };
     });
   }

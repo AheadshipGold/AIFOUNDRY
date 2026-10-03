@@ -742,8 +742,8 @@ export default function PurchasesScreen({
                 </Text>
                 <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 }}>
                   {isEn
-                    ? 'Acquired digital patterns and technical guides will be available for instant download here.'
-                    : 'Les patrons de couture et traités d’artisanat achetés apparaîtront ici avec téléchargement instantané.'}
+                    ? 'Acquired digital files and technical guides will be available for instant download here.'
+                    : 'Les guides, e-books et fichiers numériques achetés apparaîtront ici avec téléchargement instantané.'}
                 </Text>
               </View>
             )}

@@ -206,19 +206,19 @@ export default function AdminPage() {
       status: "VERIFIED",
       joinedDate: "12 Sep 2026",
       salesCount: 142,
-      documentType: "RCCM + Certificat Maître Artisan",
+      documentType: "RCCM + Registre du Commerce",
     },
     {
       id: "shop-02",
       name: "Fonderie Royale d'Abomey",
-      owner: "Maître Dah Kpassè",
+      owner: "Dah Kpassè",
       city: "Abomey",
       country: "Bénin",
-      craft: "Bronze Cire Perdue",
+      craft: "Bronze & Fonderie",
       status: "VERIFIED",
       joinedDate: "15 Sep 2026",
       salesCount: 88,
-      documentType: "Registre de Commerce + Attestation Royale",
+      documentType: "Registre de Commerce + RCCM",
     },
     {
       id: "shop-03",
@@ -226,23 +226,23 @@ export default function AdminPage() {
       owner: "Amadou Touré",
       city: "Bamako",
       country: "Mali",
-      craft: "Horlogerie Mécanique",
+      craft: "Horlogerie & Montres",
       status: "PENDING_KYC",
       joinedDate: "28 Sep 2026",
       salesCount: 14,
-      documentType: "Passeport + Bail d'atelier",
+      documentType: "Passeport + Bail commercial",
     },
     {
       id: "shop-04",
-      name: "Atelier Indigo Ouidah",
+      name: "Maison Indigo Ouidah",
       owner: "Safiath Dossou",
       city: "Ouidah",
       country: "Bénin",
-      craft: "Tissage & Teinture Végétale",
+      craft: "Mode & Tissage Végétal",
       status: "PENDING_KYC",
       joinedDate: "29 Sep 2026",
       salesCount: 3,
-      documentType: "Carte Nationale d'Identité + Photos atelier",
+      documentType: "Carte Nationale d'Identité + Photos de boutique",
     },
     {
       id: "shop-05",
@@ -292,7 +292,7 @@ export default function AdminPage() {
     {
       id: "aud-04",
       action: "DAY_CLOSURE_SEALED",
-      target: "Caisse Atelier #042 Alexandre",
+      target: "Caisse Boutique #042 Alexandre",
       operator: "finops_engine",
       role: "AUDIT_LEDGER",
       time: "30/09/2026 19:00",
@@ -982,8 +982,8 @@ export default function AdminPage() {
                   <h1>{isEn ? "Platform Overview & Health" : "Supervision Globale de la Plateforme"}</h1>
                   <p>
                     {isEn
-                      ? "Consolidated transaction volume, active workshops, and infrastructure telemetry."
-                      : "Volume d'affaires consolidé, ateliers actifs et télémétrie d'infrastructure."}
+                      ? "Consolidated transaction volume, active stores, and infrastructure telemetry."
+                      : "Volume d'affaires consolidé, boutiques actives et télémétrie d'infrastructure."}
                   </p>
                 </div>
               </div>
@@ -1012,11 +1012,11 @@ export default function AdminPage() {
 
                 <div className="oj-kpi-card" style={{ borderLeft: "4px solid #185F46" }}>
                   <div className="oj-kpi-header">
-                    <span>{isEn ? "Active Workshops" : "Boutiques & Ateliers"}</span>
+                    <span>{isEn ? "Active Stores" : "Boutiques & Commerces"}</span>
                     <span className="oj-kpi-trend positive">28 vérifiés</span>
                   </div>
                   <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {shops.length} Ateliers
+                    {shops.length} Boutiques
                   </strong>
                   <small style={{ color: "var(--oj-color-muted)", fontSize: "11px" }}>
                     Bénin (3), Mali (1), Côte d'Ivoire (1)
@@ -1087,11 +1087,11 @@ export default function AdminPage() {
             <div>
               <div className="oj-admin-header-row">
                 <div className="oj-admin-title-wrap">
-                  <h1>{isEn ? "Workshops & Merchant KYC (A03)" : "Boutiques & Modération KYC"}</h1>
+                  <h1>{isEn ? "Stores & Merchant KYC (A03)" : "Boutiques & Modération KYC"}</h1>
                   <p>
                     {isEn
-                      ? "Control verified status, examine legal trade certificates, and manage artisan onboarding."
-                      : "Contrôlez les statuts marchands, examinez les registres de commerce et validez les maîtres artisans."}
+                      ? "Control verified status, examine legal trade certificates, and manage merchant onboarding."
+                      : "Contrôlez les statuts marchands, examinez les registres de commerce et validez les commerçants vérifiés."}
                   </p>
                 </div>
               </div>
@@ -1102,7 +1102,7 @@ export default function AdminPage() {
                   <span className="oj-admin-search-icon">🔍</span>
                   <input
                     type="text"
-                    placeholder={isEn ? "Search workshop, owner, city..." : "Rechercher un atelier, propriétaire, ville..."}
+                    placeholder={isEn ? "Search store, owner, city..." : "Rechercher une boutique, propriétaire, ville..."}
                     value={shopSearch}
                     onChange={(e) => setShopSearch(e.target.value)}
                   />
@@ -1141,8 +1141,8 @@ export default function AdminPage() {
                 <table className="oj-admin-table">
                   <thead>
                     <tr>
-                      <th>{isEn ? "Workshop / Atelier" : "Atelier & Propriétaire"}</th>
-                      <th>{isEn ? "Craft & Location" : "Savoir-faire & Ville"}</th>
+                      <th>{isEn ? "Store / Boutique" : "Boutique & Propriétaire"}</th>
+                      <th>{isEn ? "Activity & Location" : "Activité & Ville"}</th>
                       <th>{isEn ? "Legal Credentials" : "Pièces Justificatives"}</th>
                       <th>{isEn ? "Sales" : "Ventes"}</th>
                       <th>{isEn ? "Status" : "Statut KYC"}</th>
@@ -1321,8 +1321,8 @@ export default function AdminPage() {
                   <h1>{isEn ? "Bespoke Requests & Quotes (D02)" : "Supervision des Demandes Sur-Mesure"}</h1>
                   <p>
                     {isEn
-                      ? "Track buyer demand structuring, workshop response rates, and awarded orders."
-                      : "Suivi des demandes acheteurs, taux de réponse des ateliers et commandes issues de devis."}
+                      ? "Track buyer demand structuring, store response rates, and awarded orders."
+                      : "Suivi des demandes acheteurs, taux de réponse des boutiques et commandes issues de devis."}
                   </p>
                 </div>
               </div>
