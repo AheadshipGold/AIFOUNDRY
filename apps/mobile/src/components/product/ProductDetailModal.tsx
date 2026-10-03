@@ -50,14 +50,15 @@ export default function ProductDetailModal({
   const isEn = locale === "en";
   const isDark = mode === "dark";
 
+  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
   const [view, setView] = useState<ModalView>("detail");
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [deliveryAddress, setDeliveryAddress] = useState("Cotonou, Haie Vive, Rue 380");
-  const [buyerPhone, setBuyerPhone] = useState(currentUser?.phone || "+229 97 00 00 00");
-  const [buyerName, setBuyerName] = useState(currentUser?.name || "Alexandre Houngbo");
+  const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.city ? `${currentUser.city}, Bénin` : (isDemo ? "Cotonou, Haie Vive, Rue 380" : ""));
+  const [buyerPhone, setBuyerPhone] = useState(currentUser?.phone || (isDemo ? "+229 97 00 00 00" : ""));
+  const [buyerName, setBuyerName] = useState(currentUser?.name || (isDemo ? "Alexandre Laurent" : ""));
   const [paymentChannel, setPaymentChannel] = useState("MTN_MOMO");
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
@@ -1018,7 +1019,7 @@ export default function ProductDetailModal({
                           ? "Please prepare exact amount in cash upon delivery."
                           : "Veuillez préparer le montant exact en espèces pour le livreur lors de la livraison.")
                       : (isEn
-                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to Maison Laurent.`
+                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to ${product.artisanShop?.name || product.seller || "the workshop"}.`
                           : `Composez le ${createdOrder.paymentInstructions?.ussdCode || "*880#"} pour valider le règlement de ${totalPriceFormatted} FCFA auprès de l'atelier.`)}
                   </Text>
                   <View style={{ height: 1, backgroundColor: colors.border }} />

@@ -36,8 +36,29 @@ export interface OrderRecord {
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<OrderRecord[]> {
+  async findAll(shopId?: string, userId?: string): Promise<OrderRecord[]> {
+    const whereClause: any = {};
+
+    if (shopId) {
+      whereClause.shopId = shopId;
+    } else if (userId) {
+      const userShop = await this.prisma.shop.findFirst({
+        where: {
+          OR: [
+            { ownerId: userId },
+            { memberships: { some: { userId } } }
+          ]
+        }
+      });
+      if (userShop) {
+        whereClause.shopId = userShop.id;
+      } else {
+        return [];
+      }
+    }
+
     const orders = await this.prisma.order.findMany({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         lines: {
           include: { variant: true }

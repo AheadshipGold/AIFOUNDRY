@@ -119,13 +119,13 @@ async function runAuthKycProof() {
       data: {
         id: `prd-test-sculpture-${Date.now()}`,
         shopId: registerRes.shop.id,
-        title: 'Masque Guélédé Cérémoniel',
-        description: 'Masque artisanal en bois sculpté main',
+        title: 'Sculpture Bronze Contemporaine',
+        description: 'Sculpture d’art en bronze noble poli main',
         category: 'sculpture',
         variants: {
           create: [
             {
-              sku: `SKU-GUELEDE-${Date.now()}`,
+              sku: `SKU-SCULPTURE-${Date.now()}`,
               name: 'Taille Standard',
               priceMinor: 6500000, // 65 000 FCFA
               currency: 'XOF',

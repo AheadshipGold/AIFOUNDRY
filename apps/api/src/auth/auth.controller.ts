@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Get, Put, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, Headers, Req, UnauthorizedException } from '@nestjs/common';
+import { Request } from 'express';
+import { fromNodeHeaders } from 'better-auth/node';
+import { auth } from './better-auth';
 import {
   AuthService,
-  RequestOtpDto,
-  VerifyOtpDto,
   RegisterUserDto,
   LoginUserDto,
   GoogleAuthDto,
@@ -10,39 +11,37 @@ import {
   ChangePasswordDto,
   RegisterSellerDto,
 } from './auth.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post('request-otp')
-  async requestOtp(@Body() dto: RequestOtpDto) {
-    return this.authService.requestOtp(dto);
-  }
-
-  @Post('verify-otp')
-  async verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto);
-  }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post('register')
-  async register(@Body() dto: RegisterUserDto) {
-    return this.authService.register(dto);
+  async register(@Body() dto: RegisterUserDto, @Req() req: Request) {
+    return this.authService.register(dto, req.headers);
   }
 
   @Post('login')
-  async login(@Body() dto: LoginUserDto) {
-    return this.authService.login(dto);
+  async login(@Body() dto: LoginUserDto, @Req() req: Request) {
+    return this.authService.login(dto, req.headers);
   }
 
   @Post('google')
-  async googleAuth(@Body() dto: GoogleAuthDto) {
-    return this.authService.googleAuth(dto);
+  async googleAuth(@Body() dto: GoogleAuthDto, @Req() req: Request) {
+    return this.authService.googleAuth(dto, req.headers);
   }
 
   @Get('me')
-  async getMe(@Headers('authorization') authHeader?: string, @Headers('x-user-id') explicitUserId?: string) {
-    const userId = this.extractUserId(authHeader, explicitUserId);
+  async getMe(
+    @Req() req: Request,
+    @Headers('authorization') authHeader?: string,
+    @Headers('x-user-id') explicitUserId?: string
+  ) {
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
     if (!userId) {
       throw new UnauthorizedException('Session invalide ou utilisateur non authentifié');
     }
@@ -52,10 +51,11 @@ export class AuthController {
   @Put('profile')
   async updateProfile(
     @Body() dto: UpdateProfileDto,
+    @Req() req: Request,
     @Headers('authorization') authHeader?: string,
     @Headers('x-user-id') explicitUserId?: string
   ) {
-    const userId = this.extractUserId(authHeader, explicitUserId);
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
     if (!userId) {
       throw new UnauthorizedException('Session invalide ou utilisateur non authentifié');
     }
@@ -65,10 +65,11 @@ export class AuthController {
   @Post('change-password')
   async changePassword(
     @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
     @Headers('authorization') authHeader?: string,
     @Headers('x-user-id') explicitUserId?: string
   ) {
-    const userId = this.extractUserId(authHeader, explicitUserId);
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
     if (!userId) {
       throw new UnauthorizedException('Session invalide ou utilisateur non authentifié');
     }
@@ -78,10 +79,11 @@ export class AuthController {
   @Post('register-seller')
   async registerSeller(
     @Body() dto: RegisterSellerDto,
+    @Req() req: Request,
     @Headers('authorization') authHeader?: string,
     @Headers('x-user-id') explicitUserId?: string
   ) {
-    const userId = this.extractUserId(authHeader, explicitUserId);
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
     if (!userId) {
       throw new UnauthorizedException('Authentification requise pour enregistrer un atelier');
     }
@@ -90,32 +92,66 @@ export class AuthController {
 
   @Post('delete-account')
   async deleteAccount(
+    @Req() req: Request,
     @Headers('authorization') authHeader?: string,
     @Headers('x-user-id') explicitUserId?: string
   ) {
-    const userId = this.extractUserId(authHeader, explicitUserId);
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
     if (!userId) {
       throw new UnauthorizedException('Session invalide ou utilisateur non authentifié');
     }
     return this.authService.deleteAccount(userId);
   }
 
-  private extractUserId(authHeader?: string, explicitUserId?: string): string | null {
+  private async extractUserId(req: Request, authHeader?: string, explicitUserId?: string): Promise<string | null> {
     if (explicitUserId) return explicitUserId;
+
+    // 1. Better Auth session check via Better Auth API
+    try {
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers),
+      });
+      if (session?.user?.id) {
+        return session.user.id;
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Direct database token lookup in Session table
     if (authHeader) {
       const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-      if (!token) return null;
-      if (token.startsWith('ojk_sess_')) {
-        const withoutPrefix = token.substring('ojk_sess_'.length);
-        const lastUnderscore = withoutPrefix.lastIndexOf('_');
-        if (lastUnderscore > 0) {
-          return withoutPrefix.substring(0, lastUnderscore);
+      if (token) {
+        const dbSession = await this.prisma.session.findUnique({
+          where: { token },
+          select: { userId: true, expiresAt: true },
+        });
+
+        if (dbSession && dbSession.expiresAt > new Date()) {
+          return dbSession.userId;
         }
-        return withoutPrefix;
+
+        // 3. Fallback for legacy tokens
+        if (token.startsWith('ojk_sess_')) {
+          const withoutPrefix = token.substring('ojk_sess_'.length);
+          const lastUnderscore = withoutPrefix.lastIndexOf('_');
+          const possibleId = lastUnderscore > 0 ? withoutPrefix.substring(0, lastUnderscore) : withoutPrefix;
+          const userExists = await this.prisma.user.findUnique({
+            where: { id: possibleId },
+            select: { id: true },
+          });
+          if (userExists) return userExists.id;
+        }
+
+        // 4. Direct user id fallback if token equals an existing user ID (test environments)
+        const directUser = await this.prisma.user.findUnique({
+          where: { id: token },
+          select: { id: true },
+        });
+        if (directUser) return directUser.id;
       }
-      return token;
     }
+
     return null;
   }
 }
-

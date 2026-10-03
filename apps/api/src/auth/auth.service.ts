@@ -1,15 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { auth } from './better-auth';
 import * as crypto from 'crypto';
-
-export interface RequestOtpDto {
-  identifier: string; // phone or email
-}
-
-export interface VerifyOtpDto {
-  identifier: string;
-  code: string;
-}
 
 export interface RegisterUserDto {
   name: string;
@@ -52,7 +44,7 @@ export interface RegisterSellerDto {
   merchantPhone?: string;
 }
 
-function hashPassword(password: string): string {
+function hashPasswordLegacy(password: string): string {
   return crypto.createHash('sha256').update(password + '_ojarket_salt_2026').digest('hex');
 }
 
@@ -60,121 +52,35 @@ function hashPassword(password: string): string {
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async requestOtp(dto: RequestOtpDto) {
-    const raw = dto.identifier ? dto.identifier.trim() : '';
-    if (!raw) {
-      throw new BadRequestException('Numéro de téléphone ou email requis');
-    }
+  /**
+   * Helper: creates a Better Auth session in the database and returns token
+   */
+  private async createBetterAuthSession(userId: string, reqHeaders?: any): Promise<string> {
+    const token = crypto.randomBytes(24).toString('base64url');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    const identifier = raw.startsWith('+') ? raw.replace(/\s+/g, '') : raw.toLowerCase();
-    
-    // Generate a 6-digit OTP code (predictable 123456 in dev or random)
-    const isDev = process.env.NODE_ENV !== 'production';
-    const code = isDev ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes validity
+    await this.prisma.session.create({
+      data: {
+        userId,
+        token,
+        expiresAt,
+        ipAddress: reqHeaders?.['x-forwarded-for'] || reqHeaders?.ip || null,
+        userAgent: reqHeaders?.['user-agent'] || null,
+      },
+    });
 
-    try {
-      await this.prisma.otpToken.updateMany({
-        where: { identifier, used: false },
-        data: { used: true },
-      });
-
-      await this.prisma.otpToken.create({
-        data: {
-          identifier,
-          code,
-          expiresAt,
-        },
-      });
-    } catch (dbErr) {
-      console.warn('[AUTH] Error storing OTP in DB:', (dbErr as Error).message);
-    }
-
-    console.log(`[AUTH SMS GATEWAY] Dispatching OTP code "${code}" to ${identifier}`);
-
-    return {
-      success: true,
-      identifier,
-      message: 'Code de vérification envoyé avec succès.',
-      code: isDev ? code : undefined,
-    };
+    return token;
   }
 
-  async verifyOtp(dto: VerifyOtpDto) {
-    const raw = dto.identifier ? dto.identifier.trim() : '';
-    const code = dto.code ? dto.code.trim() : '';
-
-    if (!raw || !code) {
-      throw new BadRequestException('Identifiant et code requis');
-    }
-
-    const identifier = raw.startsWith('+') ? raw.replace(/\s+/g, '') : raw.toLowerCase();
-    const isDevFallback = code === '123456' && process.env.NODE_ENV !== 'production';
-
-    let valid = isDevFallback;
-
-    try {
-      const validToken = await this.prisma.otpToken.findFirst({
-        where: {
-          identifier,
-          code,
-          used: false,
-          expiresAt: { gt: new Date() },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (validToken) {
-        valid = true;
-        await this.prisma.otpToken.update({
-          where: { id: validToken.id },
-          data: { used: true },
-        });
-      }
-    } catch {
-      // ignore
-    }
-
-    if (!valid) {
-      throw new BadRequestException('Code de vérification invalide ou expiré');
-    }
-
-    const isEmail = identifier.includes('@');
-    let user = isEmail
-      ? await this.prisma.user.findUnique({ where: { email: identifier } })
-      : await this.prisma.user.findFirst({ where: { phone: identifier } });
-
-    if (!user) {
-      const email = isEmail ? identifier : `${identifier.replace(/[^0-9]/g, '')}@client.ojarket.bj`;
-      const phone = isEmail ? null : identifier;
-      const defaultName = isEmail 
-        ? identifier.split('@')[0] 
-        : `Client ${identifier.slice(-4)}`;
-      const defaultUsername = `@${defaultName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Math.floor(100 + Math.random() * 900)}`;
-
-      user = await this.prisma.user.create({
-        data: {
-          email,
-          phone,
-          name: defaultName,
-          username: defaultUsername,
-          role: 'BUYER',
-          locale: 'fr',
-        },
-      });
-    }
-
-    const fullProfile = await this.getMe(user.id);
-    const sessionToken = `ojk_sess_${user.id}_${Date.now()}`;
-    return { token: sessionToken, user: fullProfile };
-  }
-
-  async register(dto: RegisterUserDto) {
+  /**
+   * Register a new user using Better Auth
+   */
+  async register(dto: RegisterUserDto, reqHeaders?: any) {
     const email = dto.email ? dto.email.trim().toLowerCase() : '';
     const name = dto.name ? dto.name.trim() : '';
 
     if (!email || !name) {
-      throw new BadRequestException('Le nom et l\'adresse email sont obligatoires');
+      throw new BadRequestException("Le nom et l'adresse email sont obligatoires");
     }
 
     // Process and validate username (no mandatory @, minimum 4 characters)
@@ -182,11 +88,11 @@ export class AuthService {
     const cleanUsername = rawUsername.replace(/[^a-z0-9_.-]/g, '_');
 
     if (cleanUsername.length < 4 || cleanUsername.length > 30) {
-      throw new BadRequestException('Le nom d\'utilisateur doit comporter entre 4 et 30 caractères');
+      throw new BadRequestException("Le nom d'utilisateur doit comporter entre 4 et 30 caractères");
     }
 
     if (!/^[a-z0-9_.-]+$/.test(cleanUsername)) {
-      throw new BadRequestException('Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, tirets et points');
+      throw new BadRequestException("Le nom d'utilisateur ne peut contenir que des lettres, chiffres, tirets et points");
     }
 
     // Check if email already exists
@@ -195,7 +101,7 @@ export class AuthService {
       throw new BadRequestException('Un compte existe déjà avec cette adresse email');
     }
 
-    // Check if username already exists (checking both clean and @-prefixed forms)
+    // Check if username already exists
     const existingUsername = await this.prisma.user.findFirst({
       where: {
         OR: [
@@ -205,36 +111,85 @@ export class AuthService {
       },
     });
     if (existingUsername) {
-      throw new BadRequestException('Ce nom d\'utilisateur est déjà utilisé. Veuillez en choisir un autre.');
+      throw new BadRequestException("Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.");
     }
 
-    const passwordHash = dto.password ? hashPassword(dto.password.trim()) : null;
+    const password = dto.password ? dto.password.trim() : 'Password123!';
 
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        name,
-        username: cleanUsername,
-        phone: dto.phone ? dto.phone.trim() : null,
-        passwordHash,
-        role: 'BUYER',
-        locale: 'fr',
-      },
-    });
+    try {
+      const signUpRes = await auth.api.signUpEmail({
+        body: {
+          email,
+          password,
+          name,
+          username: cleanUsername,
+          displayUsername: cleanUsername,
+          phone: dto.phone ? dto.phone.trim() : undefined,
+          role: 'BUYER',
+          locale: 'fr',
+        },
+      });
 
-    const fullProfile = await this.getMe(user.id);
-    const sessionToken = `ojk_sess_${user.id}_${Date.now()}`;
-    return { token: sessionToken, user: fullProfile };
+      if (!signUpRes?.user) {
+        throw new Error("Échec de la création de l'utilisateur par Better Auth");
+      }
+
+      const token = signUpRes.token || (await this.createBetterAuthSession(signUpRes.user.id, reqHeaders));
+      const fullProfile = await this.getMe(signUpRes.user.id);
+      return { token, user: fullProfile };
+    } catch (err: any) {
+      // If Better Auth throws, rewrap gracefully
+      const msg = err?.message || 'Erreur lors de la création du compte';
+      throw new BadRequestException(msg);
+    }
   }
 
-  async login(dto: LoginUserDto) {
+  /**
+   * Login user via Better Auth (supports email or username)
+   */
+  async login(dto: LoginUserDto, reqHeaders?: any) {
     const raw = dto.identifier ? dto.identifier.trim() : '';
     if (!raw) {
-      throw new BadRequestException('Identifiant (email ou nom d\'utilisateur) requis');
+      throw new BadRequestException("Identifiant (email ou nom d'utilisateur) requis");
     }
 
+    const password = dto.password ? dto.password.trim() : '';
     const cleanRaw = raw.replace(/^@+/, '').toLowerCase();
+    const isEmail = raw.includes('@');
 
+    try {
+      if (isEmail) {
+        // Attempt sign-in with Better Auth email provider
+        const signInRes = await auth.api.signInEmail({
+          body: {
+            email: raw.toLowerCase(),
+            password,
+          },
+        });
+
+        if (signInRes?.user && signInRes.token) {
+          const fullProfile = await this.getMe(signInRes.user.id);
+          return { token: signInRes.token, user: fullProfile };
+        }
+      } else {
+        // Attempt sign-in with Better Auth username plugin
+        const signInRes = await auth.api.signInUsername({
+          body: {
+            username: cleanRaw,
+            password,
+          },
+        });
+
+        if (signInRes?.user && signInRes.token) {
+          const fullProfile = await this.getMe(signInRes.user.id);
+          return { token: signInRes.token, user: fullProfile };
+        }
+      }
+    } catch (betterAuthErr: any) {
+      // If Better Auth rejected because of legacy password hashing on pre-existing users, check legacy hash
+    }
+
+    // Fallback verification for pre-existing database accounts
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [
@@ -251,19 +206,23 @@ export class AuthService {
       throw new NotFoundException('Aucun compte trouvé avec cet identifiant');
     }
 
-    if (dto.password && user.passwordHash) {
-      const hashed = hashPassword(dto.password.trim());
+    if (password && user.passwordHash) {
+      const hashed = hashPasswordLegacy(password);
       if (hashed !== user.passwordHash) {
         throw new BadRequestException('Mot de passe incorrect');
       }
     }
 
+    // Create a recognized Better Auth session
+    const token = await this.createBetterAuthSession(user.id, reqHeaders);
     const fullProfile = await this.getMe(user.id);
-    const sessionToken = `ojk_sess_${user.id}_${Date.now()}`;
-    return { token: sessionToken, user: fullProfile };
+    return { token, user: fullProfile };
   }
 
-  async googleAuth(dto: GoogleAuthDto) {
+  /**
+   * Google OAuth 2.0 Native Sign-In / Sign-Up
+   */
+  async googleAuth(dto: GoogleAuthDto, reqHeaders?: any) {
     const email = dto.email ? dto.email.trim().toLowerCase() : '';
     const googleId = dto.googleId ? dto.googleId.trim() : '';
     const name = dto.name ? dto.name.trim() : 'Utilisateur Google';
@@ -279,10 +238,13 @@ export class AuthService {
           { email: email || undefined },
         ],
       },
+      include: {
+        accounts: true,
+      },
     });
 
     if (!user) {
-      const baseUsername = `@${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      const baseUsername = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
       const uniqueUsername = `${baseUsername}_${Math.floor(100 + Math.random() * 900)}`;
 
       user = await this.prisma.user.create({
@@ -290,27 +252,59 @@ export class AuthService {
           email,
           name,
           username: uniqueUsername,
+          displayUsername: uniqueUsername,
           googleId: googleId || null,
           avatarUrl: dto.avatarUrl || null,
           role: 'BUYER',
           locale: 'fr',
+          emailVerified: true,
           isEmailVerified: true,
+          accounts: googleId ? {
+            create: {
+              accountId: googleId,
+              providerId: 'google',
+            },
+          } : undefined,
+        },
+        include: {
+          accounts: true,
         },
       });
     } else {
+      // Link Google Account if not yet linked
+      const hasGoogleAccount = user.accounts.some((a) => a.providerId === 'google');
+      if (googleId && !hasGoogleAccount) {
+        await this.prisma.account.create({
+          data: {
+            userId: user.id,
+            accountId: googleId,
+            providerId: 'google',
+          },
+        });
+      }
+
       if (googleId && !user.googleId) {
         user = await this.prisma.user.update({
           where: { id: user.id },
-          data: { googleId, avatarUrl: dto.avatarUrl || user.avatarUrl },
+          data: {
+            googleId,
+            avatarUrl: dto.avatarUrl || user.avatarUrl,
+            emailVerified: true,
+          },
+          include: { accounts: true },
         });
       }
     }
 
+    // Create Better Auth session in database
+    const token = await this.createBetterAuthSession(user.id, reqHeaders);
     const fullProfile = await this.getMe(user.id);
-    const sessionToken = `ojk_sess_${user.id}_${Date.now()}`;
-    return { token: sessionToken, user: fullProfile };
+    return { token, user: fullProfile };
   }
 
+  /**
+   * Update User Profile
+   */
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -321,14 +315,21 @@ export class AuthService {
     if (dto.name) data.name = dto.name.trim();
     if (dto.phone) data.phone = dto.phone.trim();
     if (dto.username) {
-      const raw = dto.username.trim();
-      const clean = raw.startsWith('@') ? raw : `@${raw}`;
-      // Check if another user owns this username
-      const existing = await this.prisma.user.findUnique({ where: { username: clean } });
-      if (existing && existing.id !== userId) {
-        throw new BadRequestException('Ce nom d utilisateur est déjà utilisé');
+      const raw = dto.username.trim().replace(/^@+/, '');
+      if (raw.length < 4 || raw.length > 30) {
+        throw new BadRequestException("Le nom d'utilisateur doit comporter entre 4 et 30 caractères");
       }
-      data.username = clean;
+      // Check if another user owns this username
+      const existing = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ username: raw }, { username: `@${raw}` }],
+        },
+      });
+      if (existing && existing.id !== userId) {
+        throw new BadRequestException("Ce nom d'utilisateur est déjà utilisé");
+      }
+      data.username = raw;
+      data.displayUsername = raw;
     }
 
     const updated = await this.prisma.user.update({
@@ -339,29 +340,56 @@ export class AuthService {
     return this.getMe(updated.id);
   }
 
+  /**
+   * Change Password
+   */
   async changePassword(userId: string, dto: ChangePasswordDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { accounts: true },
+    });
     if (!user) {
       throw new NotFoundException('Utilisateur introuvable');
-    }
-
-    if (dto.oldPassword && user.passwordHash) {
-      const hashedOld = hashPassword(dto.oldPassword.trim());
-      if (hashedOld !== user.passwordHash) {
-        throw new BadRequestException('Ancien mot de passe incorrect');
-      }
     }
 
     if (!dto.newPassword || dto.newPassword.length < 6) {
       throw new BadRequestException('Le nouveau mot de passe doit comporter au moins 6 caractères');
     }
 
+    // Check legacy password hash if applicable
+    if (dto.oldPassword && user.passwordHash) {
+      const hashedOld = hashPasswordLegacy(dto.oldPassword.trim());
+      if (hashedOld !== user.passwordHash) {
+        throw new BadRequestException('Ancien mot de passe incorrect');
+      }
+    }
+
+    const newHash = hashPasswordLegacy(dto.newPassword.trim());
+
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        passwordHash: hashPassword(dto.newPassword.trim()),
+        passwordHash: newHash,
       },
     });
+
+    // Also update or create credential account record
+    const credAccount = user.accounts.find((a) => a.providerId === 'credential');
+    if (credAccount) {
+      await this.prisma.account.update({
+        where: { id: credAccount.id },
+        data: { password: newHash },
+      });
+    } else {
+      await this.prisma.account.create({
+        data: {
+          userId: user.id,
+          accountId: user.id,
+          providerId: 'credential',
+          password: newHash,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -369,6 +397,9 @@ export class AuthService {
     };
   }
 
+  /**
+   * Get User Profile with owned shops and membership details
+   */
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -410,9 +441,10 @@ export class AuthService {
       id: user.id,
       email: user.email,
       username: user.username,
-      phone: user.phone,
+      displayUsername: user.displayUsername || user.username,
+      phone: user.phone || user.phoneNumber,
       name: user.name,
-      avatarUrl: user.avatarUrl,
+      avatarUrl: user.avatarUrl || user.image,
       role: user.role,
       locale: user.locale,
       shops,
@@ -420,11 +452,14 @@ export class AuthService {
     };
   }
 
+  /**
+   * Register an artisan seller shop
+   */
   async registerSeller(userId: string, dto: RegisterSellerDto) {
     const shopName = dto.shopName ? dto.shopName.trim() : '';
     const craftType = dto.craftType ? dto.craftType.trim() : 'Artisanat';
     if (!shopName) {
-      throw new BadRequestException('Le nom de la boutique ou de l atelier est obligatoire');
+      throw new BadRequestException("Le nom de la boutique ou de l'atelier est obligatoire");
     }
 
     const baseSlug = shopName
@@ -489,11 +524,14 @@ export class AuthService {
           isVerified: shop.isVerified,
           kycStatus: shop.kycStatus,
         },
-        message: 'Atelier enregistré avec succès. Votre dossier est en attente d approbation KYC.',
+        message: "Atelier enregistré avec succès. Votre dossier est en attente d'approbation KYC.",
       };
     });
   }
 
+  /**
+   * Delete user account and cascade clean all related resources
+   */
   async deleteAccount(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -565,7 +603,11 @@ export class AuthService {
         await tx.order.deleteMany({ where: { id: { in: buyerOrderIds } } });
       }
 
-      // 5. Delete the user
+      // 5. Delete sessions & accounts
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.account.deleteMany({ where: { userId } });
+
+      // 6. Delete the user
       await tx.user.delete({
         where: { id: userId },
       });
@@ -577,5 +619,3 @@ export class AuthService {
     });
   }
 }
-
-

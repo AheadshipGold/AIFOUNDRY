@@ -20,14 +20,18 @@ import {
   SubscriptionsApi,
   SubscriptionRecord,
   PlanFeatureDefinition,
+  type AuthUser,
+  type AuthShop,
 } from '../../services/api';
 
 export interface SellerShopScreenProps {
+  currentUser?: AuthUser | null;
   onSwitchToBuyer: () => void;
   onBack?: () => void;
 }
 
 export default function SellerShopScreen({
+  currentUser,
   onSwitchToBuyer,
   onBack,
 }: SellerShopScreenProps) {
@@ -38,11 +42,16 @@ export default function SellerShopScreen({
 
   const headingFont = Platform.OS === 'android' ? 'serif' : 'Georgia';
 
-  const [catalogItems, setCatalogItems] = useState([
+  const activeShop = currentUser?.activeShop || (currentUser?.shops && currentUser.shops.length > 0 ? currentUser.shops[0] : null);
+  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
+
+  const defaultMockItems = [
     { id: '1', title: isEn ? 'Genuine leather bag' : 'Sac en cuir véritable', price: '45 000 FCFA', stock: 4 },
     { id: '2', title: isEn ? 'Minimalist wallet' : 'Portefeuille minimaliste', price: '15 000 FCFA', stock: 8 },
     { id: '3', title: isEn ? 'Handcrafted belt' : 'Ceinture artisanale', price: '20 000 FCFA', stock: 2 },
-  ]);
+  ];
+
+  const [catalogItems, setCatalogItems] = useState(isDemo ? defaultMockItems : []);
 
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [plans, setPlans] = useState<PlanFeatureDefinition[]>([]);
@@ -78,8 +87,9 @@ export default function SellerShopScreen({
 
   const fetchSubscriptionData = async () => {
     try {
+      const shopIdToQuery = activeShop?.id || 'shop-01';
       const [sub, availablePlans] = await Promise.all([
-        SubscriptionsApi.getShopSubscription('shop-01').catch(() => null),
+        SubscriptionsApi.getShopSubscription(shopIdToQuery).catch(() => null),
         SubscriptionsApi.getPlans().catch(() => []),
       ]);
       setSubscription(sub);
@@ -94,13 +104,14 @@ export default function SellerShopScreen({
 
   useEffect(() => {
     fetchSubscriptionData();
-  }, []);
+  }, [currentUser]);
 
   const handleUpgrade = async (tier: string, title: string, priceFcfa: number) => {
     setUpgradingTier(tier);
     try {
+      const shopIdToQuery = activeShop?.id || 'shop-01';
       const updated = await SubscriptionsApi.upgradePlan({
-        shopId: 'shop-01',
+        shopId: shopIdToQuery,
         planTier: tier,
         billingSource: 'MTN_MOMO',
         billingInterval: 'MONTHLY',
@@ -184,21 +195,29 @@ export default function SellerShopScreen({
           </Text>
 
           <Text style={[styles.title, { fontFamily: headingFont, color: colors.text }]}>
-            Atelier Cotonou #042 · {isEn ? 'Master Leathercrafter' : 'Maître Maroquinier'}
+            {activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || (isDemo ? "Atelier Cotonou #042" : "Mon Atelier d'Art")} · {activeShop?.craftType || (isEn ? 'Master Artisan' : 'Maître Artisan')}
           </Text>
 
           <View style={styles.badgeRow}>
-            <View style={[styles.badge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-              <Text style={[styles.badgeText, { color: '#10B981' }]}>✓ {isEn ? 'Verified' : 'Vérifié'}</Text>
-            </View>
+            {(activeShop?.kycStatus === 'PENDING' || (!activeShop?.isVerified && !isDemo)) ? (
+              <View style={[styles.badge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                <Text style={[styles.badgeText, { color: '#D97706' }]}>⏳ {isEn ? 'KYC Pending' : 'En attente KYC'}</Text>
+              </View>
+            ) : (
+              <View style={[styles.badge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <Text style={[styles.badgeText, { color: '#10B981' }]}>✓ {isEn ? 'Verified' : 'Vérifié'}</Text>
+              </View>
+            )}
           </View>
 
           <Text style={[styles.infoText, { color: colors.muted }]}>
-            Quartier Haie Vive, Cotonou, Bénin
+            {activeShop?.city || currentUser?.city || 'Cotonou'}, Bénin
           </Text>
-          <Text style={[styles.infoText, { color: colors.muted }]}>
-            +229 97 00 00 00
-          </Text>
+          {currentUser?.phone ? (
+            <Text style={[styles.infoText, { color: colors.muted }]}>
+              {currentUser.phone}
+            </Text>
+          ) : null}
         </View>
 
         {/* SaaS Subscription Card (FR-37) */}
@@ -273,15 +292,15 @@ export default function SellerShopScreen({
         {/* Workshop Performance Cards */}
         <View style={styles.cardRow}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>6</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{catalogItems.length}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
               {isEn ? 'Active Creations' : 'Créations actives'}
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>★ 4.9</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{isDemo ? '★ 4.9' : '★ —'}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              124 {isEn ? 'reviews' : 'avis vérifiés'}
+              {isDemo ? (isEn ? '124 verified reviews' : '124 avis vérifiés') : (isEn ? 'New Workshop' : 'Nouvel Atelier')}
             </Text>
           </View>
         </View>
@@ -306,23 +325,62 @@ export default function SellerShopScreen({
           </Pressable>
         </View>
 
-        {catalogItems.map((item) => (
-          <View key={item.id} style={[styles.catalogItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.catalogItemContent}>
-              <Text style={[styles.catalogItemTitle, { color: colors.text }]}>
-                {item.title}
-              </Text>
-              <Text style={[styles.catalogItemPrice, { color: colors.action, fontWeight: '700' }]}>
-                {item.price}
-              </Text>
+        {catalogItems.length > 0 ? (
+          catalogItems.map((item) => (
+            <View key={item.id} style={[styles.catalogItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.catalogItemContent}>
+                <Text style={[styles.catalogItemTitle, { color: colors.text }]}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.catalogItemPrice, { color: colors.action, fontWeight: '700' }]}>
+                  {item.price}
+                </Text>
+              </View>
+              <View style={[styles.stockBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <Text style={[styles.stockBadgeText, { color: '#10B981', fontWeight: '700' }]}>
+                  {item.stock > 0 ? (isEn ? `● ${item.stock} in stock` : `● ${item.stock} en stock`) : (isEn ? 'Out of stock' : 'Rupture')}
+                </Text>
+              </View>
             </View>
-            <View style={[styles.stockBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-              <Text style={[styles.stockBadgeText, { color: '#10B981', fontWeight: '700' }]}>
-                {item.stock > 0 ? (isEn ? `● ${item.stock} in stock` : `● ${item.stock} en stock`) : (isEn ? 'Out of stock' : 'Rupture')}
+          ))
+        ) : (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 24,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginTop: 10,
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ fontSize: 28, marginBottom: 8 }}>🎨</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
+              {isEn ? 'No creations added yet' : 'Aucune création enregistrée'}
+            </Text>
+            <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center', marginTop: 4, lineHeight: 16, marginBottom: 14 }}>
+              {isEn
+                ? 'Add your handcrafted pieces to showcase them to buyers across the marketplace.'
+                : 'Ajoutez vos pièces uniques et créations artisanales pour les rendre visibles aux acheteurs.'}
+            </Text>
+            <Pressable
+              onPress={() => setShowAddModal(true)}
+              style={{
+                backgroundColor: colors.action,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 12,
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>
+                {isEn ? '+ Add First Creation' : '+ Ajouter ma première création'}
               </Text>
-            </View>
+            </Pressable>
           </View>
-        ))}
+        )}
 
         {/* Direct payment channels */}
         <View style={styles.sectionHeader}>

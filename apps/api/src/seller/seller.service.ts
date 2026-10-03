@@ -74,14 +74,49 @@ export class SellerService {
     }
   }
 
-  private async getDefaultShopId(): Promise<string> {
-    const shop = await this.prisma.shop.findFirst();
-    if (!shop) throw new NotFoundException('No shops found');
-    return shop.id;
+  private async resolveShopId(shopId?: string, userId?: string): Promise<string | null> {
+    if (shopId) {
+      const exists = await this.prisma.shop.findUnique({ where: { id: shopId } });
+      if (exists) return exists.id;
+    }
+    if (userId) {
+      const userShop = await this.prisma.shop.findFirst({
+        where: {
+          OR: [
+            { ownerId: userId },
+            { memberships: { some: { userId } } }
+          ]
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (userShop) return userShop.id;
+    }
+    // If no shop found for specific user/shop, return null
+    if (userId || shopId) {
+      return null;
+    }
+    // Fallback only if general request with no identity
+    const firstShop = await this.prisma.shop.findFirst({ orderBy: { createdAt: 'asc' } });
+    return firstShop ? firstShop.id : null;
   }
 
-  async getDashboardMetrics(shopId?: string) {
-    const targetShopId = shopId || await this.getDefaultShopId();
+  async getDashboardMetrics(shopId?: string, userId?: string) {
+    const targetShopId = await this.resolveShopId(shopId, userId);
+
+    if (!targetShopId) {
+      return {
+        kpis: [
+          { label: 'Ventes du jour', value: '0', unit: 'XOF' },
+          { label: 'Commandes', value: '0' },
+          { label: 'Alertes stock', value: '0' }
+        ],
+        priorities: [
+          { text: 'Atelier prêt · Ajoutez votre première création', action: 'Ajouter', type: 'info' },
+          { text: 'Validation KYC en cours d’examen', action: 'Vérifier', type: 'info' }
+        ]
+      };
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -120,14 +155,28 @@ export class SellerService {
         { label: 'Alertes stock', value: lowStockCount.toString() }
       ],
       priorities: [
-        { text: `${lowStockCount} articles en rupture imminente`, action: 'Réapprovisionner', type: 'warning' },
-        { text: 'Clôture de caisse non effectuée', action: 'Clôturer', type: 'info' }
+        { text: lowStockCount > 0 ? `${lowStockCount} articles en rupture imminente` : 'Stock à jour', action: 'Gérer', type: lowStockCount > 0 ? 'warning' : 'info' },
+        { text: 'Clôture de caisse quotidienne', action: 'Clôturer', type: 'info' }
       ]
     };
   }
 
-  async getCashbook(shopId?: string) {
-    const targetShopId = shopId || await this.getDefaultShopId();
+  async getCashbook(shopId?: string, userId?: string) {
+    const targetShopId = await this.resolveShopId(shopId, userId);
+
+    if (!targetShopId) {
+      return {
+        summary: {
+          totalVenduMinor: 0,
+          totalEncaisseMinor: 0,
+          totalRestantMinor: 0
+        },
+        recentEntries: [],
+        history: [],
+        eventHistory: []
+      };
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -205,9 +254,10 @@ export class SellerService {
     };
   }
 
-  async recordCollection(dto: any) {
+  async recordCollection(dto: any, userId?: string) {
     const { shopId, amountMinor, channel, reference, notes, currency = 'XOF', orderId } = dto;
-    const targetShopId = shopId || await this.getDefaultShopId();
+    const targetShopId = await this.resolveShopId(shopId, userId);
+    if (!targetShopId) throw new NotFoundException('Atelier introuvable pour enregistrer cet encaissement');
 
     return this.prisma.$transaction(async (tx) => {
       const entry = await tx.cashbookEntry.create({
@@ -239,9 +289,10 @@ export class SellerService {
     });
   }
 
-  async closeDay(dto: any) {
+  async closeDay(dto: any, userId?: string) {
     const { shopId, physicalCashMinor = 0, closedBy, notes } = dto;
-    const targetShopId = shopId || await this.getDefaultShopId();
+    const targetShopId = await this.resolveShopId(shopId, userId);
+    if (!targetShopId) throw new NotFoundException('Atelier introuvable pour effectuer la clôture');
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);

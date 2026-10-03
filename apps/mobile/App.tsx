@@ -237,39 +237,31 @@ const MainNavigator = () => {
   const handleShopCreated = useCallback((result: any) => {
     // Refresh user profile with new shop
     if (currentUser) {
+      const newShop = {
+        id: result.shop.id,
+        slug: result.shop.slug,
+        name: result.shop.name,
+        craftType: result.shop.craftType,
+        city: result.shop.city,
+        country: result.shop.country,
+        currency: 'XOF',
+        isVerified: result.shop.isVerified,
+        kycStatus: result.shop.kycStatus as any,
+        productsCount: 0,
+        ordersCount: 0,
+        role: 'OWNER',
+      };
       const updatedUser = {
         ...currentUser,
         role: 'SELLER' as const,
-        shops: [...(currentUser.shops || []), {
-          id: result.shop.id,
-          slug: result.shop.slug,
-          name: result.shop.name,
-          craftType: result.shop.craftType,
-          city: result.shop.city,
-          country: result.shop.country,
-          currency: 'XOF',
-          isVerified: result.shop.isVerified,
-          kycStatus: result.shop.kycStatus as any,
-          productsCount: 0,
-          ordersCount: 0,
-          role: 'OWNER',
-        }],
-        activeShop: {
-          id: result.shop.id,
-          slug: result.shop.slug,
-          name: result.shop.name,
-          craftType: result.shop.craftType,
-          city: result.shop.city,
-          country: result.shop.country,
-          currency: 'XOF',
-          isVerified: result.shop.isVerified,
-          kycStatus: result.shop.kycStatus as any,
-          productsCount: 0,
-          ordersCount: 0,
-          role: 'OWNER',
-        },
+        shops: [...(currentUser.shops || []), newShop],
+        activeShop: newShop,
       };
       setCurrentUser(updatedUser);
+      AsyncStorage.setItem('ojarket.auth.session', JSON.stringify({
+        token: getAuthToken(),
+        user: updatedUser,
+      })).catch(() => {});
     }
     setShowOnboarding(false);
     setUniverse("seller");
@@ -329,33 +321,41 @@ const MainNavigator = () => {
       switch (currentScreen) {
         case "dashboard":
           return <SellerDashboardScreen 
+            currentUser={currentUser}
             onOpenCashbook={() => setCurrentScreen("cashbook")} 
             onOpenOrders={() => setCurrentScreen("orders")} 
             onOpenOpportunities={() => setCurrentScreen("opportunities")} 
+            onOpenShop={() => setCurrentScreen("shop")}
             onSwitchToBuyer={switchToBuyer} 
           />;
         case "orders":
           return <SellerOrdersScreen 
+            currentUser={currentUser}
             onBack={() => setCurrentScreen("dashboard")} 
           />;
         case "cashbook":
           return <SellerCashbookScreen 
+            currentUser={currentUser}
             onBack={() => setCurrentScreen("dashboard")} 
           />;
         case "opportunities":
           return <SellerOpportunitiesScreen 
+            currentUser={currentUser}
             onBack={() => setCurrentScreen("dashboard")} 
           />;
         case "shop":
           return <SellerShopScreen 
+            currentUser={currentUser}
             onSwitchToBuyer={switchToBuyer} 
             onBack={() => setCurrentScreen("dashboard")} 
           />;
         default:
           return <SellerDashboardScreen 
+            currentUser={currentUser}
             onOpenCashbook={() => setCurrentScreen("cashbook")} 
             onOpenOrders={() => setCurrentScreen("orders")} 
             onOpenOpportunities={() => setCurrentScreen("opportunities")} 
+            onOpenShop={() => setCurrentScreen("shop")}
             onSwitchToBuyer={switchToBuyer} 
           />;
       }

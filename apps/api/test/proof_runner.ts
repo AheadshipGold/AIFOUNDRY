@@ -233,13 +233,13 @@ async function main() {
         data: {
           id: `prd-single-${Date.now()}`,
           shopId: shopA.id,
-          title: 'Pièce Unique Rare — Masque Danxomé',
-          description: 'Édition 1/1 numérotée',
+          title: 'Pièce Unique Rare — Sculpture Artistique en Bronze',
+          description: 'Édition 1/1 numérotée · Art contemporain',
           category: 'art',
           variants: {
             create: [{
               id: `var-single-${Date.now()}`,
-              sku: `MASQUE-UNIQUE-${Date.now()}`,
+              sku: `SCULPTURE-ART-UNIQUE-${Date.now()}`,
               name: 'Pièce Unique',
               priceMinor: 50000000,
               stockOnHand: 1,
@@ -480,6 +480,58 @@ async function main() {
       });
 
       return `Clôture validée : Espèces attendues (${totalCashAttendu / 100} XOF), Espèces déclarées (${cashConstateAvecEcart / 100} XOF) -> Écart fidèlement consigné : ${varianceNegative / 100} XOF (${closureAvecEcart.status}).`;
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // TEST T-AUTH : INTÉGRATION BETTER AUTH & CONFORMITÉ ARCHITECTURALE
+  // Critère : Email/Password, Username, Bearer Token, Google Linkage, GDPR Delete
+  // --------------------------------------------------------------------------
+  await runTest(
+    'T-AUTH',
+    'Conformité Moteur Authentification Better Auth (D-V3-034)',
+    'Better Auth gère nativement sessions, tokens Bearer, comptes Google et unicité des identifiants',
+    async () => {
+      const { auth } = await import('../src/auth/better-auth');
+      const { AuthService } = await import('../src/auth/auth.service');
+      const { PrismaService } = await import('../src/prisma/prisma.service');
+      const authService = new AuthService(new PrismaService());
+
+      const tStamp = Date.now();
+      const testEmail = `proof.runner.${tStamp}@ojarket.test`;
+      const testUsername = `runner_${tStamp.toString().slice(-6)}`;
+      const testPassword = 'SecurePassword2026!';
+
+      // 1. Sign up via Better Auth
+      const su = await auth.api.signUpEmail({
+        body: {
+          email: testEmail,
+          password: testPassword,
+          name: 'Runner Test User',
+          username: testUsername,
+        },
+      });
+      if (!su?.user) throw new Error('Better Auth signUpEmail a échoué');
+
+      // 2. Sign in via Username
+      const si = await auth.api.signInUsername({
+        body: {
+          username: testUsername,
+          password: testPassword,
+        },
+      });
+      if (!si?.token) throw new Error('Better Auth signInUsername a échoué');
+
+      // 3. Verify Session
+      const sess = await auth.api.getSession({
+        headers: new Headers({ authorization: `Bearer ${si.token}` }),
+      });
+      if (!sess?.user || sess.user.id !== su.user.id) throw new Error('Better Auth getSession a échoué');
+
+      // 4. Clean delete
+      await authService.deleteAccount(su.user.id);
+
+      return `Better Auth opérationnel : Inscription, Connexion par identifiant (@${testUsername}), Token Bearer et Session validés à 100%.`;
     }
   );
 

@@ -19,13 +19,15 @@ import {
   Card,
   Badge,
 } from "../../design-system/components";
-import { SellerApi, CashbookData } from "../../services/api";
+import { SellerApi, CashbookData, type AuthUser } from "../../services/api";
 
 interface SellerCashbookScreenProps {
+  currentUser?: AuthUser | null;
   onBack: () => void;
 }
 
 export default function SellerCashbookScreen({
+  currentUser,
   onBack,
 }: SellerCashbookScreenProps) {
   const insets = useSafeAreaInsets();
@@ -36,6 +38,8 @@ export default function SellerCashbookScreen({
   const [cashbook, setCashbook] = useState<CashbookData | null>(null);
   const [loading, setLoading] = useState(true);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
 
   useEffect(() => {
     const showSub = Keyboard.addListener(
@@ -68,7 +72,7 @@ export default function SellerCashbookScreen({
       }
     }
     loadData();
-  }, []);
+  }, [currentUser]);
 
   const handleCloseDay = () => {
     Alert.alert(
@@ -84,7 +88,7 @@ export default function SellerCashbookScreen({
             try {
               await SellerApi.closeDay({
                 physicalCashMinor: cashbook?.summary?.totalEncaisseMinor || 0,
-                closedBy: 'Maître Ganvié'
+                closedBy: currentUser?.name || (isEn ? 'Artisan Merchant' : 'Artisan Vendeur'),
               });
               setClosed(true);
             } catch (error) {
@@ -97,9 +101,15 @@ export default function SellerCashbookScreen({
     );
   };
 
-  const totalVendu = cashbook ? Math.round(cashbook.summary.totalVenduMinor / 100) : 1280000;
-  const totalEncaisse = cashbook ? Math.round(cashbook.summary.totalEncaisseMinor / 100) : 850000;
-  const totalRestant = cashbook ? Math.round(cashbook.summary.totalRestantMinor / 100) : 430000;
+  const totalVendu = cashbook?.summary?.totalVenduMinor !== undefined
+    ? Math.round(cashbook.summary.totalVenduMinor / 100)
+    : (isDemo ? 1280000 : 0);
+  const totalEncaisse = cashbook?.summary?.totalEncaisseMinor !== undefined
+    ? Math.round(cashbook.summary.totalEncaisseMinor / 100)
+    : (isDemo ? 850000 : 0);
+  const totalRestant = cashbook?.summary?.totalRestantMinor !== undefined
+    ? Math.round(cashbook.summary.totalRestantMinor / 100)
+    : (isDemo ? 430000 : 0);
 
   const defaultEntries = [
     {
@@ -122,14 +132,14 @@ export default function SellerCashbookScreen({
     },
   ];
 
-  const entriesToDisplay = cashbook?.recentEntries
+  const entriesToDisplay = (cashbook?.recentEntries && cashbook.recentEntries.length > 0)
     ? cashbook.recentEntries.map((entry) => ({
         time: entry.time,
         desc: entry.label + (entry.reference ? ` (${entry.reference})` : ""),
         amount: `${entry.amountMinor >= 0 ? "+" : ""}${Math.round(entry.amountMinor / 100)} FCFA`,
         tag: entry.channel + (entry.source === 'SELLER_MANUAL' ? ' · Manuel' : ' · Vérifié'),
       }))
-    : defaultEntries;
+    : (isDemo ? defaultEntries : []);
 
 
   const [showCollectModal, setShowCollectModal] = useState(false);
@@ -365,36 +375,61 @@ export default function SellerCashbookScreen({
             {isEn ? "Daily Cash Entries" : "Écritures financières du jour"}
           </Text>
 
-          <View style={{ gap: 10, marginBottom: 28 }}>
-            {entriesToDisplay.map((item, idx) => (
-              <View
-                key={idx}
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  padding: 14,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
-                    {item.time} · {item.tag}
-                  </Text>
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginTop: 2 }}>
-                    {item.desc}
+          {entriesToDisplay.length > 0 ? (
+            <View style={{ gap: 10, marginBottom: 28 }}>
+              {entriesToDisplay.map((item, idx) => (
+                <View
+                  key={idx}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    padding: 14,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
+                      {item.time} · {item.tag}
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginTop: 2 }}>
+                      {item.desc}
+                    </Text>
+                  </View>
+
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action }}>
+                    {item.amount}
                   </Text>
                 </View>
-
-                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action }}>
-                  {item.amount}
-                </Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          ) : (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 24,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 28,
+              }}
+            >
+              <Text style={{ fontSize: 28, marginBottom: 8 }}>📒</Text>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.text, textAlign: "center" }}>
+                {isEn ? "No cashbook entries today" : "Aucune écriture de caisse aujourd'hui"}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
+                {isEn
+                  ? "Record incoming cash or mobile money payments received at your workshop."
+                  : "Enregistrez vos encaissements d'espèces ou paiements Mobile Money reçus à l'atelier."}
+              </Text>
+            </View>
+          )}
         </>
       )}
 

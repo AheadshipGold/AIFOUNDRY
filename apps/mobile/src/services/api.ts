@@ -352,6 +352,7 @@ export interface AuthUser {
   phone: string | null;
   name: string;
   username?: string;
+  city?: string;
   role: 'BUYER' | 'SELLER' | 'ADMIN' | 'OPERATOR';
   locale: string;
   shops: AuthShop[];
@@ -371,13 +372,6 @@ export interface AuthShop {
   productsCount: number;
   ordersCount: number;
   role: string;
-}
-
-export interface OtpResponse {
-  success: boolean;
-  identifier: string;
-  message: string;
-  code?: string; // only in dev
 }
 
 export interface AuthResponse {
@@ -433,20 +427,6 @@ function authHeaders(): Record<string, string> {
 }
 
 export const AuthApi = {
-  async requestOtp(identifier: string): Promise<OtpResponse> {
-    return request<OtpResponse>('/v1/auth/request-otp', {
-      method: 'POST',
-      body: JSON.stringify({ identifier }),
-    });
-  },
-
-  async verifyOtp(identifier: string, code: string): Promise<AuthResponse> {
-    return request<AuthResponse>('/v1/auth/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify({ identifier, code }),
-    });
-  },
-
   async loginWithEmail(identifier: string, password: string): Promise<AuthResponse> {
     return request<AuthResponse>('/v1/auth/login', {
       method: 'POST',

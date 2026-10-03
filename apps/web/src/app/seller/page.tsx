@@ -33,7 +33,7 @@ export default function StandaloneSellerDashboard() {
       id: "ord-02",
       orderNumber: "OJK-2026-0892",
       buyerName: "Amina Diop",
-      itemTitle: "Collier Plastron Danxomé — Bronze",
+      itemTitle: "Collier Plastron Haute Joaillerie — Bronze",
       totalFcfa: 320000,
       paymentChannel: "Moov Money",
       paymentStatus: "SETTLED_TO_MERCHANT",
@@ -179,7 +179,7 @@ export default function StandaloneSellerDashboard() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "8px", backgroundColor: "rgba(212, 180, 131, 0.08)", borderLeft: "4px solid #D4B483" }}>
               <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--oj-text-primary)" }}>
-                💬 Répondre à la demande sur-mesure D02 pour le parure Danxomé (Abomey)
+                💬 Répondre à la demande sur-mesure D02 pour la parure en bronze (Abomey)
               </span>
               <span style={{ fontSize: "12px", fontWeight: 700, color: "#AD8455" }}>SOUS 4H</span>
             </div>

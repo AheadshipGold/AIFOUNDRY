@@ -77,7 +77,7 @@ async function main() {
 
   const prod2 = await prisma.product.create({
     data: {
-      id: 'prd-adjaho-collier', shopId: shopAdjaho1.id, title: 'Collier Pectoral Reine Danxomé', description: 'Bronze ciselé.', category: 'joaillerie', originCity: 'Abomey',
+      id: 'prd-adjaho-collier', shopId: shopAdjaho1.id, title: 'Collier Plastron Haute Joaillerie', description: 'Création joaillière en bronze noble.', category: 'joaillerie', originCity: 'Abomey',
       variants: { create: [{ id: 'var-adjaho-col-1', sku: 'COL-DAN-01', name: 'Standard', priceMinor: 32000000, stockOnHand: 2 }] }
     }
   });

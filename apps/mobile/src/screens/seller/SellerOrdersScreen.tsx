@@ -12,17 +12,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
-import { OrdersApi, OrderRecord } from "../../services/api";
+import { OrdersApi, OrderRecord, type AuthUser } from "../../services/api";
 
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
 const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
 const imgArmchair = require("../../../assets/products/armchair.jpg");
 
 interface SellerOrdersScreenProps {
+  currentUser?: AuthUser | null;
   onBack: () => void;
 }
 
-export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) {
+export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrdersScreenProps) {
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale, mode } = useDesign();
@@ -33,15 +34,17 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
+
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, [currentUser]);
 
   async function loadOrders() {
     try {
       setLoading(true);
       const data = await OrdersApi.getAll();
-      setOrders(data);
+      setOrders(data || []);
     } catch (err) {
       console.warn("Failed to load orders", err);
     } finally {
@@ -90,22 +93,9 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
       fulfillmentStatus: "PENDING",
       image: imgWatchChrono,
     },
-    {
-      id: "mock3",
-      orderNumber: "CMD-2840",
-      buyerName: "Kodjo Mensah",
-      deliveryAddress: "Cotonou, Ganhi",
-      items: [{ itemTitle: "Fauteuil Club Travertin & Lin Brut" }],
-      totalAmountMinor: 14500000,
-      currency: "XOF",
-      paymentChannel: "CASH_ON_DELIVERY",
-      paymentStatus: "SETTLED_TO_MERCHANT",
-      fulfillmentStatus: "DELIVERED",
-      image: imgArmchair,
-    },
   ] as any as OrderRecord[];
 
-  const displayOrders = orders.length > 0 ? orders : defaultOrders;
+  const displayOrders = orders.length > 0 ? orders : (isDemo ? defaultOrders : []);
 
   const filters = [
     { id: "all", labelFr: `Toutes (${displayOrders.length})`, labelEn: `All (${displayOrders.length})` },
@@ -233,6 +223,46 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
         {loading ? (
           <View style={{ padding: 40, alignItems: "center" }}>
             <ActivityIndicator size="large" color={colors.action} />
+          </View>
+        ) : filteredOrders.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 32,
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 20,
+            }}
+          >
+            <Text style={{ fontSize: 36, marginBottom: 12 }}>📦</Text>
+            <Text
+              style={{
+                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                fontSize: 17,
+                fontWeight: "700",
+                color: colors.text,
+                textAlign: "center",
+              }}
+            >
+              {isEn ? "No orders yet" : "Aucune commande pour le moment"}
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.muted,
+                textAlign: "center",
+                marginTop: 6,
+                lineHeight: 18,
+                maxWidth: 280,
+              }}
+            >
+              {isEn
+                ? "Your workshop is open. When buyers place orders for your creations, they will appear here."
+                : "Votre atelier est prêt. Dès que des clients achèteront vos créations, leurs commandes apparaîtront ici."}
+            </Text>
           </View>
         ) : (
           <View style={{ gap: 14 }}>

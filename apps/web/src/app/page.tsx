@@ -529,8 +529,8 @@ function MainMarketplaceView() {
       id: "req-01",
       buyerName: "Amina Diop",
       buyerCity: "Cotonou",
-      title: "Parure royale en bronze ciselé pour cérémonie traditionnelle",
-      description: "Recherche d'un atelier d'artisan d'Abomey capable de forger un collier plastron et manchettes assorties sous 15 jours avec symboles royaux.",
+      title: "Parure de haute joaillerie en bronze ciselé",
+      description: "Recherche d'un atelier d'artisan joaillier capable de forger un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
       category: "Joaillerie & Bronze",
       budget: "280 000 FCFA",
       proposalsCount: 2,
@@ -1213,7 +1213,9 @@ function MainMarketplaceView() {
             <div className="oj-seller-header">
               <div>
                 <h1 className="oj-seller-greeting">
-                  {isEn ? "Welcome back, Alexandre 👋" : "Bonjour Alexandre 👋"}
+                  {currentUser?.name
+                    ? (isEn ? `Welcome back, ${currentUser.name.split(' ')[0]} 👋` : `Bonjour ${currentUser.name.split(' ')[0]} 👋`)
+                    : (isEn ? "Welcome back, Alexandre 👋" : "Bonjour Alexandre 👋")}
                 </h1>
                 <p style={{ color: "var(--oj-color-muted)", margin: 0 }}>
                   {isEn

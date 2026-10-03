@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Headers } from '@nestjs/common';
 import { OrdersService, OrderRecord } from './orders.service';
 
 @Controller('v1/orders')
@@ -6,8 +6,13 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  async getAll(): Promise<OrderRecord[]> {
-    return this.ordersService.findAll();
+  async getAll(
+    @Query('shopId') shopId?: string,
+    @Headers('x-shop-id') headerShopId?: string,
+    @Headers('x-user-id') explicitUserId?: string,
+  ): Promise<OrderRecord[]> {
+    const targetShopId = headerShopId || shopId;
+    return this.ordersService.findAll(targetShopId, explicitUserId);
   }
 
   @Get(':id')

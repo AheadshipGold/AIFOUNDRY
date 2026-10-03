@@ -16,19 +16,24 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import { Button } from "../../design-system/components";
-import { RequestsApi, PurchaseRequestItem } from "../../services/api";
+import { RequestsApi, PurchaseRequestItem, type AuthUser } from "../../services/api";
 
 interface SellerOpportunitiesScreenProps {
+  currentUser?: AuthUser | null;
   onBack: () => void;
 }
 
 export default function SellerOpportunitiesScreen({
+  currentUser,
   onBack,
 }: SellerOpportunitiesScreenProps) {
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale } = useDesign();
   const isEn = locale === "en";
+
+  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
+  const activeShop = currentUser?.activeShop || (currentUser?.shops && currentUser.shops.length > 0 ? currentUser.shops[0] : null);
 
   const [requests, setRequests] = useState<PurchaseRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,14 +66,14 @@ export default function SellerOpportunitiesScreen({
     };
   }, []);
 
-  // Fallback mock requests
+  // Fallback mock requests for demo account only
   const fallbackRequests: PurchaseRequestItem[] = [
     {
       id: "req-01",
       buyerName: "Amina Diop",
-      title: "Parure royale en bronze ciselé pour cérémonie traditionnelle",
+      title: "Parure de haute joaillerie en bronze ciselé",
       description:
-        "Recherche d'un atelier d'artisan d'Abomey capable de forger un collier plastron et manchettes assorties sous 15 jours avec symboles royaux dahoméens.",
+        "Recherche d'un atelier d'artisan joaillier capable de forger un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
       category: "Joaillerie & Bronze",
       targetBudgetMinor: 28000000,
       currency: "XOF",
@@ -89,19 +94,6 @@ export default function SellerOpportunitiesScreen({
       createdAt: new Date().toISOString(),
       proposals: [],
     },
-    {
-      id: "req-03",
-      buyerName: "Didier Agossa",
-      title: "Sac de voyage weekend en cuir pleine fleur patiné",
-      description:
-        "Sac de voyage 50L en cuir brun foncé avec compartiment chaussures et bandoulière renforcée cuir sellier.",
-      category: "Maroquinerie",
-      targetBudgetMinor: 19000000,
-      currency: "XOF",
-      status: "OPEN",
-      createdAt: new Date().toISOString(),
-      proposals: [],
-    },
   ];
 
   const fetchRequests = async () => {
@@ -110,10 +102,10 @@ export default function SellerOpportunitiesScreen({
       if (data && data.length > 0) {
         setRequests(data);
       } else {
-        setRequests(fallbackRequests);
+        setRequests(isDemo ? fallbackRequests : []);
       }
     } catch {
-      setRequests(fallbackRequests);
+      setRequests(isDemo ? fallbackRequests : []);
     } finally {
       setLoading(false);
     }
@@ -121,7 +113,7 @@ export default function SellerOpportunitiesScreen({
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [currentUser]);
 
   const handleSubmitQuote = async () => {
     if (!selectedReq) return;
@@ -132,8 +124,8 @@ export default function SellerOpportunitiesScreen({
     setSubmitting(true);
     try {
       await RequestsApi.submitProposal(selectedReq.id, {
-        shopName: "Atelier d'Excellence Bénin",
-        artisanCity: "Cotonou",
+        shopName: activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || "Mon Atelier d'Art",
+        artisanCity: activeShop?.city || currentUser?.city || "Cotonou",
         priceMinor: priceNum * 100,
         advancePaymentRequiredMinor: advNum * 100,
         productionDays: daysNum,
@@ -277,6 +269,46 @@ export default function SellerOpportunitiesScreen({
       {/* Loading state */}
       {loading ? (
         <ActivityIndicator size="large" color={colors.action} style={{ marginTop: 24 }} />
+      ) : requests.length === 0 ? (
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 32,
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 10,
+          }}
+        >
+          <Text style={{ fontSize: 36, marginBottom: 12 }}>✦</Text>
+          <Text
+            style={{
+              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+              fontSize: 17,
+              fontWeight: "700",
+              color: colors.text,
+              textAlign: "center",
+            }}
+          >
+            {isEn ? "No bespoke requests yet" : "Aucune demande sur-mesure"}
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: colors.muted,
+              textAlign: "center",
+              marginTop: 6,
+              lineHeight: 18,
+              maxWidth: 280,
+            }}
+          >
+            {isEn
+              ? "When clients create custom requests matching your craftsmanship, they will be listed here for you to submit price quotes."
+              : "Dès que des acheteurs publieront des projets sur-mesure correspondant à vos compétences, vous pourrez leur soumettre vos devis d'artisan ici."}
+          </Text>
+        </View>
       ) : (
         /* Requests List */
         <View style={{ gap: 16 }}>

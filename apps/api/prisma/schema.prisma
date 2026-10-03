@@ -19,26 +19,82 @@ enum UserRole {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  username        String?          @unique
-  phone           String?
-  name            String
-  passwordHash    String?
-  googleId        String?          @unique
-  avatarUrl       String?
-  isEmailVerified Boolean          @default(false)
-  role            UserRole         @default(BUYER)
-  locale          String           @default("fr")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                  String           @id @default(uuid())
+  name                String
+  email               String           @unique
+  emailVerified       Boolean          @default(false)
+  image               String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
-  ownedShops      Shop[]           @relation("ShopOwner")
-  memberships     ShopMembership[]
-  requests        PurchaseRequest[]
-  orders          Order[]
+  // Better Auth plugin fields
+  username            String?          @unique
+  displayUsername     String?
+  phoneNumber         String?
+  phoneNumberVerified Boolean          @default(false)
+
+  // Custom Ojarket fields
+  phone               String?
+  passwordHash        String?
+  googleId            String?          @unique
+  avatarUrl           String?
+  isEmailVerified     Boolean          @default(false)
+  role                UserRole         @default(BUYER)
+  locale              String           @default("fr")
+
+  // Relations
+  sessions            Session[]
+  accounts            Account[]
+  ownedShops          Shop[]           @relation("ShopOwner")
+  memberships         ShopMembership[]
+  requests            PurchaseRequest[]
+  orders              Order[]
 
   @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
 }
 
 enum KycStatus {

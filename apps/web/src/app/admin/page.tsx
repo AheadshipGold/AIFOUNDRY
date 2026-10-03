@@ -1341,7 +1341,7 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {[
-                      { title: "Parure royale en bronze ciselé pour cérémonie traditionnelle", buyer: "Amina Diop (Cotonou)", cat: "Joaillerie & Bronze", budget: "280 000 FCFA", quotes: 2, status: "MATCHED" },
+                      { title: "Parure de haute joaillerie en bronze ciselé", buyer: "Amina Diop (Cotonou)", cat: "Joaillerie & Bronze", budget: "280 000 FCFA", quotes: 2, status: "MATCHED" },
                       { title: "Table console sculptée en bois d'Iroko massif", buyer: "Marcelle Houngbo (Porto-Novo)", cat: "Mobilier d'Art", budget: "450 000 FCFA", quotes: 1, status: "MATCHED" },
                       { title: "Sac de voyage weekend en cuir pleine fleur patiné", buyer: "Didier Agossa (Parakou)", cat: "Maroquinerie", budget: "190 000 FCFA", quotes: 0, status: "OPEN" },
                     ].map((r, i) => (

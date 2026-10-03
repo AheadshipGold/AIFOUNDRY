@@ -30,8 +30,8 @@ export default function StandaloneBespokePage() {
   const [requests, setRequests] = useState<RequestItem[]>([
     {
       id: "req-01",
-      title: "Parure royale en bronze ciselé pour cérémonie traditionnelle",
-      description: "Recherche d'un atelier d'artisan d'Abomey capable de forger un collier plastron et manchettes assorties sous 15 jours avec symboles royaux.",
+      title: "Parure de haute joaillerie en bronze ciselé",
+      description: "Recherche d'un atelier d'artisan joaillier capable de forger un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
       category: "joaillerie",
       targetBudgetMinor: 28000000,
       currency: "XOF",

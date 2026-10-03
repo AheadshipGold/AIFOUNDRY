@@ -91,9 +91,9 @@ const CATALOG: Product[] = [
   },
   {
     id: "prod-4",
-    title: "Buste Royal Dahomey en Bronze",
-    subtitle: "Bronze noble ciselé à la flamme",
-    seller: "Fonderie Royale d'Abomey",
+    title: "Sculpture Artistique en Bronze",
+    subtitle: "Création originale · Bronze noble ciselé",
+    seller: "Atelier d'Art & Fonderie",
     price: 195000,
     currency: "XOF",
     rating: 5.0,

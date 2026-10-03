@@ -12,6 +12,7 @@
   "dependencies": {
     "@aifoundry/design-system": "0.1.0",
     "@aifoundry/shared": "*",
+    "better-auth": "^1.7.6",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18"
