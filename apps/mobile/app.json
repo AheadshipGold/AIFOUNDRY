@@ -33,6 +33,12 @@
     },
     "web": {
       "favicon": "./assets/brand/Ojarket_04_Favicon_512_Transparent.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "dc02cba8-0675-47f9-826d-1dad3de32b27"
+      }
+    },
+    "owner": "scriptura"
   }
 }
