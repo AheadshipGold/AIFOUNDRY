@@ -28,7 +28,9 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
       ]
     },
     "web": {
@@ -51,6 +53,12 @@
         "expo-image-picker",
         {
           "photosPermission": "Ojarket a besoin d'accéder à vos photos pour enrichir le catalogue de votre atelier."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Ojarket utilise votre position pour vous afficher les ateliers et créateurs d'artisanat les plus proches à Cotonou et au Bénin."
         }
       ],
       [
