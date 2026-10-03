@@ -5,10 +5,23 @@ import Link from "next/link";
 import { DesignProvider, useDesign } from "../design-system/provider";
 import { translations, Locale } from "@aifoundry/shared";
 import "../design-system/styles.css";
-import "./landing.css";
 import { WebAuthModal } from "../components/WebAuthModal";
 import { WebSellerOnboardingModal } from "../components/WebSellerOnboardingModal";
-import { AuthApi, getStoredToken, getStoredUser, clearSession, type AuthUser } from "../lib/api";
+import {
+  AuthApi,
+  getStoredToken,
+  getStoredUser,
+  clearSession,
+  SellerApi,
+  OrdersApi,
+  RequestsApi,
+  type AuthUser,
+  type OrderRecord,
+  type PurchaseRequestItem,
+  type FinOpsEntry,
+  type CashbookData,
+  type SellerDashboardData,
+} from "../lib/api";
 
 
 // Types
@@ -464,6 +477,29 @@ function MainMarketplaceView() {
   // D02 Buyer proposals & comparison modal state
   const [buyerRequestsModalOpen, setBuyerRequestsModalOpen] = useState(false);
   const [proposalAccepted, setProposalAccepted] = useState(false);
+  const [requestsList, setRequestsList] = useState<any[]>([
+    {
+      id: "req-01",
+      buyerName: "Amina Diop",
+      buyerCity: "Cotonou",
+      category: "Joaillerie & Bronze",
+      title: "Parure de joaillerie en bronze ciselé",
+      description: "Recherche d'une boutique ou joaillier capable de fournir un collier plastron sous 15 jours.",
+      budget: "280 000 FCFA",
+      proposals: [
+        {
+          id: "prop-01",
+          sellerName: "Maison Laurent",
+          sellerCity: "Porto-Novo",
+          price: "270 000 FCFA",
+          advance: "100 000 FCFA",
+          delayDays: 10,
+          notes: "Bronze noble poli, ébauche sous 4 jours, livraison soignée.",
+          status: "ACCEPTED",
+        },
+      ],
+    },
+  ]);
 
   // D02 Seller Quote modal state
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -487,87 +523,114 @@ function MainMarketplaceView() {
   const [closeNotesInput, setCloseNotesInput] = useState("Caisse conforme, inventaire vérifié");
   const [closureSuccess, setClosureSuccess] = useState(false);
 
-  // Dynamic D02 Requests state
-  const [requestsList, setRequestsList] = useState([
-    {
-      id: "req-01",
-      buyerName: "Amina Diop",
-      buyerCity: "Cotonou",
-      title: "Parure de joaillerie en bronze ciselé",
-      description: "Recherche d'une boutique ou joaillier capable de fournir un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
-      category: "Joaillerie & Bronze",
-      budget: "280 000 FCFA",
-      proposalsCount: 2,
-      proposals: [
-        {
-          id: "prop-01",
-          artisan: "Fonderie Royale d'Abomey",
-          city: "Abomey",
-          price: 275000,
-          advance: 100000,
-          days: 12,
-          notes: "Faisable sous 12 jours. Ébauche envoyée par WhatsApp après confirmation du versement direct MoMo.",
-          status: "PENDING",
-        },
-        {
-          id: "prop-02",
-          artisan: "Maison d'Honneur",
-          city: "Cotonou",
-          price: 290000,
-          advance: 120000,
-          days: 10,
-          notes: "Finition bronze patiné noble, garniture intérieure velours noir.",
-          status: "PENDING",
-        },
-      ],
-    },
-    {
-      id: "req-02",
-      buyerName: "Marcelle Houngbo",
-      buyerCity: "Porto-Novo",
-      title: "Table console sculptée en bois d'Iroko massif",
-      description: "Console d'entrée 140cm x 40cm avec pieds sculptés motifs bas-reliefs dahoméens. Finition cirée naturelle.",
-      category: "Mobilier d'Art",
-      budget: "450 000 FCFA",
-      proposalsCount: 1,
-      proposals: [
-        {
-          id: "prop-03",
-          artisan: "Studio Bois Sacré",
-          city: "Porto-Novo",
-          price: 430000,
-          advance: 200000,
-          days: 21,
-          notes: "Bois d'Iroko séché 3 ans. Finitions soignées réalisées par un ébéniste qualifié.",
-          status: "PENDING",
-        }
-      ],
-    },
-    {
-      id: "req-03",
-      buyerName: "Didier Agossa",
-      buyerCity: "Parakou",
-      title: "Sac de voyage weekend en cuir pleine fleur patiné",
-      description: "Sac de voyage 50L en cuir brun foncé avec compartiment chaussures et bandoulière renforcée.",
-      category: "Maroquinerie",
-      budget: "190 000 FCFA",
-      proposalsCount: 0,
-      proposals: [],
-    }
-  ]);
-
-  // Dynamic FinOps Entries state
-  const [finopsEntries, setFinopsEntries] = useState([
-    { id: "fin-01", type: "ENCAISSEMENT", label: "Commande OJK-2026-0891 (Sac Cabas Grand Marché)", channel: "MTN MoMo", amount: 185000, reference: "TXN-MTN-89021", time: "14:32", status: "Confirmé par PSP" },
-    { id: "fin-02", type: "ENCAISSEMENT", label: "Vente directe comptoir — Porte-carte cuir cognac", channel: "Espèces", amount: 45000, reference: "REC-CPT-004", time: "11:15", status: "Confirmé par vendeur" },
-    { id: "fin-03", type: "VENTE_A_CREDIT", label: "Commande Galerie Royale — Solde à livraison", channel: "Virement", amount: 120000, reference: "CMD-GAL-990", time: "09:10", status: "Créance en attente" },
-  ]);
-
+  // Real Database Connected State for Seller Universe
+  const [sellerOrders, setSellerOrders] = useState<OrderRecord[]>([]);
+  const [sellerRequests, setSellerRequests] = useState<PurchaseRequestItem[]>([]);
+  const [finopsEntries, setFinopsEntries] = useState<FinOpsEntry[]>([]);
   const [finopsKpis, setFinopsKpis] = useState({
-    vendu: 1280000,
-    encaisse: 850000,
-    restant: 430000,
+    vendu: 0,
+    encaisse: 0,
+    restant: 0,
   });
+  const [sellerLoading, setSellerLoading] = useState(false);
+
+  const isDemoAccount = (user: AuthUser | null) => {
+    if (!user) return false;
+    return user.email === "demo@ojarket.test" || user.email === "alexandre@ojarket.test";
+  };
+
+  const fetchSellerData = async (user: AuthUser | null) => {
+    if (!user) {
+      setSellerOrders([]);
+      setSellerRequests([]);
+      setFinopsEntries([]);
+      setFinopsKpis({ vendu: 0, encaisse: 0, restant: 0 });
+      return;
+    }
+
+    const isDemo = isDemoAccount(user);
+    if (isDemo) {
+      // Demo test accounts only: sample data for presentation
+      setSellerRequests([
+        {
+          id: "req-01",
+          buyerName: "Amina Diop",
+          buyerPhone: "+229 97 00 00 01",
+          title: "Parure de joaillerie en bronze ciselé",
+          description: "Recherche d'une boutique ou joaillier capable de fournir un collier plastron sous 15 jours.",
+          category: "Joaillerie & Bronze",
+          targetBudgetMinor: 28000000,
+          currency: "XOF",
+          status: "OPEN",
+          proposals: [],
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      setSellerOrders([
+        {
+          id: "ord-01",
+          orderNumber: "CMD-2847",
+          buyerName: "Amina Diop",
+          totalAmountMinor: 4800000,
+          currency: "XOF",
+          paymentChannel: "MTN MoMo",
+          fulfillmentStatus: "PREPARING",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      setFinopsEntries([
+        {
+          id: "fin-01",
+          type: "ENCAISSEMENT",
+          label: "Commande CMD-2847",
+          channel: "MTN MoMo",
+          amountMinor: 4800000,
+          reference: "TXN-MTN-89021",
+          time: "14:32",
+        },
+      ]);
+      setFinopsKpis({ vendu: 48000, encaisse: 48000, restant: 0 });
+      return;
+    }
+
+    // REAL REGISTERED USER (e.g. ABRAHAM B. A., or any user): query real database!
+    const targetShopId = user.activeShop?.id || (user.shops && user.shops[0]?.id);
+    setSellerLoading(true);
+
+    try {
+      const [cb, ord, reqs] = await Promise.all([
+        SellerApi.getCashbook(targetShopId).catch(() => null),
+        OrdersApi.getAll(targetShopId).catch(() => []),
+        RequestsApi.getAll().catch(() => []),
+      ]);
+
+      const vendu = cb?.summary?.totalVenduMinor ? Math.round(cb.summary.totalVenduMinor / 100) : 0;
+      const encaisse = cb?.summary?.totalEncaisseMinor ? Math.round(cb.summary.totalEncaisseMinor / 100) : 0;
+      const restant = cb?.summary?.totalRestantMinor ? Math.round(cb.summary.totalRestantMinor / 100) : 0;
+      setFinopsKpis({ vendu, encaisse, restant });
+
+      setSellerOrders(ord || []);
+      setSellerRequests(reqs || []);
+
+      if (cb?.recentEntries && Array.isArray(cb.recentEntries)) {
+        setFinopsEntries(cb.recentEntries);
+      } else {
+        setFinopsEntries([]);
+      }
+    } catch (err) {
+      console.warn("Failed to load real seller data from backend", err);
+      setSellerOrders([]);
+      setSellerRequests([]);
+      setFinopsEntries([]);
+      setFinopsKpis({ vendu: 0, encaisse: 0, restant: 0 });
+    } finally {
+      setSellerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSellerData(currentUser);
+  }, [currentUser]);
 
 
   const addToCart = (prod: Product) => {
@@ -1178,17 +1241,17 @@ function MainMarketplaceView() {
               <div>
                 <h1 className="oj-seller-greeting">
                   {currentUser?.name
-                    ? (isEn ? `Welcome back, ${currentUser.name.split(' ')[0]} 👋` : `Bonjour ${currentUser.name.split(' ')[0]} 👋`)
-                    : (isEn ? "Welcome back, Alexandre 👋" : "Bonjour Alexandre 👋")}
+                    ? (isEn ? `Welcome back, ${currentUser.name.trim().split(/\s+/)[0]} 👋` : `Bonjour ${currentUser.name.trim().split(/\s+/)[0]} 👋`)
+                    : (isEn ? "Welcome back 👋" : "Bonjour 👋")}
                 </h1>
                 <p style={{ color: "var(--oj-color-muted)", margin: 0 }}>
                   {isEn
-                    ? "Manage your workshop, payments and orders."
-                    : "Gérez votre boutique et développez vos ventes."}
+                    ? "Manage your store, orders and payments."
+                    : "Gérez votre boutique, vos commandes et vos encaissements."}
                 </p>
               </div>
               <span className="oj-verified-pill" style={{ fontSize: "12px", padding: "4px 12px" }}>
-                Vendeur Pro
+                {currentUser?.activeShop?.name || "Boutique Vendeur"}
               </span>
             </div>
 
@@ -1202,9 +1265,9 @@ function MainMarketplaceView() {
                   {tab === "overview"
                     ? isEn ? "Dashboard" : "Tableau de bord"
                     : tab === "opportunities"
-                    ? isEn ? "Buyer Demands (3)" : "Opportunités D02 (3)"
+                    ? isEn ? `Buyer Demands (${sellerRequests.length})` : `Demandes acheteurs (${sellerRequests.length})`
                     : tab === "orders"
-                    ? isEn ? "Orders (14)" : "Commandes (14)"
+                    ? isEn ? `Orders (${sellerOrders.length})` : `Commandes (${sellerOrders.length})`
                     : isEn ? "Cashbook & FinOps" : "Caisse & FinOps"}
                 </button>
               ))}
@@ -1214,16 +1277,36 @@ function MainMarketplaceView() {
               <div>
                 <div className="oj-kpi-grid">
                   {[
-                    { label: isEn ? "Sales" : "Ventes", value: "1 280 000 FCFA", trend: "+38%", positive: true },
-                    { label: isEn ? "Orders" : "Commandes", value: "142", trend: "+24%", positive: true },
-                    { label: isEn ? "Requests" : "Demandes clients", value: "16", trend: "+60%", positive: true },
-                    { label: isEn ? "Low Stock" : "Stock faible", value: "3", trend: isEn ? "Items" : "Articles", positive: false },
+                    {
+                      label: isEn ? "Sales" : "Ventes",
+                      value: formatPrice(finopsKpis.vendu),
+                      trend: finopsKpis.vendu > 0 ? "+100%" : "0%",
+                      positive: finopsKpis.vendu > 0,
+                    },
+                    {
+                      label: isEn ? "Orders" : "Commandes",
+                      value: `${sellerOrders.length}`,
+                      trend: sellerOrders.length > 0 ? `+${sellerOrders.length}` : "0",
+                      positive: sellerOrders.length > 0,
+                    },
+                    {
+                      label: isEn ? "Requests" : "Demandes clients",
+                      value: `${sellerRequests.length}`,
+                      trend: sellerRequests.length > 0 ? `+${sellerRequests.length}` : "0",
+                      positive: sellerRequests.length > 0,
+                    },
+                    {
+                      label: isEn ? "Low Stock" : "Stock faible",
+                      value: "0",
+                      trend: isEn ? "Items" : "Articles",
+                      positive: true,
+                    },
                   ].map((kpi, i) => (
                     <div key={i} className="oj-kpi-card">
                       <div className="oj-kpi-header">
                         <span>{kpi.label}</span>
-                        <span className={`oj-kpi-trend ${kpi.positive ? "positive" : "negative"}`}>
-                          {kpi.positive ? "↗" : "⚠"} {kpi.trend}
+                        <span className={`oj-kpi-trend ${kpi.positive ? "positive" : "neutral"}`}>
+                          {kpi.positive ? "↗" : "•"} {kpi.trend}
                         </span>
                       </div>
                       <strong className="oj-kpi-value">{kpi.value}</strong>
@@ -1236,9 +1319,21 @@ function MainMarketplaceView() {
                     {isEn ? "Needs Action" : "Actions prioritaires"}
                   </h3>
                   {[
-                    { label: isEn ? "Orders to prepare" : "Commandes à préparer", count: "04", action: () => setSellerTab("orders") },
-                    { label: isEn ? "Buyer requests to quote" : "Demandes sur-mesure à chiffrer", count: "03", action: () => setSellerTab("opportunities") },
-                    { label: isEn ? "Items to restock" : "Réappro à planifier", count: "02", action: () => setSellerTab("overview") },
+                    {
+                      label: isEn ? "Orders to prepare" : "Commandes à préparer",
+                      count: `${sellerOrders.filter(o => o.fulfillmentStatus === 'PREPARING' || o.fulfillmentStatus === 'PENDING').length}`,
+                      action: () => setSellerTab("orders"),
+                    },
+                    {
+                      label: isEn ? "Buyer requests to quote" : "Demandes clients à chiffrer",
+                      count: `${sellerRequests.filter(r => r.status === 'OPEN').length}`,
+                      action: () => setSellerTab("opportunities"),
+                    },
+                    {
+                      label: isEn ? "Direct payments recorded" : "Encaissements enregistrés",
+                      count: `${finopsEntries.length}`,
+                      action: () => setSellerTab("cashbook"),
+                    },
                   ].map((todo, i) => (
                     <div key={i} className="oj-todo-item">
                       <div>
@@ -1259,10 +1354,10 @@ function MainMarketplaceView() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                   <div>
                     <h3 style={{ margin: "0 0 4px", fontFamily: "var(--oj-font-editorial)", fontSize: "20px" }}>
-                      {t.d02.sellerOpportunities}
+                      {isEn ? "Buyer Demands & Opportunities" : "Demandes Acheteurs & Opportunités"}
                     </h3>
                     <p style={{ margin: 0, color: "var(--oj-color-muted)", fontSize: "13px" }}>
-                      {t.d02.sellerOpportunitiesDesc}
+                      {isEn ? "Browse requests submitted by clients and propose formal quotes." : "Consultez les demandes publiées par les clients et proposez vos devis."}
                     </p>
                   </div>
                 </div>
@@ -1273,100 +1368,131 @@ function MainMarketplaceView() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {requestsList.map((req) => (
-                    <div
-                      key={req.id}
-                      style={{
-                        background: "var(--oj-color-surface)",
-                        border: "1px solid var(--oj-color-border)",
-                        borderRadius: "var(--oj-radius-card)",
-                        padding: "24px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        flexWrap: "wrap",
-                        gap: "20px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-                      }}
-                    >
-                      <div style={{ flex: 1, minWidth: "280px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                          <span className="oj-status-pill pending">{req.category}</span>
-                          <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                            {req.buyerName} · {req.buyerCity}
-                          </span>
-                        </div>
-                        <h4 style={{ margin: "0 0 8px", fontSize: "17px", fontWeight: 600 }}>{req.title}</h4>
-                        <p style={{ margin: "0 0 16px", color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.5" }}>
-                          {req.description}
-                        </p>
-                        <div style={{ display: "flex", gap: "20px", fontSize: "13px" }}>
-                          <div>
-                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Target Budget:" : "Budget indicatif :"} </span>
-                            <strong style={{ color: "var(--oj-color-action)" }}>{req.budget}</strong>
+                {sellerRequests.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
+                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>🛍️</div>
+                    <h4 style={{ margin: "0 0 8px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
+                      {isEn ? "No buyer demands at the moment" : "Aucune demande acheteur pour le moment"}
+                    </h4>
+                    <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: 0, maxWidth: "440px", marginLeft: "auto", marginRight: "auto" }}>
+                      {isEn ? "Custom product requests from buyers will automatically appear here." : "Les demandes spécifiques des acheteurs apparaîtront automatiquement ici dès leur publication."}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {sellerRequests.map((req) => (
+                      <div
+                        key={req.id}
+                        style={{
+                          background: "var(--oj-color-surface)",
+                          border: "1px solid var(--oj-color-border)",
+                          borderRadius: "var(--oj-radius-card)",
+                          padding: "24px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          flexWrap: "wrap",
+                          gap: "20px",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: "280px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                            <span className="oj-status-pill pending">{req.category}</span>
+                            <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                              {req.buyerName}
+                            </span>
                           </div>
-                          <div>
-                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Quotes:" : "Devis soumis :"} </span>
-                            <strong>{req.proposalsCount}</strong>
+                          <h4 style={{ margin: "0 0 8px", fontSize: "17px", fontWeight: 600 }}>{req.title}</h4>
+                          <p style={{ margin: "0 0 16px", color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.5" }}>
+                            {req.description}
+                          </p>
+                          <div style={{ display: "flex", gap: "20px", fontSize: "13px" }}>
+                            <div>
+                              <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Target Budget:" : "Budget indicatif :"} </span>
+                              <strong style={{ color: "var(--oj-color-action)" }}>
+                                {req.targetBudgetMinor ? formatPrice(Math.round(req.targetBudgetMinor / 100)) : "À négocier"}
+                              </strong>
+                            </div>
+                            <div>
+                              <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Quotes:" : "Devis soumis :"} </span>
+                              <strong>{req.proposals?.length || 0}</strong>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "180px" }}>
-                        <button
-                          className="oj-btn-primary"
-                          onClick={() => {
-                            setSelectedRequestForQuote(req);
-                            setQuoteModalOpen(true);
-                          }}
-                        >
-                          {t.d02.submitProposal} →
-                        </button>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "180px" }}>
+                          <button
+                            className="oj-btn-primary"
+                            onClick={() => {
+                              setSelectedRequestForQuote(req);
+                              setQuoteModalOpen(true);
+                            }}
+                          >
+                            {t.d02.submitProposal} →
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {sellerTab === "orders" && (
               <div>
-                <table className="oj-order-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                        {isEn ? "Order" : "Commande"}
-                      </th>
-                      <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                        {isEn ? "Amount" : "Montant"}
-                      </th>
-                      <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                        {isEn ? "Status" : "Statut"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { id: "#CMD-2847", item: "Cabas Studio", amount: 48000, status: "En préparation", statusClass: "pending" },
-                      { id: "#CMD-2846", item: "Chronographe Héritage", amount: 285000, status: "À expédier", statusClass: "pending" },
-                      { id: "#CMD-2845", item: "Fauteuil Travertin", amount: 145000, status: "Livrée", statusClass: "success" },
-                    ].map((ord) => (
-                      <tr key={ord.id}>
-                        <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
-                          <div style={{ fontWeight: 600 }}>{ord.item}</div>
-                          <small style={{ color: "var(--oj-color-muted)" }}>{ord.id}</small>
-                        </td>
-                        <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-                          {formatPrice(ord.amount)}
-                        </td>
-                        <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
-                          <span className={`oj-status-pill ${ord.statusClass}`}>{ord.status}</span>
-                        </td>
+                {sellerOrders.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
+                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>📦</div>
+                    <h4 style={{ margin: "0 0 8px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
+                      {isEn ? "No orders yet" : "Aucune commande pour le moment"}
+                    </h4>
+                    <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: 0, maxWidth: "420px", marginLeft: "auto", marginRight: "auto" }}>
+                      {isEn ? "Your store is ready to receive orders. Your sales will appear here automatically." : "Votre boutique est prête à recevoir ses premières ventes. Vos commandes apparaîtront automatiquement ici."}
+                    </p>
+                  </div>
+                ) : (
+                  <table className="oj-order-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                          {isEn ? "Order" : "Commande"}
+                        </th>
+                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                          {isEn ? "Customer" : "Client"}
+                        </th>
+                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                          {isEn ? "Amount" : "Montant"}
+                        </th>
+                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                          {isEn ? "Status" : "Statut"}
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {sellerOrders.map((ord) => (
+                        <tr key={ord.id}>
+                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
+                            <div style={{ fontWeight: 600 }}>{ord.orderNumber}</div>
+                            <small style={{ color: "var(--oj-color-muted)" }}>{ord.paymentChannel || "Paiement direct"}</small>
+                          </td>
+                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
+                            <div>{ord.buyerName}</div>
+                            <small style={{ color: "var(--oj-color-muted)" }}>{ord.buyerPhone || ""}</small>
+                          </td>
+                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                            {formatPrice(Math.round(ord.totalAmountMinor / 100))}
+                          </td>
+                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
+                            <span className={`oj-status-pill ${ord.fulfillmentStatus === 'DELIVERED' ? 'success' : 'pending'}`}>
+                              {ord.fulfillmentStatus || ord.paymentStatus || "En cours"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
 
@@ -1412,35 +1538,46 @@ function MainMarketplaceView() {
                   <h4 style={{ margin: "0 0 16px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
                     {t.finops.cashbookTitle}
                   </h4>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid var(--oj-color-border)", color: "var(--oj-color-muted)" }}>
-                        <th style={{ textAlign: "left", padding: "10px 0" }}>Libellé & Référence</th>
-                        <th style={{ textAlign: "left", padding: "10px 0" }}>Canal</th>
-                        <th style={{ textAlign: "left", padding: "10px 0" }}>Heure</th>
-                        <th style={{ textAlign: "left", padding: "10px 0" }}>Statut</th>
-                        <th style={{ textAlign: "right", padding: "10px 0" }}>Montant</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {finopsEntries.map((e) => (
-                        <tr key={e.id} style={{ borderBottom: "1px solid var(--oj-color-subtle)" }}>
-                          <td style={{ padding: "14px 0" }}>
-                            <div style={{ fontWeight: 600 }}>{e.label}</div>
-                            <small style={{ color: "var(--oj-color-muted)" }}>{e.reference}</small>
-                          </td>
-                          <td style={{ padding: "14px 0" }}>{e.channel}</td>
-                          <td style={{ padding: "14px 0", color: "var(--oj-color-muted)" }}>{e.time}</td>
-                          <td style={{ padding: "14px 0" }}>
-                            <span className="oj-status-pill success">{e.status}</span>
-                          </td>
-                          <td style={{ padding: "14px 0", textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                            {formatPrice(e.amount)}
-                          </td>
+                  {finopsEntries.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--oj-color-muted)" }}>
+                      <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 600 }}>
+                        {isEn ? "No cashbook transactions yet" : "Aucun mouvement de caisse enregistré"}
+                      </p>
+                      <small style={{ fontSize: "13px" }}>
+                        {isEn ? "Use the button above to record your direct sales and collections." : "Utilisez le bouton ci-dessus pour enregistrer vos encaissements et ventes directes."}
+                      </small>
+                    </div>
+                  ) : (
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid var(--oj-color-border)", color: "var(--oj-color-muted)" }}>
+                          <th style={{ textAlign: "left", padding: "10px 0" }}>Libellé & Référence</th>
+                          <th style={{ textAlign: "left", padding: "10px 0" }}>Canal</th>
+                          <th style={{ textAlign: "left", padding: "10px 0" }}>Heure</th>
+                          <th style={{ textAlign: "left", padding: "10px 0" }}>Statut</th>
+                          <th style={{ textAlign: "right", padding: "10px 0" }}>Montant</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {finopsEntries.map((e) => (
+                          <tr key={e.id} style={{ borderBottom: "1px solid var(--oj-color-subtle)" }}>
+                            <td style={{ padding: "14px 0" }}>
+                              <div style={{ fontWeight: 600 }}>{e.label}</div>
+                              <small style={{ color: "var(--oj-color-muted)" }}>{e.reference}</small>
+                            </td>
+                            <td style={{ padding: "14px 0" }}>{e.channel}</td>
+                            <td style={{ padding: "14px 0", color: "var(--oj-color-muted)" }}>{e.time}</td>
+                            <td style={{ padding: "14px 0" }}>
+                              <span className="oj-status-pill success">{e.status || "Confirmé"}</span>
+                            </td>
+                            <td style={{ padding: "14px 0", textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                              {formatPrice(typeof e.amountMinor === "number" ? Math.round(e.amountMinor / 100) : (e as any).amount || 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
 
                 {/* Grand Livre Immuable (Append-only preview) */}
@@ -1727,7 +1864,7 @@ function MainMarketplaceView() {
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-                      {req.proposals.map((prop) => (
+                      {req.proposals.map((prop: any) => (
                         <div
                           key={prop.id}
                           style={{
@@ -1769,12 +1906,12 @@ function MainMarketplaceView() {
                               className="oj-btn-primary"
                               style={{ width: "100%", fontSize: "13px", padding: "10px" }}
                               onClick={() => {
-                                setRequestsList((prev) =>
-                                  prev.map((r) =>
+                                setRequestsList((prev: any[]) =>
+                                  prev.map((r: any) =>
                                     r.id === req.id
                                       ? {
                                           ...r,
-                                          proposals: r.proposals.map((p) => ({
+                                          proposals: r.proposals.map((p: any) => ({
                                             ...p,
                                             status: p.id === prop.id ? "ACCEPTED" : "DECLINED",
                                           })),
@@ -1974,7 +2111,7 @@ function MainMarketplaceView() {
                     type: "ENCAISSEMENT",
                     label: collectLabel,
                     channel: collectChannel,
-                    amount: amt,
+                    amountMinor: amt * 100,
                     reference: collectRef,
                     time: "À l'instant",
                     status: "Confirmé par vendeur",
@@ -2100,19 +2237,19 @@ function MainMarketplaceView() {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>MTN Mobile Money :</span>
-                  <strong>{formatPrice(finopsEntries.filter(e => e.channel.includes("MTN")).reduce((s, e) => s + e.amount, 0))}</strong>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel.includes("MTN")).reduce((s, e) => s + Math.round((e.amountMinor || 0) / 100), 0))}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>Moov / Celtiis :</span>
-                  <strong>{formatPrice(finopsEntries.filter(e => e.channel.includes("Moov") || e.channel.includes("Celtiis")).reduce((s, e) => s + e.amount, 0))}</strong>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel.includes("Moov") || e.channel.includes("Celtiis")).reduce((s, e) => s + Math.round((e.amountMinor || 0) / 100), 0))}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>Espèces en caisse théorique :</span>
-                  <strong>{formatPrice(finopsEntries.filter(e => e.channel === "Espèces").reduce((s, e) => s + e.amount, 0))}</strong>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel === "Espèces").reduce((s, e) => s + Math.round((e.amountMinor || 0) / 100), 0))}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>Virements bancaires :</span>
-                  <strong>{formatPrice(finopsEntries.filter(e => e.channel === "Virement").reduce((s, e) => s + e.amount, 0))}</strong>
+                  <strong>{formatPrice(finopsEntries.filter(e => e.channel === "Virement").reduce((s, e) => s + Math.round((e.amountMinor || 0) / 100), 0))}</strong>
                 </div>
                 <div style={{ borderTop: "1px solid var(--oj-color-border)", paddingTop: "8px", display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                   <span>Total Théorique Encaissé :</span>

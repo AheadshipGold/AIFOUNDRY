@@ -241,3 +241,112 @@ export const AuthApi = {
     return res;
   },
 };
+
+export interface OrderRecord {
+  id: string;
+  orderNumber: string;
+  buyerName: string;
+  buyerPhone?: string;
+  deliveryAddress?: string;
+  totalAmountMinor: number;
+  currency: string;
+  paymentChannel?: string;
+  paymentStatus?: string;
+  fulfillmentStatus?: string;
+  createdAt: string;
+}
+
+export interface PurchaseRequestItem {
+  id: string;
+  buyerName: string;
+  buyerPhone?: string;
+  title: string;
+  description: string;
+  category: string;
+  targetBudgetMinor?: number;
+  currency: string;
+  status: 'OPEN' | 'MATCHED' | 'FULFILLED' | 'CLOSED';
+  proposals?: any[];
+  createdAt: string;
+}
+
+export interface FinOpsEntry {
+  id: string;
+  type: 'ENCAISSEMENT' | 'DECAISSEMENT' | 'VENTE_A_CREDIT';
+  label: string;
+  channel: string;
+  amountMinor: number;
+  currency?: string;
+  reference: string;
+  time: string;
+  source?: string;
+  status?: string;
+}
+
+export interface CashbookData {
+  summary: {
+    totalVenduMinor: number;
+    totalEncaisseMinor: number;
+    totalRestantMinor: number;
+  };
+  recentEntries: FinOpsEntry[];
+}
+
+export interface SellerDashboardData {
+  kpis: Array<{ label: string; value: string; trend?: string; positive?: boolean }>;
+  priorities?: Array<{ label: string; count: string; action: string }>;
+}
+
+export const SellerApi = {
+  async getDashboard(shopId?: string): Promise<SellerDashboardData> {
+    const q = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
+    return request<SellerDashboardData>(`/v1/seller/dashboard${q}`);
+  },
+
+  async getCashbook(shopId?: string): Promise<CashbookData> {
+    const q = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
+    return request<CashbookData>(`/v1/seller/cashbook${q}`);
+  },
+
+  async recordCollection(data: {
+    label: string;
+    amountMinor: number;
+    channel: string;
+    reference?: string;
+    notes?: string;
+  }): Promise<any> {
+    return request('/v1/seller/cashbook/collect', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async closeDay(data: {
+    physicalCashMinor: number;
+    notes?: string;
+  }): Promise<any> {
+    return request('/v1/seller/cashbook/close', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+export const OrdersApi = {
+  async getAll(shopId?: string): Promise<OrderRecord[]> {
+    const q = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
+    return request<OrderRecord[]>(`/v1/orders${q}`);
+  },
+};
+
+export const RequestsApi = {
+  async getAll(): Promise<PurchaseRequestItem[]> {
+    return request<PurchaseRequestItem[]>('/v1/requests');
+  },
+  async submitProposal(requestId: string, data: any): Promise<any> {
+    return request(`/v1/requests/${requestId}/proposals`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
