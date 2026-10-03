@@ -39,6 +39,27 @@
         "projectId": "dc02cba8-0675-47f9-826d-1dad3de32b27"
       }
     },
-    "owner": "scriptura"
+    "owner": "scriptura",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ojarket a besoin d'accéder à l'appareil photo pour photographier vos créations et scanner les codes de vérification."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ojarket a besoin d'accéder à vos photos pour enrichir le catalogue de votre atelier."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/brand/Ojarket_01_Icon_UltraPremium_Transparent.png",
+          "color": "#C5A059"
+        }
+      ]
+    ]
   }
 }
