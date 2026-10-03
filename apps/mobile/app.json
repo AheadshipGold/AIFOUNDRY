@@ -8,8 +8,9 @@
     "userInterfaceStyle": "automatic",
     "scheme": "ojarket",
     "splash": {
+      "image": "./assets/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAF9F6"
+      "backgroundColor": "#0D2E26"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -22,7 +23,7 @@
       "package": "com.ojarket.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/brand/Ojarket_01_Icon_UltraPremium_Transparent.png",
+        "foregroundImage": "./assets/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png",
         "backgroundColor": "#0D2E26"
       },
       "permissions": [
