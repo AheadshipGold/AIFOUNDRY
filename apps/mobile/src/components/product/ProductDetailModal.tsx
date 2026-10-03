@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Share,
+  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useDesign } from "../../design-system/provider";
 import { OrdersApi, type ProductItem, type AuthUser, type OrderRecord } from "../../services/api";
@@ -59,6 +61,26 @@ export default function ProductDetailModal({
   const [paymentChannel, setPaymentChannel] = useState("MTN_MOMO");
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  React.useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   React.useEffect(() => {
     if (currentUser) {
@@ -195,13 +217,16 @@ export default function ProductDetailModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={resetAndClose}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}
+      >
         <View
           style={{
             backgroundColor: colors.surface,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
-            height: "92%",
+            height: keyboardHeight > 0 ? "98%" : "92%",
             overflow: "hidden",
             flexDirection: "column",
           }}
@@ -321,7 +346,9 @@ export default function ProductDetailModal({
           {/* ==================== SCROLLABLE CONTENT ==================== */}
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={true}
+            contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 80 : 120 }}
             style={{ flex: 1 }}
           >
             {/* VIEW 1: PRODUCT DETAIL SCREEN (100% MATCH TO REFERENCE) */}
@@ -1099,7 +1126,7 @@ export default function ProductDetailModal({
             </View>
           )}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

@@ -7,7 +7,9 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import { SellerApi, CashbookData, SellerDashboardData, AuthApi, type AuthShop } from "../../services/api";
 
@@ -35,6 +37,8 @@ export default function SellerDashboardScreen({
   onOpenOpportunities,
   onSwitchToBuyer,
 }: SellerDashboardScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale, mode, setMode } = useDesign();
   const isEn = locale === "en";
   const isDark = mode === "dark";
@@ -84,7 +88,7 @@ export default function SellerDashboardScreen({
           justifyContent: "space-between",
           alignItems: "center",
           paddingHorizontal: 16,
-          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 10),
           paddingBottom: 12,
           backgroundColor: colors.surface,
           borderBottomWidth: 1,

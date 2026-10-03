@@ -8,7 +8,11 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  StatusBar,
+  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import {
   Button,
@@ -24,11 +28,33 @@ interface SellerCashbookScreenProps {
 export default function SellerCashbookScreen({
   onBack,
 }: SellerCashbookScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale } = useDesign();
   const isEn = locale === "en";
   const [closed, setClosed] = useState(false);
   const [cashbook, setCashbook] = useState<CashbookData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -185,7 +211,7 @@ export default function SellerCashbookScreen({
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 20,
-          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 10),
           paddingBottom: 14,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
@@ -374,7 +400,8 @@ export default function SellerCashbookScreen({
 
       {/* Collect Direct Sale Modal */}
       {showCollectModal && (
-        <View
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{
             position: "absolute",
             top: 0,
@@ -384,6 +411,7 @@ export default function SellerCashbookScreen({
             backgroundColor: "rgba(0,0,0,0.6)",
             justifyContent: "center",
             padding: 20,
+            zIndex: 100,
           }}
         >
           <View
@@ -393,109 +421,116 @@ export default function SellerCashbookScreen({
               padding: 20,
               borderWidth: 1,
               borderColor: colors.border,
+              maxHeight: keyboardHeight > 0 ? "98%" : "90%",
             }}
           >
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text }}>
-                {isEn ? "Record Direct Sale" : "Encaisser une Vente"}
-              </Text>
-              <Pressable onPress={() => setShowCollectModal(false)}>
-                <Text style={{ fontSize: 18, color: colors.muted }}>✕</Text>
-              </Pressable>
-            </View>
-
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginBottom: 6 }}>
-              {isEn ? "Description / Item *" : "Libellé de la vente *"}
-            </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 14,
-                color: colors.text,
-                backgroundColor: colors.canvas,
-                marginBottom: 12,
-              }}
-              value={collectLabel}
-              onChangeText={setCollectLabel}
-              placeholder="ex: Sacoche cuir vendue à l'atelier"
-              placeholderTextColor={colors.muted}
-            />
-
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginBottom: 6 }}>
-              {isEn ? "Amount in FCFA *" : "Montant en FCFA *"}
-            </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 18,
-                fontWeight: "700",
-                color: colors.action,
-                backgroundColor: colors.canvas,
-                marginBottom: 16,
-              }}
-              value={collectAmount}
-              onChangeText={setCollectAmount}
-              placeholder="35000"
-              placeholderTextColor={colors.muted}
-              keyboardType="number-pad"
-            />
-
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginBottom: 8 }}>
-              {isEn ? "Payment Method" : "Canal de paiement"}
-            </Text>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
-              {[
-                { id: "CASH_ON_DELIVERY", label: isEn ? "Cash" : "Espèces" },
-                { id: "MTN_MOMO", label: "MTN MoMo" },
-                { id: "MOOV_MONEY", label: "Moov" },
-              ].map((pm) => (
-                <Pressable
-                  key={pm.id}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: collectChannel === pm.id ? colors.action : colors.border,
-                    backgroundColor: collectChannel === pm.id ? colors.canvas : colors.surface,
-                    alignItems: "center",
-                  }}
-                  onPress={() => setCollectChannel(pm.id)}
-                >
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: collectChannel === pm.id ? colors.action : colors.text }}>
-                    {pm.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Pressable
-              style={{
-                backgroundColor: colors.action,
-                borderRadius: 12,
-                paddingVertical: 14,
-                alignItems: "center",
-                opacity: submittingCollect ? 0.6 : 1,
-              }}
-              onPress={handleRecordCollection}
-              disabled={submittingCollect}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
             >
-              {submittingCollect ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-                  {isEn ? "Confirm Collection" : "Valider l'Encaissement"}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text }}>
+                  {isEn ? "Record Direct Sale" : "Encaisser une Vente"}
                 </Text>
-              )}
-            </Pressable>
+                <Pressable onPress={() => setShowCollectModal(false)}>
+                  <Text style={{ fontSize: 18, color: colors.muted }}>✕</Text>
+                </Pressable>
+              </View>
+
+              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginBottom: 6 }}>
+                {isEn ? "Description / Item *" : "Libellé de la vente *"}
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 10,
+                  padding: 12,
+                  fontSize: 14,
+                  color: colors.text,
+                  backgroundColor: colors.canvas,
+                  marginBottom: 12,
+                }}
+                value={collectLabel}
+                onChangeText={setCollectLabel}
+                placeholder="ex: Sacoche cuir vendue à l'atelier"
+                placeholderTextColor={colors.muted}
+              />
+
+              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginBottom: 6 }}>
+                {isEn ? "Amount in FCFA *" : "Montant en FCFA *"}
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 10,
+                  padding: 12,
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.action,
+                  backgroundColor: colors.canvas,
+                  marginBottom: 16,
+                }}
+                value={collectAmount}
+                onChangeText={setCollectAmount}
+                placeholder="35000"
+                placeholderTextColor={colors.muted}
+                keyboardType="number-pad"
+              />
+
+              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginBottom: 8 }}>
+                {isEn ? "Payment Method" : "Canal de paiement"}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
+                {[
+                  { id: "CASH_ON_DELIVERY", label: isEn ? "Cash" : "Espèces" },
+                  { id: "MTN_MOMO", label: "MTN MoMo" },
+                  { id: "MOOV_MONEY", label: "Moov" },
+                ].map((pm) => (
+                  <Pressable
+                    key={pm.id}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: collectChannel === pm.id ? colors.action : colors.border,
+                      backgroundColor: collectChannel === pm.id ? colors.canvas : colors.surface,
+                      alignItems: "center",
+                    }}
+                    onPress={() => setCollectChannel(pm.id)}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: collectChannel === pm.id ? colors.action : colors.text }}>
+                      {pm.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Pressable
+                style={{
+                  backgroundColor: colors.action,
+                  borderRadius: 12,
+                  paddingVertical: 14,
+                  alignItems: "center",
+                  opacity: submittingCollect ? 0.6 : 1,
+                }}
+                onPress={handleRecordCollection}
+                disabled={submittingCollect}
+              >
+                {submittingCollect ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+                    {isEn ? "Confirm Collection" : "Valider l'Encaissement"}
+                  </Text>
+                )}
+              </Pressable>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* Daily Close Action */}

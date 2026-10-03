@@ -9,7 +9,10 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  StatusBar,
+  KeyboardAvoidingView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import { RequestsApi } from "../../services/api";
 
@@ -24,6 +27,8 @@ export default function RequestNeedScreen({
   onBack,
   onSubmitted,
 }: RequestNeedScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
   const isDark = mode === "dark";
@@ -114,7 +119,7 @@ export default function RequestNeedScreen({
           alignItems: "center",
           justifyContent: "space-between",
           paddingHorizontal: 20,
-          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 10),
           paddingBottom: 14,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
@@ -177,11 +182,17 @@ export default function RequestNeedScreen({
       </View>
 
       {/* ==================== SCROLLABLE FORM ==================== */}
-      <ScrollView
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
-        showsVerticalScrollIndicator={false}
       >
+        <ScrollView
+          style={{ flex: 1 }}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
+          contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Editorial Subtitle */}
         <Text
           style={{
@@ -576,6 +587,7 @@ export default function RequestNeedScreen({
           </View>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
+  </View>
   );
 }

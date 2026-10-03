@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { DesignProvider, useDesign } from "./src/design-system/provider";
 
 import BuyerHomeScreen from "./src/screens/buyer/BuyerHomeScreen";
@@ -18,7 +20,8 @@ import AuthModal, { restoreSession, clearSession } from "./src/components/auth/A
 import SellerOnboardingModal from "./src/components/seller/SellerOnboardingModal";
 import ProductDetailModal from "./src/components/product/ProductDetailModal";
 import { startPeriodicSync, stopPeriodicSync } from "./src/services/offlineSync";
-import { type AuthUser } from "./src/services/api";
+import { type AuthUser, getAuthToken } from "./src/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Universe = "buyer" | "seller";
 
@@ -31,6 +34,7 @@ const BottomNav = ({
   currentScreen: string; 
   setCurrentScreen: (s: string) => void;
 }) => {
+  const insets = useSafeAreaInsets();
   const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
   const isDark = mode === "dark";
@@ -61,6 +65,7 @@ const BottomNav = ({
           backgroundColor: colors.surface, 
           borderTopColor: colors.border,
           shadowColor: isDark ? "#000" : "#151E1C",
+          paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 18 : 10),
         }
       ]}
     >
@@ -119,7 +124,7 @@ const BottomNav = ({
 };
 
 const MainNavigator = () => {
-  const { colors } = useDesign();
+  const { colors, mode } = useDesign();
   const [universe, setUniverse] = useState<Universe>("buyer");
   const [currentScreen, setCurrentScreen] = useState<string>("home");
 
@@ -180,9 +185,17 @@ const MainNavigator = () => {
 
   // Guest-aware actions: these require authentication
   const switchToSeller = useCallback(() => {
+    if (!currentUser) {
+      requireAuth('switchToSeller');
+      return;
+    }
+    if (!currentUser.shops || currentUser.shops.length === 0) {
+      setShowOnboarding(true);
+      return;
+    }
     setUniverse("seller");
     setCurrentScreen("dashboard");
-  }, []);
+  }, [currentUser, requireAuth]);
 
   const switchToBuyer = useCallback(() => {
     setUniverse("buyer");
@@ -207,6 +220,18 @@ const MainNavigator = () => {
     setUniverse("buyer");
     setCurrentScreen("home");
     stopPeriodicSync();
+  }, []);
+
+  const handleUpdateProfile = useCallback(async (updatedUser: AuthUser) => {
+    setCurrentUser(updatedUser);
+    try {
+      await AsyncStorage.setItem('ojarket.auth.session', JSON.stringify({
+        token: getAuthToken(),
+        user: updatedUser,
+      }));
+    } catch {
+      // Ignore storage error
+    }
   }, []);
 
   const handleShopCreated = useCallback((result: any) => {
@@ -280,7 +305,14 @@ const MainNavigator = () => {
           />;
         case "profile":
           return <ProfileScreen 
+            currentUser={currentUser}
             onBack={() => setCurrentScreen("home")}
+            onOpenAuth={() => {
+              setPendingAction(null);
+              setShowAuthModal(true);
+            }}
+            onLogout={handleLogout}
+            onUpdateProfile={handleUpdateProfile}
             onSwitchToSeller={switchToSeller} 
             onOpenPurchases={handleOpenPurchases} 
             onOpenRequests={handleOpenNeed} 
@@ -331,7 +363,8 @@ const MainNavigator = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.canvas }]}>
+    <View style={[styles.container, { backgroundColor: colors.canvas }]}>
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <View style={styles.screenContainer}>
         {renderScreen()}
       </View>
@@ -351,6 +384,11 @@ const MainNavigator = () => {
       {/* Seller Onboarding */}
       <SellerOnboardingModal
         visible={showOnboarding}
+        currentUser={currentUser}
+        onRequireAuth={() => {
+          setPendingAction('switchToSeller');
+          setShowAuthModal(true);
+        }}
         onClose={() => setShowOnboarding(false)}
         onShopCreated={handleShopCreated}
       />
@@ -370,15 +408,17 @@ const MainNavigator = () => {
           setCurrentScreen("purchases");
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 export default function App() {
   return (
-    <DesignProvider>
-      <MainNavigator />
-    </DesignProvider>
+    <SafeAreaProvider>
+      <DesignProvider>
+        <MainNavigator />
+      </DesignProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -395,7 +435,6 @@ const styles = StyleSheet.create({
   },
   navContainer: {
     flexDirection: "row",
-    paddingBottom: Platform.OS === "ios" ? 20 : 10,
     paddingTop: 8,
     borderTopWidth: 1,
     justifyContent: "space-around",

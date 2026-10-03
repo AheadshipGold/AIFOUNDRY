@@ -9,7 +9,9 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
 import {
   OrdersApi,
@@ -32,6 +34,8 @@ export default function PurchasesScreen({
   onContactSupport,
   onOpenNeed,
 }: PurchasesScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale } = useDesign();
   const isEn = locale === 'en';
   const [activeTab, setActiveTab] = useState<'orders' | 'digital' | 'requests' | 'history'>('orders');
@@ -578,7 +582,7 @@ export default function PurchasesScreen({
       <View
         style={{
           paddingHorizontal: 20,
-          paddingTop: Platform.OS === 'android' ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === 'android' ? 36 : 10),
           paddingBottom: 12,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,

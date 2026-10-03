@@ -3,40 +3,58 @@
 
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Dynamic API resolution: on physical device via Expo Dev Client, Metro's hostUri provides the machine LAN IP.
-// On Android Emulator without hostUri: fallback to 10.0.2.2. On web / fallback: localhost.
-const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost;
-const host = debuggerHost ? debuggerHost.split(':')[0] : null;
+// Default to the computer's LAN IP 10.76.226.162 for physical devices on same Wi-Fi.
+const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost || (Constants as any)?.manifest?.debuggerHost;
+const host = debuggerHost ? debuggerHost.split(':')[0] : '10.76.226.162';
 
-const DEFAULT_API_BASE_URL = host
-  ? `http://${host}:3001/api`
-  : Platform.select({
-      android: 'http://10.0.2.2:3001/api',
-      default: 'http://localhost:3001/api',
-    });
+const DEFAULT_API_BASE_URL = `http://${host}:3001/api`;
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2500);
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  const customHeaders = (options?.headers as Record<string, string>) || {};
+  let authHeader = customHeaders['Authorization'] || customHeaders['authorization'];
+
+  if (!authHeader) {
+    const token = await getValidAuthToken();
+    if (token) {
+      authHeader = `Bearer ${token}`;
+    }
+  }
+
+  const finalHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...customHeaders,
+    ...(authHeader ? { Authorization: authHeader } : {}),
+  };
 
   try {
     const res = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options?.headers || {}),
-      },
-      signal: controller.signal,
       ...options,
+      headers: finalHeaders,
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      throw new Error(`API error ${res.status}: ${res.statusText}`);
+      let errDetail = res.statusText;
+      try {
+        const errorJson = await res.json();
+        if (errorJson && errorJson.message) {
+          errDetail = Array.isArray(errorJson.message) ? errorJson.message.join(', ') : errorJson.message;
+        }
+      } catch {
+        // use default statusText
+      }
+      throw new Error(errDetail || `Erreur API ${res.status}`);
     }
 
     return await res.json();
@@ -333,6 +351,7 @@ export interface AuthUser {
   email: string;
   phone: string | null;
   name: string;
+  username?: string;
   role: 'BUYER' | 'SELLER' | 'ADMIN' | 'OPERATOR';
   locale: string;
   shops: AuthShop[];
@@ -391,6 +410,21 @@ export function getAuthToken(): string | null {
   return _authToken;
 }
 
+export async function getValidAuthToken(): Promise<string | null> {
+  if (_authToken) return _authToken;
+  try {
+    const raw = await AsyncStorage.getItem('ojarket.auth.session');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.token) {
+        _authToken = parsed.token;
+        return _authToken;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 function authHeaders(): Record<string, string> {
   if (_authToken) {
     return { Authorization: `Bearer ${_authToken}` };
@@ -413,6 +447,59 @@ export const AuthApi = {
     });
   },
 
+  async loginWithEmail(identifier: string, password: string): Promise<AuthResponse> {
+    return request<AuthResponse>('/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, password }),
+    });
+  },
+
+  async registerWithEmail(data: {
+    name: string;
+    username: string;
+    email: string;
+    phone?: string;
+    password: string;
+  }): Promise<AuthResponse> {
+    return request<AuthResponse>('/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async loginWithGoogle(data: {
+    email: string;
+    name: string;
+    googleId: string;
+    avatarUrl?: string;
+  }): Promise<AuthResponse> {
+    return request<AuthResponse>('/v1/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateProfile(data: {
+    name?: string;
+    username?: string;
+    phone?: string;
+    email?: string;
+  }): Promise<AuthUser> {
+    return request<AuthUser>('/v1/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: authHeaders(),
+    });
+  },
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>('/v1/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword }),
+      headers: authHeaders(),
+    });
+  },
+
   async getMe(): Promise<AuthUser> {
     return request<AuthUser>('/v1/auth/me', {
       headers: authHeaders(),
@@ -429,6 +516,13 @@ export const AuthApi = {
     return request<RegisterSellerResponse>('/v1/auth/register-seller', {
       method: 'POST',
       body: JSON.stringify(data),
+      headers: authHeaders(),
+    });
+  },
+
+  async deleteAccount(): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>('/v1/auth/delete-account', {
+      method: 'POST',
       headers: authHeaders(),
     });
   },

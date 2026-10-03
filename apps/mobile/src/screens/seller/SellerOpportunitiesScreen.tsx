@@ -9,7 +9,11 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  StatusBar,
+  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import { Button } from "../../design-system/components";
 import { RequestsApi, PurchaseRequestItem } from "../../services/api";
@@ -21,6 +25,8 @@ interface SellerOpportunitiesScreenProps {
 export default function SellerOpportunitiesScreen({
   onBack,
 }: SellerOpportunitiesScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale } = useDesign();
   const isEn = locale === "en";
 
@@ -34,6 +40,26 @@ export default function SellerOpportunitiesScreen({
     "Cuir de premier choix tannage végétal ou travail du bronze à la cire perdue. Confection sous 12 jours."
   );
   const [submitting, setSubmitting] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Fallback mock requests
   const fallbackRequests: PurchaseRequestItem[] = [
@@ -176,7 +202,7 @@ export default function SellerOpportunitiesScreen({
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 20,
-          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 10),
           paddingBottom: 14,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
@@ -382,7 +408,8 @@ export default function SellerOpportunitiesScreen({
           animationType="slide"
           onRequestClose={() => setSelectedReq(null)}
         >
-          <View
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{
               flex: 1,
               backgroundColor: "rgba(0,0,0,0.6)",
@@ -395,131 +422,138 @@ export default function SellerOpportunitiesScreen({
                 borderTopLeftRadius: 24,
                 borderTopRightRadius: 24,
                 padding: 24,
-                maxHeight: "90%",
+                maxHeight: keyboardHeight > 0 ? "98%" : "90%",
               }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 20 }}
               >
-                <Text
+                <View
                   style={{
-                    fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.text,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
                   }}
                 >
-                  {isEn ? "Submit Artisan Quote" : "Soumettre un Devis Atelier"}
+                  <Text
+                    style={{
+                      fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                      fontSize: 18,
+                      fontWeight: "700",
+                      color: colors.text,
+                    }}
+                  >
+                    {isEn ? "Submit Artisan Quote" : "Soumettre un Devis Atelier"}
+                  </Text>
+                  <Pressable onPress={() => setSelectedReq(null)}>
+                    <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 16 }}>
+                  Demande : {selectedReq.title} ({formatPrice(selectedReq.targetBudgetMinor)})
                 </Text>
-                <Pressable onPress={() => setSelectedReq(null)}>
-                  <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>
-                </Pressable>
-              </View>
 
-              <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 16 }}>
-                Demande : {selectedReq.title} ({formatPrice(selectedReq.targetBudgetMinor)})
-              </Text>
+                {/* Price input */}
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                    {isEn ? "Total Quote (FCFA)" : "Prix total proposé (FCFA)"}
+                  </Text>
+                  <TextInput
+                    value={quotePrice}
+                    onChangeText={setQuotePrice}
+                    keyboardType="numeric"
+                    style={{
+                      backgroundColor: colors.subtle,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 10,
+                      fontSize: 14,
+                      color: colors.text,
+                    }}
+                  />
+                </View>
 
-              {/* Price input */}
-              <View style={{ marginBottom: 12 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-                  {isEn ? "Total Quote (FCFA)" : "Prix total proposé (FCFA)"}
-                </Text>
-                <TextInput
-                  value={quotePrice}
-                  onChangeText={setQuotePrice}
-                  keyboardType="numeric"
-                  style={{
-                    backgroundColor: colors.subtle,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 10,
-                    fontSize: 14,
-                    color: colors.text,
-                  }}
-                />
-              </View>
+                {/* Advance input */}
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                    {isEn ? "Direct Advance Deposit Required (FCFA)" : "Acompte direct exigé (FCFA)"}
+                  </Text>
+                  <TextInput
+                    value={quoteAdvance}
+                    onChangeText={setQuoteAdvance}
+                    keyboardType="numeric"
+                    style={{
+                      backgroundColor: colors.subtle,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 10,
+                      fontSize: 14,
+                      color: colors.text,
+                    }}
+                  />
+                </View>
 
-              {/* Advance input */}
-              <View style={{ marginBottom: 12 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-                  {isEn ? "Direct Advance Deposit Required (FCFA)" : "Acompte direct exigé (FCFA)"}
-                </Text>
-                <TextInput
-                  value={quoteAdvance}
-                  onChangeText={setQuoteAdvance}
-                  keyboardType="numeric"
-                  style={{
-                    backgroundColor: colors.subtle,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 10,
-                    fontSize: 14,
-                    color: colors.text,
-                  }}
-                />
-              </View>
+                {/* Days input */}
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                    {isEn ? "Lead Time (Days)" : "Délai de confection (jours)"}
+                  </Text>
+                  <TextInput
+                    value={quoteDays}
+                    onChangeText={setQuoteDays}
+                    keyboardType="numeric"
+                    style={{
+                      backgroundColor: colors.subtle,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 10,
+                      fontSize: 14,
+                      color: colors.text,
+                    }}
+                  />
+                </View>
 
-              {/* Days input */}
-              <View style={{ marginBottom: 12 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-                  {isEn ? "Lead Time (Days)" : "Délai de confection (jours)"}
-                </Text>
-                <TextInput
-                  value={quoteDays}
-                  onChangeText={setQuoteDays}
-                  keyboardType="numeric"
-                  style={{
-                    backgroundColor: colors.subtle,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 10,
-                    fontSize: 14,
-                    color: colors.text,
-                  }}
-                />
-              </View>
+                {/* Notes input */}
+                <View style={{ marginBottom: 20 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                    {isEn ? "Technical Specifications & Notes" : "Spécifications & Notes atelier"}
+                  </Text>
+                  <TextInput
+                    value={quoteNotes}
+                    onChangeText={setQuoteNotes}
+                    multiline
+                    numberOfLines={3}
+                    style={{
+                      backgroundColor: colors.subtle,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 10,
+                      fontSize: 12,
+                      color: colors.text,
+                      minHeight: 60,
+                    }}
+                  />
+                </View>
 
-              {/* Notes input */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-                  {isEn ? "Technical Specifications & Notes" : "Spécifications & Notes atelier"}
-                </Text>
-                <TextInput
-                  value={quoteNotes}
-                  onChangeText={setQuoteNotes}
-                  multiline
-                  numberOfLines={3}
-                  style={{
-                    backgroundColor: colors.subtle,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 10,
-                    fontSize: 12,
-                    color: colors.text,
-                    minHeight: 60,
-                  }}
-                />
-              </View>
-
-              <Button disabled={submitting} onPress={handleSubmitQuote}>
-                {submitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  isEn ? "Submit Proposal →" : "Soumettre la proposition →"
-                )}
-              </Button>
+                <Button disabled={submitting} onPress={handleSubmitQuote}>
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    isEn ? "Submit Proposal →" : "Soumettre la proposition →"
+                  )}
+                </Button>
+              </ScrollView>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       )}
       </ScrollView>

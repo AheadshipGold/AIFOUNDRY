@@ -9,8 +9,11 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
+import Icon from "../../design-system/Icon";
 import { CatalogApi, ProductItem } from "../../services/api";
 
 interface SearchScreenProps {
@@ -194,6 +197,8 @@ export default function SearchScreen({
   onOpenNeed,
   onOpenCart,
 }: SearchScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
   const isDark = mode === "dark";
@@ -293,7 +298,7 @@ export default function SearchScreen({
       {/* ==================== HEADER & SEARCH ==================== */}
       <View
         style={{
-          paddingTop: Platform.OS === "android" ? 14 : 44,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 44),
           paddingHorizontal: 20,
           paddingBottom: 16,
           backgroundColor: colors.surface,
@@ -360,6 +365,8 @@ export default function SearchScreen({
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
       >
         {/* ==================== FILTERS ==================== */}
         <View style={{ paddingTop: 16, paddingBottom: 12 }}>
@@ -686,25 +693,22 @@ export default function SearchScreen({
                         </View>
                         <Pressable
                           onPress={() => (prod.isDigital || prod.category === "digital" ? onSelectProduct(prod) : onOpenCart())}
-                          style={{
-                            paddingHorizontal: prod.isDigital || prod.category === "digital" ? 8 : 0,
-                            width: prod.isDigital || prod.category === "digital" ? "auto" : 28,
-                            height: 28,
-                            borderRadius: 7,
+                          style={({ pressed }) => [{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
                             backgroundColor: prod.isDigital || prod.category === "digital" ? colors.accent : colors.action,
                             alignItems: "center",
                             justifyContent: "center",
-                          }}
+                            opacity: pressed ? 0.85 : 1,
+                            transform: [{ scale: pressed ? 0.92 : 1 }],
+                          }]}
                         >
-                          <Text
-                            style={{
-                              color: prod.isDigital || prod.category === "digital" ? "#022B22" : "#FFFFFF",
-                              fontSize: prod.isDigital || prod.category === "digital" ? 10 : 13,
-                              fontWeight: "700",
-                            }}
-                          >
-                            {prod.isDigital || prod.category === "digital" ? "⚡ Télécharger" : "+"}
-                          </Text>
+                          {prod.isDigital || prod.category === "digital" ? (
+                            <Icon name="download" size={16} color="#022B22" weight="bold" />
+                          ) : (
+                            <Icon name="plus" size={16} color="#FFFFFF" weight="bold" />
+                          )}
                         </Pressable>
                       </View>
                     </View>
@@ -849,25 +853,22 @@ export default function SearchScreen({
                         </View>
                         <Pressable
                           onPress={() => (prod.isDigital || prod.category === "digital" ? onSelectProduct(prod) : onOpenCart())}
-                          style={{
-                            paddingHorizontal: prod.isDigital || prod.category === "digital" ? 8 : 0,
-                            width: prod.isDigital || prod.category === "digital" ? "auto" : 28,
-                            height: 28,
-                            borderRadius: 7,
+                          style={({ pressed }) => [{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
                             backgroundColor: prod.isDigital || prod.category === "digital" ? colors.accent : colors.action,
                             alignItems: "center",
                             justifyContent: "center",
-                          }}
+                            opacity: pressed ? 0.85 : 1,
+                            transform: [{ scale: pressed ? 0.92 : 1 }],
+                          }]}
                         >
-                          <Text
-                            style={{
-                              color: prod.isDigital || prod.category === "digital" ? "#022B22" : "#FFFFFF",
-                              fontSize: prod.isDigital || prod.category === "digital" ? 10 : 13,
-                              fontWeight: "700",
-                            }}
-                          >
-                            {prod.isDigital || prod.category === "digital" ? "⚡ Télécharger" : "+"}
-                          </Text>
+                          {prod.isDigital || prod.category === "digital" ? (
+                            <Icon name="download" size={16} color="#022B22" weight="bold" />
+                          ) : (
+                            <Icon name="plus" size={16} color="#FFFFFF" weight="bold" />
+                          )}
                         </Pressable>
                       </View>
                     </View>

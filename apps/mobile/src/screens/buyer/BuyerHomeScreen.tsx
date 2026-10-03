@@ -8,8 +8,11 @@ import {
   TextInput,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
+import Icon from "../../design-system/Icon";
 import { CatalogApi, ProductItem } from "../../services/api";
 
 interface BuyerHomeScreenProps {
@@ -199,6 +202,8 @@ export default function BuyerHomeScreen({
   onOpenCart,
   onSwitchToSeller,
 }: BuyerHomeScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale, mode, setMode, setLocale } = useDesign();
   const isEn = locale === "en";
   const isDark = mode === "dark";
@@ -283,7 +288,7 @@ export default function BuyerHomeScreen({
           justifyContent: "space-between",
           alignItems: "center",
           paddingHorizontal: 18,
-          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 14),
           paddingBottom: 12,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
@@ -396,6 +401,8 @@ export default function BuyerHomeScreen({
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
       >
         {/* ==================== EDITORIAL HERO TITLE ==================== */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
@@ -869,28 +876,21 @@ export default function BuyerHomeScreen({
                           <Pressable
                             onPress={() => onSelectProduct(prod)}
                             style={({ pressed }) => [{
-                              height: 32,
-                              paddingHorizontal: prod.isDigital || prod.category === "digital" ? 10 : 0,
-                              width: prod.isDigital || prod.category === "digital" ? "auto" : 32,
+                              width: 34,
+                              height: 34,
                               borderRadius: 8,
                               backgroundColor: prod.isDigital || prod.category === "digital" ? colors.accent : colors.action,
                               alignItems: "center",
                               justifyContent: "center",
                               opacity: pressed ? 0.85 : 1,
                               transform: [{ scale: pressed ? 0.92 : 1 }],
-                              flexDirection: "row",
-                              gap: 4,
                             }]}
                           >
-                            <Text
-                              style={{
-                                color: prod.isDigital || prod.category === "digital" ? "#022B22" : "#FFFFFF",
-                                fontSize: prod.isDigital || prod.category === "digital" ? 11 : 14,
-                                fontWeight: "800",
-                              }}
-                            >
-                              {prod.isDigital || prod.category === "digital" ? "⚡ Télécharger" : "🛒"}
-                            </Text>
+                            {prod.isDigital || prod.category === "digital" ? (
+                              <Icon name="download" size={17} color="#022B22" weight="bold" />
+                            ) : (
+                              <Icon name="cart" size={17} color="#FFFFFF" weight="duotone" />
+                            )}
                           </Pressable>
                         </View>
                       </View>
@@ -1048,28 +1048,21 @@ export default function BuyerHomeScreen({
                           <Pressable
                             onPress={() => onSelectProduct(prod)}
                             style={({ pressed }) => [{
-                              height: 32,
-                              paddingHorizontal: prod.isDigital || prod.category === "digital" ? 10 : 0,
-                              width: prod.isDigital || prod.category === "digital" ? "auto" : 32,
+                              width: 34,
+                              height: 34,
                               borderRadius: 8,
                               backgroundColor: prod.isDigital || prod.category === "digital" ? colors.accent : colors.action,
                               alignItems: "center",
                               justifyContent: "center",
                               opacity: pressed ? 0.85 : 1,
                               transform: [{ scale: pressed ? 0.92 : 1 }],
-                              flexDirection: "row",
-                              gap: 4,
                             }]}
                           >
-                            <Text
-                              style={{
-                                color: prod.isDigital || prod.category === "digital" ? "#022B22" : "#FFFFFF",
-                                fontSize: prod.isDigital || prod.category === "digital" ? 11 : 14,
-                                fontWeight: "800",
-                              }}
-                            >
-                              {prod.isDigital || prod.category === "digital" ? "⚡ Télécharger" : "🛒"}
-                            </Text>
+                            {prod.isDigital || prod.category === "digital" ? (
+                              <Icon name="download" size={17} color="#022B22" weight="bold" />
+                            ) : (
+                              <Icon name="cart" size={17} color="#FFFFFF" weight="duotone" />
+                            )}
                           </Pressable>
                         </View>
                       </View>

@@ -19,19 +19,24 @@ enum UserRole {
 }
 
 model User {
-  id            String           @id @default(uuid())
-  email         String           @unique
-  phone         String?
-  name          String
-  role          UserRole         @default(BUYER)
-  locale        String           @default("fr")
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id              String           @id @default(uuid())
+  email           String           @unique
+  username        String?          @unique
+  phone           String?
+  name            String
+  passwordHash    String?
+  googleId        String?          @unique
+  avatarUrl       String?
+  isEmailVerified Boolean          @default(false)
+  role            UserRole         @default(BUYER)
+  locale          String           @default("fr")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  ownedShops    Shop[]           @relation("ShopOwner")
-  memberships   ShopMembership[]
-  requests      PurchaseRequest[]
-  orders        Order[]
+  ownedShops      Shop[]           @relation("ShopOwner")
+  memberships     ShopMembership[]
+  requests        PurchaseRequest[]
+  orders          Order[]
 
   @@map("users")
 }

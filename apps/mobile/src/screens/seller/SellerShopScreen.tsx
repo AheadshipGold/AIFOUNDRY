@@ -10,7 +10,11 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  StatusBar,
+  Keyboard,
+  KeyboardAvoidingView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
 import {
   SubscriptionsApi,
@@ -27,6 +31,8 @@ export default function SellerShopScreen({
   onSwitchToBuyer,
   onBack,
 }: SellerShopScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale } = useDesign();
   const isEn = locale === 'en';
 
@@ -49,6 +55,26 @@ export default function SellerShopScreen({
   const [newPrice, setNewPrice] = useState('');
   const [newStock, setNewStock] = useState('3');
   const [newDescription, setNewDescription] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const fetchSubscriptionData = async () => {
     try {
@@ -136,7 +162,7 @@ export default function SellerShopScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.canvas }]}>
       {/* Header with Back Button */}
-      <View style={[styles.appBar, { borderBottomColor: colors.border }]}>
+      <View style={[styles.appBar, { borderBottomColor: colors.border, paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === 'android' ? 36 : 16) }]}>
         {onBack ? (
           <Pressable onPress={onBack} style={styles.backButton}>
             <Text style={[styles.backText, { color: colors.action }]}>←</Text>
@@ -472,7 +498,8 @@ export default function SellerShopScreen({
 
       {/* Add Creation Modal */}
       {showAddModal && (
-        <View
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{
             position: 'absolute',
             top: 0,
@@ -482,6 +509,7 @@ export default function SellerShopScreen({
             backgroundColor: 'rgba(0,0,0,0.6)',
             justifyContent: 'center',
             padding: 20,
+            zIndex: 100,
           }}
         >
           <View
@@ -491,7 +519,7 @@ export default function SellerShopScreen({
               padding: 20,
               borderWidth: 1,
               borderColor: colors.border,
-              maxHeight: '90%',
+              maxHeight: keyboardHeight > 0 ? '98%' : '90%',
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -503,7 +531,12 @@ export default function SellerShopScreen({
               </Pressable>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+              contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 20 }}
+            >
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text, marginBottom: 6 }}>
                 {isEn ? 'Creation Title *' : 'Titre de la création *'}
               </Text>
@@ -604,7 +637,7 @@ export default function SellerShopScreen({
               </Pressable>
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       )}
     </View>
   );

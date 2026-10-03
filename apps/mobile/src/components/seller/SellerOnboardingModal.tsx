@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Modal, StyleSheet,
-  ScrollView, Platform, ActivityIndicator, Alert,
+  ScrollView, Platform, ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView,
 } from 'react-native';
 import { useDesign } from '../../design-system/provider';
-import { AuthApi, type RegisterSellerResponse } from '../../services/api';
+import { AuthApi, getValidAuthToken, type RegisterSellerResponse, type AuthUser } from '../../services/api';
 
 interface SellerOnboardingModalProps {
   visible: boolean;
   onClose: () => void;
   onShopCreated: (result: RegisterSellerResponse) => void;
+  currentUser?: AuthUser | null;
+  onRequireAuth?: () => void;
 }
 
 const CRAFT_TYPES = [
@@ -28,7 +30,13 @@ const CITIES = [
   'Ouidah', 'Natitingou', 'Djougou', 'Lokossa', 'Abomey-Calavi',
 ];
 
-export default function SellerOnboardingModal({ visible, onClose, onShopCreated }: SellerOnboardingModalProps) {
+export default function SellerOnboardingModal({
+  visible,
+  onClose,
+  onShopCreated,
+  currentUser,
+  onRequireAuth,
+}: SellerOnboardingModalProps) {
   const { colors, locale } = useDesign();
   const isEn = locale === 'en';
 
@@ -39,6 +47,26 @@ export default function SellerOnboardingModal({ visible, onClose, onShopCreated 
   const [merchantPhone, setMerchantPhone] = useState('+229');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!shopName.trim()) {
@@ -47,6 +75,22 @@ export default function SellerOnboardingModal({ visible, onClose, onShopCreated 
     }
     if (!craftType) {
       setError(isEn ? 'Select your craft type' : 'Sélectionnez votre type d\'artisanat');
+      return;
+    }
+
+    const token = await getValidAuthToken();
+    if (!token && !currentUser) {
+      setError(
+        isEn
+          ? 'You must sign in or create an account before opening a workshop.'
+          : 'Vous devez vous connecter ou créer un compte avant d\'enregistrer votre atelier.'
+      );
+      if (onRequireAuth) {
+        setTimeout(() => {
+          onClose();
+          onRequireAuth();
+        }, 1500);
+      }
       return;
     }
 
@@ -70,17 +114,30 @@ export default function SellerOnboardingModal({ visible, onClose, onShopCreated 
         [{ text: 'OK', onPress: () => onShopCreated(result) }]
       );
     } catch (err: any) {
-      setError(isEn ? 'Unable to register workshop. Please try again.' : 'Impossible d\'enregistrer l\'atelier. Veuillez réessayer.');
+      setError(
+        err?.message ||
+          (isEn
+            ? 'Unable to register workshop. Please try again.'
+            : 'Impossible d\'enregistrer l\'atelier. Veuillez réessayer.')
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
-      <View style={styles.overlay}>
-        <View style={[styles.container, { backgroundColor: colors.surface }]}>
-          <ScrollView showsVerticalScrollIndicator={false}>
+    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.overlay}
+      >
+        <View style={[styles.container, { backgroundColor: colors.surface, maxHeight: keyboardHeight > 0 ? '98%' : '90%' }]}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={true}
+            contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 40 }}
+          >
             {/* Header */}
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <Text style={[styles.closeTxt, { color: colors.muted }]}>✕</Text>
@@ -212,7 +269,7 @@ export default function SellerOnboardingModal({ visible, onClose, onShopCreated 
             <View style={{ height: 32 }} />
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

@@ -1,0 +1,19 @@
+﻿# Monorepo workspaces not needed for mobile native build
+apps/web/
+apps/api/
+.paf/
+docs/
+tests/
+e2e/
+playwright-report/
+test-results/
+
+# Standard ignores
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.turbo/
+.gradle/
+*.log

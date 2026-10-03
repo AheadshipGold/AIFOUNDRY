@@ -8,7 +8,9 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import { OrdersApi, OrderRecord } from "../../services/api";
 
@@ -21,6 +23,8 @@ interface SellerOrdersScreenProps {
 }
 
 export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale, mode } = useDesign();
   const isEn = locale === "en";
   const isDark = mode === "dark";
@@ -130,7 +134,7 @@ export default function SellerOrdersScreen({ onBack }: SellerOrdersScreenProps) 
       <View
         style={{
           paddingHorizontal: 18,
-          paddingTop: Platform.OS === "android" ? 14 : 10,
+          paddingTop: topInset > 0 ? topInset + 6 : (Platform.OS === "android" ? 36 : 10),
           paddingBottom: 12,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
