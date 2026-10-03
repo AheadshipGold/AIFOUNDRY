@@ -156,8 +156,8 @@ export default function PurchasesScreen({
       Alert.alert(
         isEn ? 'Incident Registered' : 'Dossier de Litige Ouvert',
         isEn
-          ? 'Your report has been received by the Ojarket Concierge. An arbitration mediator will contact the workshop within 24h.'
-          : 'Votre signalement a été transmis à la conciergerie Ojarket. Un médiateur contactera l’atelier sous 24h pour arbitrer le dossier.'
+          ? 'Your report has been received by the Ojarket Concierge. An arbitration mediator will contact the store within 24h.'
+          : 'Votre signalement a été transmis à la conciergerie Ojarket. Un médiateur contactera la boutique sous 24h pour arbitrer le dossier.'
       );
       setReportingOrder(null);
       setIncidentTitle('');
@@ -227,7 +227,7 @@ export default function PurchasesScreen({
         </View>
 
         <Text style={{ fontSize: 15, color: colors.text, fontWeight: '600', marginBottom: 4 }}>
-          {order.lines && order.lines.length > 0 ? order.lines[0].itemTitle : isEn ? 'Bespoke Creation' : 'Création sur-mesure'}
+          {order.lines && order.lines.length > 0 ? order.lines[0].itemTitle : isEn ? 'Commercial Product' : 'Article de boutique'}
         </Text>
         <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 14 }}>
           {order.buyerName} · {order.deliveryAddress || 'Cotonou, Bénin'}
@@ -262,15 +262,15 @@ export default function PurchasesScreen({
           </View>
 
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 14 }}>⚒️</Text>
+            <Text style={{ fontSize: 14 }}>📦</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{isEn ? '3. Craft Execution' : '3. Exécution Artisanale'}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{isEn ? '3. Preparation & Delivery' : '3. Préparation & Livraison'}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }}>
                 {order.fulfillmentStatus === 'DELIVERED'
                   ? isEn ? 'Handed over · Completed' : 'Remise effectuée · Terminée'
                   : order.fulfillmentStatus === 'SHIPPED'
                   ? isEn ? 'Handover in progress in Cotonou' : 'Remise en cours à Cotonou'
-                  : isEn ? 'In progress at the workshop' : "En cours de confection à l'atelier"}
+                  : isEn ? 'In preparation at store' : "En cours de préparation en boutique"}
               </Text>
             </View>
           </View>
@@ -303,8 +303,8 @@ export default function PurchasesScreen({
           <Pressable
             onPress={() =>
               showAlert(
-                isEn ? 'Contact Workshop' : "Contacter l'atelier",
-                isEn ? 'Messaging channel open with the master artisan.' : "Canal de messagerie ouvert avec le maître artisan."
+                isEn ? 'Contact Store' : "Contacter la boutique",
+                isEn ? 'Messaging channel open with the merchant.' : "Canal de messagerie ouvert avec le commerçant."
               )
             }
             style={{
@@ -318,7 +318,7 @@ export default function PurchasesScreen({
             }}
           >
             <Text style={{ color: colors.text, fontWeight: '600', fontSize: 11 }}>
-              {isEn ? 'Contact' : "Contacter l'atelier"}
+              {isEn ? 'Contact' : "Contacter la boutique"}
             </Text>
           </Pressable>
           <Pressable
@@ -458,7 +458,7 @@ export default function PurchasesScreen({
             }}
           >
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#D97706' }}>
-              {req.category ? req.category.toUpperCase() : isEn ? 'BESPOKE NEED' : 'DEMANDE SUR-MESURE'}
+              {req.category ? req.category.toUpperCase() : isEn ? 'PRODUCT REQUEST' : 'DEMANDE DE PRODUIT'}
             </Text>
           </View>
           <Text style={{ fontSize: 12, color: colors.muted }}>
@@ -484,15 +484,15 @@ export default function PurchasesScreen({
 
         {/* Proposals list */}
         <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8 }}>
-          {isEn ? `Artisan Quotes (${proposals.length})` : `Devis d'artisans reçus (${proposals.length})`}
+          {isEn ? `Merchant Quotes (${proposals.length})` : `Offres & Devis reçus (${proposals.length})`}
         </Text>
 
         {proposals.length === 0 ? (
           <View style={{ backgroundColor: colors.canvas, borderRadius: 8, padding: 12, alignItems: 'center' }}>
             <Text style={{ fontSize: 12, color: colors.muted }}>
               {isEn
-                ? 'Looking for matching artisans... Quotes will appear here shortly.'
-                : 'Diffusion en cours auprès des maîtres artisans... Les devis apparaîtront ici.'}
+                ? 'Broadcasted to verified stores... Offers will appear here shortly.'
+                : 'Diffusion en cours auprès des commerçants vérifiés... Les offres et devis apparaîtront ici.'}
             </Text>
           </View>
         ) : (

@@ -420,8 +420,8 @@ export default function ProfileScreen({
 
             <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 19, marginBottom: 16 }}>
               {isEn
-                ? 'Sign in or create an account to track your orders, express bespoke custom requests to master artisans, and open your seller workshop.'
-                : 'Connectez-vous ou créez votre compte pour suivre vos achats, exprimer vos besoins sur-mesure aux maîtres artisans et accéder à votre atelier.'}
+                ? 'Sign in or create an account to track your orders, express bespoke product requests to verified merchants, and manage your store.'
+                : 'Connectez-vous ou créez votre compte pour suivre vos achats, exprimer vos demandes de produits aux commerçants vérifiés et gérer votre boutique.'}
             </Text>
 
             <Pressable
@@ -459,16 +459,16 @@ export default function ProfileScreen({
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
-            🏛 {isEn ? 'Artisan & Merchant Space' : 'Espace Vendeur & Atelier'}
+            🏪 {isEn ? 'Merchant & Store Space' : 'Espace Commerçant & Boutique'}
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 14 }}>
             {currentUser?.shops && currentUser.shops.length > 0
               ? (isEn
-                  ? `Access your workshop (${currentUser.shops[0].name}), cashbook, and custom quotes.`
-                  : `Gérez votre atelier (${currentUser.shops[0].name}), votre livre de caisse et vos commandes.`)
+                  ? `Manage your store (${currentUser.shops[0].name}), your cashbook, and customer orders.`
+                  : `Gérez votre boutique (${currentUser.shops[0].name}), votre livre de caisse et vos commandes clients.`)
               : (isEn
-                  ? 'Are you an artisan or luxury creator in Cotonou? Open your verified workshop on Ojarket.'
-                  : 'Vous êtes artisan maroquinier, créateur ou bijoutier ? Ouvrez votre atelier vérifié sur Ojarket.')}
+                  ? 'Are you a merchant, seller, or retailer? Open your verified store on Ojarket.'
+                  : 'Vous êtes commerçant, revendeur ou créateur de marque ? Ouvrez votre boutique vérifiée sur Ojarket.')}
           </Text>
           <Pressable
             onPress={onSwitchToSeller}
@@ -485,8 +485,8 @@ export default function ProfileScreen({
           >
             <Text style={{ color: isDark ? '#D4AF37' : '#ffffff', fontWeight: '700', fontSize: 14 }}>
               {currentUser?.shops && currentUser.shops.length > 0
-                ? (isEn ? 'Access My Workshop Space →' : "Accéder à mon Atelier d'Artisan →")
-                : (isEn ? 'Open an Artisan Workshop →' : "Ouvrir un Atelier d'Artisan →")}
+                ? (isEn ? 'Access My Store Space →' : "Accéder à ma Boutique Vendeur →")
+                : (isEn ? 'Open a Merchant Store →' : "Ouvrir ma Boutique Vendeur →")}
             </Text>
           </Pressable>
         </View>

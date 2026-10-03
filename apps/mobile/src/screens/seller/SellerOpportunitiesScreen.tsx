@@ -71,9 +71,9 @@ export default function SellerOpportunitiesScreen({
     {
       id: "req-01",
       buyerName: "Amina Diop",
-      title: "Parure de haute joaillerie en bronze ciselé",
+      title: "Parure de joaillerie et bijoux en bronze ciselé",
       description:
-        "Recherche d'un atelier d'artisan joaillier capable de forger un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
+        "Recherche d'une boutique ou fournisseur spécialisé capable de livrer un lot de colliers et manchettes en bronze noble poli sous 15 jours.",
       category: "Joaillerie & Bronze",
       targetBudgetMinor: 28000000,
       currency: "XOF",
@@ -84,10 +84,10 @@ export default function SellerOpportunitiesScreen({
     {
       id: "req-02",
       buyerName: "Marcelle Houngbo",
-      title: "Table console sculptée en bois d'Iroko massif",
+      title: "Table console en bois d'Iroko massif",
       description:
-        "Console d'entrée 140cm x 40cm avec pieds sculptés motifs bas-reliefs dahoméens. Finition cirée naturelle.",
-      category: "Mobilier d'Art",
+        "Console d'entrée 140cm x 40cm avec finitions soignées. Meuble de salon / entrée.",
+      category: "Mobilier & Déco",
       targetBudgetMinor: 45000000,
       currency: "XOF",
       status: "OPEN",
@@ -124,7 +124,7 @@ export default function SellerOpportunitiesScreen({
     setSubmitting(true);
     try {
       await RequestsApi.submitProposal(selectedReq.id, {
-        shopName: activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || "Mon Atelier d'Art",
+        shopName: activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || "Ma Boutique",
         artisanCity: activeShop?.city || currentUser?.city || "Cotonou",
         priceMinor: priceNum * 100,
         advancePaymentRequiredMinor: advNum * 100,
@@ -154,7 +154,7 @@ export default function SellerOpportunitiesScreen({
                     id: `prop-${Date.now()}`,
                     requestId: r.id,
                     shopId: "shop-01",
-                    shopName: "Atelier d'Excellence Bénin",
+                    shopName: "Boutique Excellence Bénin",
                     artisanCity: "Cotonou",
                     priceMinor: priceNum * 100,
                     advancePaymentRequiredMinor: advNum * 100,
@@ -257,12 +257,12 @@ export default function SellerOpportunitiesScreen({
           }}
         >
           <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-            {isEn ? "Direct Artisan Quotes" : "Devis d'Atelier en Direct"}
+            {isEn ? "Direct Merchant Quotes" : "Devis & Offres Commerçantes"}
           </Text>
           <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}>
             {isEn
               ? "Respond to qualified buyer requests. State your total price, mandatory advance deposit, and delivery lead time."
-              : "Répondez aux besoins exprimés par les clients. Définissez votre prix net, votre acompte direct et votre délai de confection."}
+              : "Répondez aux besoins exprimés par les clients. Définissez votre prix net, votre acompte direct et votre délai de livraison."}
           </Text>
         </View>
 
@@ -292,7 +292,7 @@ export default function SellerOpportunitiesScreen({
               textAlign: "center",
             }}
           >
-            {isEn ? "No bespoke requests yet" : "Aucune demande sur-mesure"}
+            {isEn ? "No product requests yet" : "Aucune demande de produit"}
           </Text>
           <Text
             style={{
@@ -305,15 +305,15 @@ export default function SellerOpportunitiesScreen({
             }}
           >
             {isEn
-              ? "When clients create custom requests matching your craftsmanship, they will be listed here for you to submit price quotes."
-              : "Dès que des acheteurs publieront des projets sur-mesure correspondant à vos compétences, vous pourrez leur soumettre vos devis d'artisan ici."}
+              ? "When clients create custom requests matching your products and inventory, they will be listed here for you to submit price quotes."
+              : "Dès que des acheteurs publieront des demandes de produits correspondant à votre activité, vous pourrez leur soumettre vos devis et offres ici."}
           </Text>
         </View>
       ) : (
         /* Requests List */
         <View style={{ gap: 16 }}>
           {requests.map((req) => {
-            const hasMyProposal = req.proposals && req.proposals.some(p => p.shopName.includes("Atelier") || p.status === 'PENDING' || p.status === 'ACCEPTED');
+            const hasMyProposal = req.proposals && req.proposals.some(p => p.status === 'PENDING' || p.status === 'ACCEPTED');
             const myProp = req.proposals && req.proposals[0];
 
             return (
@@ -479,7 +479,7 @@ export default function SellerOpportunitiesScreen({
                       color: colors.text,
                     }}
                   >
-                    {isEn ? "Submit Artisan Quote" : "Soumettre un Devis Atelier"}
+                    {isEn ? "Submit Store Quote / Offer" : "Soumettre un Devis / Offre Boutique"}
                   </Text>
                   <Pressable onPress={() => setSelectedReq(null)}>
                     <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>
@@ -535,7 +535,7 @@ export default function SellerOpportunitiesScreen({
                 {/* Days input */}
                 <View style={{ marginBottom: 12 }}>
                   <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-                    {isEn ? "Lead Time (Days)" : "Délai de confection (jours)"}
+                    {isEn ? "Delivery Lead Time (Days)" : "Délai de livraison (jours)"}
                   </Text>
                   <TextInput
                     value={quoteDays}
@@ -556,7 +556,7 @@ export default function SellerOpportunitiesScreen({
                 {/* Notes input */}
                 <View style={{ marginBottom: 20 }}>
                   <Text style={{ fontSize: 11, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-                    {isEn ? "Technical Specifications & Notes" : "Spécifications & Notes atelier"}
+                    {isEn ? "Commercial Terms & Notes" : "Conditions & Notes de vente"}
                   </Text>
                   <TextInput
                     value={quoteNotes}

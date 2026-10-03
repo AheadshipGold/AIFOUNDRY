@@ -111,7 +111,7 @@ export class SellerService {
           { label: 'Alertes stock', value: '0' }
         ],
         priorities: [
-          { text: 'Atelier prêt · Ajoutez votre première création', action: 'Ajouter', type: 'info' },
+          { text: 'Boutique prête · Ajoutez votre premier produit', action: 'Ajouter', type: 'info' },
           { text: 'Validation KYC en cours d’examen', action: 'Vérifier', type: 'info' }
         ]
       };

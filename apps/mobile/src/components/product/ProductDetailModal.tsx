@@ -301,7 +301,7 @@ export default function ProductDetailModal({
                   try {
                     await Share.share({
                       title: product.title,
-                      message: `${product.title} (${formattedPrice} FCFA) sur Ojarket - L'Artisanat d'Excellence du Bénin`,
+                      message: `${product.title} (${formattedPrice} FCFA) sur Ojarket - Marketplace E-Commerce`,
                     });
                   } catch {}
                 }}
@@ -501,7 +501,7 @@ export default function ProductDetailModal({
                   </View>
                 </View>
 
-                {/* 4. ARTISAN / WORKSHOP TRUST CARD */}
+                {/* 4. STORE / MERCHANT TRUST CARD */}
                 <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
                   <View
                     style={{
@@ -653,7 +653,7 @@ export default function ProductDetailModal({
                       marginBottom: 6,
                     }}
                   >
-                    {isEn ? "Description & Craftsmanship" : "Description & Savoir-Faire"}
+                    {isEn ? "Product Description & Details" : "Description du Produit & Détails"}
                   </Text>
                   <Text
                     style={{
@@ -664,8 +664,8 @@ export default function ProductDetailModal({
                     }}
                   >
                     {product.description || (isEn
-                      ? "Handcrafted by master artisans in Benin using authentic materials with generational heritage. Each creation is inspected and certified before shipment."
-                      : "Création façonnée artisanalement à Cotonou par des maîtres artisans d'art. Alliage noble, finitions minutieuses et boîtier poli à la main. Chaque exemplaire est numéroté.")}
+                      ? "Quality product offered by verified merchant in Benin. Inspected and packaged carefully before delivery."
+                      : "Produit de haute qualité proposé par un commerçant vérifié sur Ojarket. Finitions soignées, vérification de conformité et livraison rapide.")}
                   </Text>
                 </View>
 
@@ -699,7 +699,7 @@ export default function ProductDetailModal({
                       <Text style={{ fontSize: 18 }}>📍</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
-                          {isEn ? "Store & Workshop Pickup" : "Retrait direct en atelier d'art"}
+                          {isEn ? "Store Pickup" : "Retrait direct en boutique"}
                         </Text>
                         <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
                           {isEn ? "Free same-day pickup at Haie Vive" : "Gratuit · Disponible dès aujourd'hui à Haie Vive"}
@@ -1019,8 +1019,8 @@ export default function ProductDetailModal({
                           ? "Please prepare exact amount in cash upon delivery."
                           : "Veuillez préparer le montant exact en espèces pour le livreur lors de la livraison.")
                       : (isEn
-                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to ${product.artisanShop?.name || product.seller || "the workshop"}.`
-                          : `Composez le ${createdOrder.paymentInstructions?.ussdCode || "*880#"} pour valider le règlement de ${totalPriceFormatted} FCFA auprès de l'atelier.`)}
+                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to ${product.artisanShop?.name || product.seller || "the store"}.`
+                          : `Composez le ${createdOrder.paymentInstructions?.ussdCode || "*880#"} pour valider le règlement de ${totalPriceFormatted} FCFA auprès de la boutique.`)}
                   </Text>
                   <View style={{ height: 1, backgroundColor: colors.border }} />
                   <Text style={{ fontSize: 11, color: colors.muted }}>

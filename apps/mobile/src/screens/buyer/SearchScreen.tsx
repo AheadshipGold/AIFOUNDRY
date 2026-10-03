@@ -63,7 +63,7 @@ const CATALOG: Product[] = [
     id: "prod-2",
     title: "Chronographe Héritage",
     subtitle: "Automatique · Or & Acier",
-    seller: "Atelier Horlogerie",
+    seller: "Horlogerie Prestige",
     price: 285000,
     currency: "XOF",
     rating: 5.0,
@@ -88,8 +88,8 @@ const CATALOG: Product[] = [
   {
     id: "prod-4",
     title: "Sculpture Artistique en Bronze",
-    subtitle: "Création originale · Bronze noble ciselé",
-    seller: "Atelier d'Art & Fonderie",
+    subtitle: "Bronze noble ciselé · Décoration prestige",
+    seller: "Fonderie Royale",
     price: 195000,
     currency: "XOF",
     rating: 5.0,
@@ -178,7 +178,7 @@ function mapApiProduct(prod: ProductItem): Product {
   
   let cleanTitle = prod.title || "";
   let cleanSubtitle = prod.description || "";
-  let cleanSeller = prod.artisanShop?.name || "Artisan";
+  let cleanSeller = prod.artisanShop?.name || "Boutique Partenaire";
 
   const lowerT = cleanTitle.toLowerCase();
   const lowerS = cleanSeller.toLowerCase();
@@ -189,7 +189,7 @@ function mapApiProduct(prod: ProductItem): Product {
   }
 
   if (lowerS.includes("ouidah") || lowerS.includes("sculpture")) {
-    cleanSeller = "Atelier d'Art & Fonderie Royale";
+    cleanSeller = "Galerie d'Art Royale";
   }
 
   return {
@@ -294,9 +294,9 @@ export default function SearchScreen({
     { id: "all", label: isEn ? "All" : "Tout" },
     { id: "watches", label: isEn ? "Watches" : "Montres" },
     { id: "leather", label: isEn ? "Leather" : "Maroquinerie" },
-    { id: "fashion", label: isEn ? "Jewelry" : "Bijoux d'Art" },
-    { id: "home", label: isEn ? "Home" : "Mobilier & Déco" },
-    { id: "art", label: isEn ? "Sculptures" : "Art & Bronze" },
+    { id: "fashion", label: isEn ? "Jewelry & Fashion" : "Bijoux & Mode" },
+    { id: "home", label: isEn ? "Home & Decor" : "Maison & Mobilier" },
+    { id: "art", label: isEn ? "Art & Sculptures" : "Art & Décoration" },
     { id: "digital", label: isEn ? "Digital" : "Numérique" },
   ];
 
@@ -340,8 +340,8 @@ export default function SearchScreen({
           <TextInput
             placeholder={
               isEn
-                ? "Search for creations, artisans..."
-                : "Rechercher des créations, artisans..."
+                ? "Search for products, boutiques..."
+                : "Rechercher des produits, boutiques..."
             }
             placeholderTextColor={colors.muted}
             value={search}
@@ -479,11 +479,11 @@ export default function SearchScreen({
             {filtered.length}{" "}
             {isEn
               ? filtered.length === 1
-                ? "creation available"
-                : "creations available"
+                ? "product available"
+                : "products available"
               : filtered.length === 1
-              ? "création disponible"
-              : "créations disponibles"}
+              ? "produit disponible"
+              : "produits disponibles"}
           </Text>
         </View>
 
@@ -526,8 +526,8 @@ export default function SearchScreen({
                 }}
               >
                 {isEn
-                  ? "Cannot find the ideal piece?"
-                  : "Vous ne trouvez pas la création idéale ?"}
+                  ? "Cannot find the ideal product?"
+                  : "Vous ne trouvez pas le produit idéal ?"}
               </Text>
               <Text
                 style={{
@@ -539,8 +539,8 @@ export default function SearchScreen({
                 }}
               >
                 {isEn
-                  ? "Post a request and describe your needs to our verified master artisans."
-                  : "Décrivez votre besoin aux maîtres artisans vérifiés."}
+                  ? "Post a request and describe what you need to verified merchants and stores."
+                  : "Décrivez votre recherche de produit aux commerçants et boutiques vérifiés."}
               </Text>
 
               <Pressable
@@ -559,7 +559,7 @@ export default function SearchScreen({
                     fontWeight: "700",
                   }}
                 >
-                  {isEn ? "Post a request →" : "Exprimer un besoin →"}
+                  {isEn ? "Post a request →" : "Publier une demande →"}
                 </Text>
               </Pressable>
             </View>

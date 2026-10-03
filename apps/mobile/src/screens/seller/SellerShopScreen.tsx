@@ -48,7 +48,7 @@ export default function SellerShopScreen({
   const defaultMockItems = [
     { id: '1', title: isEn ? 'Genuine leather bag' : 'Sac en cuir véritable', price: '45 000 FCFA', stock: 4 },
     { id: '2', title: isEn ? 'Minimalist wallet' : 'Portefeuille minimaliste', price: '15 000 FCFA', stock: 8 },
-    { id: '3', title: isEn ? 'Handcrafted belt' : 'Ceinture artisanale', price: '20 000 FCFA', stock: 2 },
+    { id: '3', title: isEn ? 'Leather belt' : 'Ceinture en cuir surpiqué', price: '20 000 FCFA', stock: 2 },
   ];
 
   const [catalogItems, setCatalogItems] = useState(isDemo ? defaultMockItems : []);
@@ -165,8 +165,8 @@ export default function SellerShopScreen({
     setNewDescription('');
 
     Alert.alert(
-      isEn ? 'Creation Published!' : 'Création Publiée !',
-      isEn ? 'Your new creation has been registered in your workshop catalog.' : 'Votre nouvelle création a été enregistrée dans le catalogue de votre atelier.'
+      isEn ? 'Product Published!' : 'Produit Mis en Vente !',
+      isEn ? 'Your product is now listed in your store catalog.' : 'Votre produit a été enregistré et mis en vente dans votre boutique.'
     );
   };
 
@@ -182,30 +182,30 @@ export default function SellerShopScreen({
           <View style={styles.backButtonPlaceholder} />
         )}
         <Text style={[styles.appBarTitle, { color: colors.text }]}>
-          {isEn ? 'My Shop' : 'Ma Boutique'}
+          {isEn ? 'My Store' : 'Ma Boutique'}
         </Text>
         <View style={styles.backButtonPlaceholder} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Workshop Profile Header */}
+        {/* Store Profile Header */}
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.eyebrow, { color: colors.muted }]}>
-            {isEn ? 'ARTISAN WORKSHOP' : "ATELIER D'ART"}
+            {isEn ? 'VERIFIED MERCHANT STORE' : "BOUTIQUE COMMERÇANTE VÉRIFIÉE"}
           </Text>
 
           <Text style={[styles.title, { fontFamily: headingFont, color: colors.text }]}>
-            {activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || (isDemo ? "Atelier Cotonou #042" : "Mon Atelier d'Art")} · {activeShop?.craftType || (isEn ? 'Master Artisan' : 'Maître Artisan')}
+            {activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || (isDemo ? "Boutique Cotonou #042" : "Ma Boutique")} · {activeShop?.craftType || (isEn ? 'Merchant Store' : 'Boutique & Vente')}
           </Text>
 
           <View style={styles.badgeRow}>
             {(activeShop?.kycStatus === 'PENDING' || (!activeShop?.isVerified && !isDemo)) ? (
               <View style={[styles.badge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                <Text style={[styles.badgeText, { color: '#D97706' }]}>⏳ {isEn ? 'KYC Pending' : 'En attente KYC'}</Text>
+                <Text style={[styles.badgeText, { color: '#D97706' }]}>⏳ {isEn ? 'KYC Verification Pending' : 'Validation Boutique en cours'}</Text>
               </View>
             ) : (
               <View style={[styles.badge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Text style={[styles.badgeText, { color: '#10B981' }]}>✓ {isEn ? 'Verified' : 'Vérifié'}</Text>
+                <Text style={[styles.badgeText, { color: '#10B981' }]}>✓ {isEn ? 'Verified Store' : 'Boutique Vérifiée'}</Text>
               </View>
             )}
           </View>
@@ -234,7 +234,7 @@ export default function SellerShopScreen({
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: colors.action, letterSpacing: 1 }}>
-              {isEn ? 'SAAS SUBSCRIPTION' : 'FORMULE ATELIER & SAAS'}
+              {isEn ? 'MERCHANT SUBSCRIPTION' : 'FORMULE BOUTIQUE & VENDEUR'}
             </Text>
             <View
               style={{
@@ -246,9 +246,9 @@ export default function SellerShopScreen({
             >
               <Text style={{ fontSize: 11, fontWeight: '700', color: '#C49A45' }}>
                 {subscription?.planTier === 'MAISON_D_ART_PRESTIGE'
-                  ? "Maison d'Art"
+                  ? "Boutique Prestige"
                   : subscription?.planTier === 'ATELIER_PRO'
-                  ? 'Atelier Pro'
+                  ? 'Boutique Pro'
                   : 'Découverte (Gratuit)'}
               </Text>
             </View>
@@ -256,20 +256,20 @@ export default function SellerShopScreen({
 
           <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
             {subscription?.planTier === 'MAISON_D_ART_PRESTIGE'
-              ? "Plan Maison d'Art & Prestige (45 000 FCFA/mois)"
+              ? "Plan Boutique Prestige (45 000 FCFA/mois)"
               : subscription?.planTier === 'ATELIER_PRO'
-              ? 'Plan Atelier Pro (15 000 FCFA/mois)'
+              ? 'Plan Boutique Pro (15 000 FCFA/mois)'
               : 'Plan Découverte (0 FCFA/mois · 0% commission)'}
           </Text>
 
           <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, marginBottom: 12 }}>
             {subscription?.planTier === 'DECOUVERTE_FREE'
               ? (isEn
-                  ? 'Limit: 5 creations. Upgrade to Atelier Pro for unlimited items, bespoke D02 priority, and FinOps FEC audit export.'
-                  : 'Limite : 5 créations. Passez en Atelier Pro pour un catalogue illimité, la priorité sur les devis D02 et l’export FEC comptable.')
+                  ? 'Limit: 5 products. Upgrade to Boutique Pro for unlimited products, order priority, and FinOps FEC accounting export.'
+                  : 'Limite : 5 produits en vente. Passez en Boutique Pro pour un catalogue illimité, la gestion avancée des commandes et l’export comptable.')
               : (isEn
-                  ? 'Active · 100% merchant direct payments, priority bespoke matching, verified badge.'
-                  : 'Formule active · 100% paiements directs marchands, accès prioritaire aux demandes sur-mesure.')}
+                  ? 'Active · 100% merchant direct payments, priority commercial requests, verified badge.'
+                  : 'Formule active · 100% paiements directs marchands, accès prioritaire aux demandes clients.')}
           </Text>
 
           <Pressable
@@ -289,26 +289,26 @@ export default function SellerShopScreen({
           </Pressable>
         </View>
 
-        {/* Workshop Performance Cards */}
+        {/* Store Performance Cards */}
         <View style={styles.cardRow}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.statValue, { color: colors.text }]}>{catalogItems.length}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              {isEn ? 'Active Creations' : 'Créations actives'}
+              {isEn ? 'Products for Sale' : 'Produits en vente'}
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.statValue, { color: colors.text }]}>{isDemo ? '★ 4.9' : '★ —'}</Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              {isDemo ? (isEn ? '124 verified reviews' : '124 avis vérifiés') : (isEn ? 'New Workshop' : 'Nouvel Atelier')}
+              {isDemo ? (isEn ? '124 verified reviews' : '124 avis clients') : (isEn ? 'New Store' : 'Nouvelle Boutique')}
             </Text>
           </View>
         </View>
 
-        {/* Catalog Preview Header with Add Button */}
+        {/* Product Catalog Header with Add Button */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {isEn ? 'Catalog' : 'Catalogue des Créations'}
+            {isEn ? 'Products for Sale' : 'Catalogue des Produits'}
           </Text>
           <Pressable
             onPress={() => setShowAddModal(true)}
@@ -320,7 +320,7 @@ export default function SellerShopScreen({
             }}
           >
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
-              {isEn ? '+ New Creation' : '+ Ajouter'}
+              {isEn ? '+ Add Product' : '+ Ajouter un Produit'}
             </Text>
           </Pressable>
         </View>
@@ -357,14 +357,14 @@ export default function SellerShopScreen({
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 28, marginBottom: 8 }}>🎨</Text>
+            <Text style={{ fontSize: 28, marginBottom: 8 }}>📦</Text>
             <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
-              {isEn ? 'No creations added yet' : 'Aucune création enregistrée'}
+              {isEn ? 'No products in store yet' : 'Aucun produit dans votre boutique'}
             </Text>
             <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center', marginTop: 4, lineHeight: 16, marginBottom: 14 }}>
               {isEn
-                ? 'Add your handcrafted pieces to showcase them to buyers across the marketplace.'
-                : 'Ajoutez vos pièces uniques et créations artisanales pour les rendre visibles aux acheteurs.'}
+                ? 'Add your articles and products to start selling to buyers across the marketplace.'
+                : 'Ajoutez vos articles et produits pour commencer à vendre et recevoir des commandes sur Ojarket.'}
             </Text>
             <Pressable
               onPress={() => setShowAddModal(true)}
@@ -376,7 +376,7 @@ export default function SellerShopScreen({
               }}
             >
               <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>
-                {isEn ? '+ Add First Creation' : '+ Ajouter ma première création'}
+                {isEn ? '+ Add First Product' : '+ Ajouter mon premier produit'}
               </Text>
             </Pressable>
           </View>
@@ -385,14 +385,14 @@ export default function SellerShopScreen({
         {/* Direct payment channels */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {isEn ? 'Payment Channels' : 'Canaux de paiement'}
+            {isEn ? 'Payment Channels' : 'Canaux de paiement acceptés'}
           </Text>
         </View>
 
         {[
           'MTN Mobile Money (*880#)',
           'Moov Money Bénin (*155#)',
-          isEn ? 'Cash at workshop' : "Espèces à l'atelier",
+          isEn ? 'Cash on delivery / in store' : 'Espèces à la boutique / livraison',
         ].map((channel, i) => (
           <View key={i} style={[styles.channelItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.channelText, { color: colors.text }]}>{channel}</Text>
@@ -437,7 +437,7 @@ export default function SellerShopScreen({
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Text style={{ fontFamily: headingFont, fontSize: 18, fontWeight: '700', color: colors.text }}>
-                  👑 {isEn ? 'Workshop Subscription Plans' : 'Formules d’Abonnement Atelier'}
+                  👑 {isEn ? 'Merchant Store Plans' : 'Formules d’Abonnement Boutique'}
                 </Text>
                 <Pressable onPress={() => setShowPlanModal(false)}>
                   <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>
@@ -458,8 +458,8 @@ export default function SellerShopScreen({
                     0 FCFA <Text style={{ fontSize: 12, fontWeight: '400', color: colors.muted }}>/ mois</Text>
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 12 }}>
-                    • Jusqu’à 5 créations en vitrine{'\n'}
-                    • Livre de caisse FinOps & clôture journalière{'\n'}
+                    • Jusqu’à 5 produits en vente{'\n'}
+                    • Livre de caisse & suivi journalier{'\n'}
                     • Encaissement MTN MoMo & Moov direct
                   </Text>
                   <Pressable
@@ -480,10 +480,10 @@ export default function SellerShopScreen({
                   </Pressable>
                 </View>
 
-                {/* Plan 2: Atelier Pro */}
+                {/* Plan 2: Boutique Pro */}
                 <View style={{ backgroundColor: colors.canvas, borderRadius: 14, padding: 16, borderWidth: 2, borderColor: colors.action }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Plan Atelier Pro</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Plan Boutique Pro</Text>
                     <View style={{ backgroundColor: colors.action, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>RECOMMANDÉ</Text>
                     </View>
@@ -492,14 +492,14 @@ export default function SellerShopScreen({
                     15 000 FCFA <Text style={{ fontSize: 12, fontWeight: '400', color: colors.muted }}>/ mois</Text>
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 12 }}>
-                    • Créations & variantes illimitées{'\n'}
-                    • Accès prioritaire aux demandes sur-mesure (D02){'\n'}
-                    • Badge Maître Artisan Vérifié{'\n'}
-                    • Export FEC comptable certifié
+                    • Produits & articles illimités{'\n'}
+                    • Accès prioritaire aux demandes acheteurs{'\n'}
+                    • Badge Commerçant Vérifié{'\n'}
+                    • Export comptable certifié
                   </Text>
                   <Pressable
                     disabled={upgradingTier === 'ATELIER_PRO'}
-                    onPress={() => handleUpgrade('ATELIER_PRO', 'Plan Atelier Pro', 15000)}
+                    onPress={() => handleUpgrade('ATELIER_PRO', 'Plan Boutique Pro', 15000)}
                     style={{
                       paddingVertical: 10,
                       borderRadius: 8,
@@ -511,27 +511,27 @@ export default function SellerShopScreen({
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
                       <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>
-                        {subscription?.planTier === 'ATELIER_PRO' ? '✓ Renouveler (MoMo)' : 'Activer Atelier Pro (15 000 FCFA) →'}
+                        {subscription?.planTier === 'ATELIER_PRO' ? '✓ Renouveler (MoMo)' : 'Activer Boutique Pro (15 000 FCFA) →'}
                       </Text>
                     )}
                   </Pressable>
                 </View>
 
-                {/* Plan 3: Maison d'Art & Prestige */}
+                {/* Plan 3: Boutique Prestige */}
                 <View style={{ backgroundColor: colors.canvas, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#C49A45' }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Maison d'Art & Prestige</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Boutique Prestige</Text>
                   <Text style={{ fontSize: 18, fontWeight: '800', color: '#C49A45', marginVertical: 4 }}>
                     45 000 FCFA <Text style={{ fontSize: 12, fontWeight: '400', color: colors.muted }}>/ mois</Text>
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 12 }}>
-                    • Toutes les fonctionnalités Atelier Pro{'\n'}
-                    • Conciergerie VIP & médiation dédiée 7j/7{'\n'}
-                    • Mise en avant éditoriale sur la vitrine Web mondiale{'\n'}
-                    • Vente de patrons & guides numériques
+                    • Toutes les fonctionnalités Boutique Pro{'\n'}
+                    • Support prioritaire & visibilité renforcée{'\n'}
+                    • Mise en avant en tête de la Marketplace{'\n'}
+                    • Vente d'articles numériques et physiques
                   </Text>
                   <Pressable
                     disabled={upgradingTier === 'MAISON_D_ART_PRESTIGE'}
-                    onPress={() => handleUpgrade('MAISON_D_ART_PRESTIGE', "Maison d'Art & Prestige", 45000)}
+                    onPress={() => handleUpgrade('MAISON_D_ART_PRESTIGE', "Boutique Prestige", 45000)}
                     style={{
                       paddingVertical: 10,
                       borderRadius: 8,
@@ -543,7 +543,7 @@ export default function SellerShopScreen({
                       <ActivityIndicator size="small" color="#0D2E26" />
                     ) : (
                       <Text style={{ fontSize: 12, fontWeight: '700', color: '#0D2E26' }}>
-                        Activer Maison d'Art (45 000 FCFA) →
+                        Activer Boutique Prestige (45 000 FCFA) →
                       </Text>
                     )}
                   </Pressable>
@@ -554,7 +554,7 @@ export default function SellerShopScreen({
         </Modal>
       )}
 
-      {/* Add Creation Modal */}
+      {/* Add Product Modal */}
       {showAddModal && (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -582,7 +582,7 @@ export default function SellerShopScreen({
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
-                {isEn ? 'Add a New Creation' : 'Ajouter une Création'}
+                {isEn ? 'Add a New Product' : 'Ajouter un Nouveau Produit'}
               </Text>
               <Pressable onPress={() => setShowAddModal(false)}>
                 <Text style={{ fontSize: 18, color: colors.muted }}>✕</Text>
@@ -596,7 +596,7 @@ export default function SellerShopScreen({
               contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 20 }}
             >
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text, marginBottom: 6 }}>
-                {isEn ? 'Creation Title *' : 'Titre de la création *'}
+                {isEn ? 'Product Name *' : 'Nom du produit / Article *'}
               </Text>
               <TextInput
                 style={{
@@ -611,7 +611,7 @@ export default function SellerShopScreen({
                 }}
                 value={newTitle}
                 onChangeText={setNewTitle}
-                placeholder={isEn ? 'e.g. Handmade Leather Belt' : 'ex: Ceinture en cuir patiné'}
+                placeholder={isEn ? 'e.g. Leather Handbag, Smartphone, Watch...' : 'ex: Sac en cuir, Montre, Téléphone, Vêtement...'}
                 placeholderTextColor={colors.muted}
               />
 
@@ -638,7 +638,7 @@ export default function SellerShopScreen({
               />
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text, marginBottom: 6 }}>
-                {isEn ? 'Initial Stock Available' : 'Stock disponible'}
+                {isEn ? 'Stock Quantity Available' : 'Quantité en stock'}
               </Text>
               <TextInput
                 style={{
@@ -653,13 +653,13 @@ export default function SellerShopScreen({
                 }}
                 value={newStock}
                 onChangeText={setNewStock}
-                placeholder="3"
+                placeholder="5"
                 placeholderTextColor={colors.muted}
                 keyboardType="number-pad"
               />
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text, marginBottom: 6 }}>
-                {isEn ? 'Craftsmanship & Materials Description' : 'Description & Savoir-faire'}
+                {isEn ? 'Product Description & Details' : 'Description du produit & Caractéristiques'}
               </Text>
               <TextInput
                 style={{
@@ -675,7 +675,7 @@ export default function SellerShopScreen({
                 }}
                 value={newDescription}
                 onChangeText={setNewDescription}
-                placeholder={isEn ? 'Describe materials, technique, and care...' : 'Matériaux nobles, finitions main...'}
+                placeholder={isEn ? 'Describe your product, condition, warranty, features...' : 'Caractéristiques, état, marque, garantie...'}
                 placeholderTextColor={colors.muted}
                 multiline
               />
@@ -690,7 +690,7 @@ export default function SellerShopScreen({
                 onPress={handleCreateProduct}
               >
                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
-                  {isEn ? 'Publish Creation' : 'Publier la création'}
+                  {isEn ? 'Publish Product for Sale' : 'Mettre en vente le produit'}
                 </Text>
               </Pressable>
             </ScrollView>

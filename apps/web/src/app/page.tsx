@@ -70,12 +70,12 @@ const CATALOG: Product[] = [
     rating: 5.0,
     reviewsCount: 68,
     seller: {
-      name: "Atelier Horlogerie",
+      name: "Horlogerie Prestige",
       city: "Abidjan",
       verified: true,
       rating: 5.0,
       salesCount: 186,
-      initials: "AH",
+      initials: "HP",
     },
     image: "/products/watch-chrono.jpg",
     description:
@@ -131,7 +131,7 @@ const CATALOG: Product[] = [
     },
     image: "/products/art-bronze.jpg",
     description:
-      "Sculpture royale en bronze massif patiné à l'or et à la cire perdue, issue des ateliers de fonte ancestraux du plateau d'Abomey.",
+      "Sculpture royale en bronze massif patiné à l'or et à la cire perdue, pièce d'art de prestige du plateau d'Abomey.",
     stock: 2,
     variants: [
       { name: "Bronze Doré Patiné", color: "#B8860B" },
@@ -529,8 +529,8 @@ function MainMarketplaceView() {
       id: "req-01",
       buyerName: "Amina Diop",
       buyerCity: "Cotonou",
-      title: "Parure de haute joaillerie en bronze ciselé",
-      description: "Recherche d'un atelier d'artisan joaillier capable de forger un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
+      title: "Parure de joaillerie en bronze ciselé",
+      description: "Recherche d'une boutique ou joaillier capable de fournir un collier plastron et manchettes assorties sous 15 jours en bronze noble poli.",
       category: "Joaillerie & Bronze",
       budget: "280 000 FCFA",
       proposalsCount: 2,
@@ -547,7 +547,7 @@ function MainMarketplaceView() {
         },
         {
           id: "prop-02",
-          artisan: "Ateliers d'Honneur",
+          artisan: "Maison d'Honneur",
           city: "Cotonou",
           price: 290000,
           advance: 120000,
@@ -813,7 +813,7 @@ function MainMarketplaceView() {
                         {currentUser.role === "ADMIN"
                           ? "👑 Super Administrateur"
                           : currentUser.role === "SELLER"
-                          ? `👑 Maître Artisan · ${currentUser.shopName || "Atelier"}`
+                          ? `👑 Vendeur Certifié · ${currentUser.shopName || "Boutique"}`
                           : "✦ Client Privilège"}
                       </div>
                     </div>
@@ -856,7 +856,7 @@ function MainMarketplaceView() {
                         fontWeight: 500,
                       }}
                     >
-                      {universe === "buyer" ? "Basculer vers Atelier Vendeur ↗" : "Basculer vers Espace Découverte ↗"}
+                      {universe === "buyer" ? "Basculer vers Espace Vendeur ↗" : "Basculer vers Espace Acheteur ↗"}
                     </button>
 
                     <button
@@ -2453,10 +2453,10 @@ function MainMarketplaceView() {
                 👑
               </div>
               <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)", letterSpacing: "0.14em" }}>
-                {isEn ? "ARTISAN & MERCHANT ACCESS" : "ESPACE ATELIER & VENDEUR"}
+                {isEn ? "MERCHANT & STORE ACCESS" : "ESPACE COMMERÇANT & BOUTIQUE"}
               </span>
               <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", margin: "8px 0 10px", color: "var(--oj-color-text)" }}>
-                {isEn ? "Protected Artisan Space" : "Accès Réservé aux Maîtres Artisans"}
+                {isEn ? "Protected Merchant Space" : "Accès Réservé aux Commerçants Vérifiés"}
               </h2>
               <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.5", margin: 0 }}>
                 {isEn
@@ -2481,7 +2481,7 @@ function MainMarketplaceView() {
                 onClick={() => handleLogin(DEMO_SELLER_USER)}
                 style={{ width: "100%", height: "42px", fontSize: "13px" }}
               >
-                Entrer dans l'Atelier (Maison Laurent) →
+                Entrer dans la Boutique (Maison Laurent) →
               </button>
             </div>
 
@@ -2497,8 +2497,8 @@ function MainMarketplaceView() {
                     name: "Alexandre Laurent",
                     phone: authIdentifier,
                     role: "SELLER",
-                    shopName: "Atelier d'Art",
-                    shopInitials: "AA",
+                    shopName: "Ma Boutique",
+                    shopInitials: "MB",
                   });
                 }
               }}
@@ -2563,17 +2563,17 @@ function MainMarketplaceView() {
 
             <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid var(--oj-color-border)", textAlign: "center" }}>
               <span style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>
-                Vous n'avez pas encore d'atelier certifié ?{" "}
+                Vous n'avez pas encore de boutique certifiée ?{" "}
               </span>
               <a
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  alert(isEn ? "Merchant onboarding application form opened." : "Formulaire de candidature Maître Artisan ouvert.");
+                  alert(isEn ? "Merchant onboarding application form opened." : "Formulaire de création de boutique ouvert.");
                 }}
                 style={{ color: "var(--oj-color-accent)", fontWeight: 700, fontSize: "13px", textDecoration: "none" }}
               >
-                Déposer une candidature →
+                Créer ma boutique →
               </a>
             </div>
           </div>
@@ -2636,7 +2636,7 @@ function MainMarketplaceView() {
             >
               {[
                 { id: "BUYER", label: "🛍️ Acheteur" },
-                { id: "SELLER", label: "👑 Artisan" },
+                { id: "SELLER", label: "🏪 Commerçant" },
                 { id: "ADMIN", label: "🛡️ Admin" },
               ].map((tab) => (
                 <button
@@ -2678,8 +2678,8 @@ function MainMarketplaceView() {
                 {authRoleTab === "ADMIN" && "Superviseur Plateforme (Direction Ojarket)"}
               </div>
               <div style={{ fontSize: "12px", color: "var(--oj-color-muted)", marginBottom: "12px" }}>
-                {authRoleTab === "BUYER" && "Accès commandes acheteur, favoris et demandes sur-mesure."}
-                {authRoleTab === "SELLER" && "Accès atelier vendeur, tableau de bord, FinOps et devis."}
+                {authRoleTab === "BUYER" && "Accès commandes acheteur, favoris et demandes de produits."}
+                {authRoleTab === "SELLER" && "Accès boutique vendeur, tableau de bord, FinOps et devis."}
                 {authRoleTab === "ADMIN" && "Supervision multi-marchand, corridors KYC et grand livre."}
               </div>
               <button
@@ -2691,7 +2691,7 @@ function MainMarketplaceView() {
                 }}
                 style={{ width: "100%", height: "40px", fontSize: "13px" }}
               >
-                Se connecter en tant que {authRoleTab === "BUYER" ? "Acheteur" : (authRoleTab === "SELLER" ? "Artisan Vendeur" : "Administrateur")} →
+                Se connecter en tant que {authRoleTab === "BUYER" ? "Acheteur" : (authRoleTab === "SELLER" ? "Commerçant Vendeur" : "Administrateur")} →
               </button>
             </div>
 

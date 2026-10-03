@@ -261,8 +261,8 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
               }}
             >
               {isEn
-                ? "Your workshop is open. When buyers place orders for your creations, they will appear here."
-                : "Votre atelier est prêt. Dès que des clients achèteront vos créations, leurs commandes apparaîtront ici."}
+                ? "Your store is set up. When buyers place orders for your products, they will appear here."
+                : "Votre boutique est prête. Dès que des clients commanderont vos produits, leurs commandes apparaîtront ici."}
             </Text>
           </View>
         ) : (
@@ -270,7 +270,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
             {filteredOrders.map((order: any) => {
               const itemTitle = order.lines
                 ? order.lines.map((l: any) => l.itemTitle).join(", ")
-                : order.items?.map((i: any) => i.itemTitle).join(", ") || "Création Artisanale";
+                : order.items?.map((i: any) => i.itemTitle).join(", ") || "Article de boutique";
 
               let orderImg = order.image || imgWatchChrono;
               if (itemTitle.toLowerCase().includes("cuir") || itemTitle.toLowerCase().includes("sac")) {

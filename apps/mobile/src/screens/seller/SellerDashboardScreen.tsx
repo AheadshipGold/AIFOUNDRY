@@ -67,11 +67,11 @@ export default function SellerDashboardScreen({
   const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
   const sellerName = currentUser?.name
     ? currentUser.name.trim().split(/\s+/)[0]
-    : (isDemo ? "Alexandre" : (isEn ? "Artisan" : "Artisan"));
+    : (isDemo ? "Alexandre" : (isEn ? "Merchant" : "Commerçant"));
   const shopName = activeShop?.name
     || currentUser?.activeShop?.name
     || (currentUser?.shops && currentUser.shops[0]?.name)
-    || (isDemo ? "Maison Laurent" : (isEn ? "My Workshop" : "Mon Atelier"));
+    || (isDemo ? "Maison Laurent" : (isEn ? "My Store" : "Ma Boutique"));
   const initials = currentUser?.name
     ? currentUser.name.trim().split(/\s+/).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
     : (isDemo ? "AL" : "OA");
@@ -136,7 +136,7 @@ export default function SellerDashboardScreen({
           zIndex: 10,
         }}
       >
-        {/* Official Brand Logo + Atelier Subtitle */}
+        {/* Official Brand Logo + Boutique Subtitle */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Image
             source={isDark ? logoDark : logoLight}
@@ -153,7 +153,7 @@ export default function SellerDashboardScreen({
             }}
           >
             <Text style={{ fontSize: 8.5, color: colors.accent, fontWeight: "800", letterSpacing: 0.5 }}>
-              ATELIER
+              BOUTIQUE
             </Text>
           </View>
         </View>
@@ -256,7 +256,7 @@ export default function SellerDashboardScreen({
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
                 <Text style={{ fontSize: 11, color: colors.muted }}>
-                  {shopName} · {isEn ? "Cotonou Atelier" : "Atelier Cotonou"}
+                  {shopName} · {isEn ? "Store Cotonou" : "Boutique Cotonou"}
                 </Text>
                 {kycStatus === 'PENDING' ? (
                   <View
@@ -293,7 +293,7 @@ export default function SellerDashboardScreen({
                   >
                     <Text style={{ fontSize: 10 }}>👑</Text>
                     <Text style={{ fontSize: 9.5, color: colors.accent, fontWeight: "800" }}>
-                      {isEn ? "Certified Artisan" : "Atelier Certifié"}
+                      {isEn ? "Verified Store" : "Boutique Certifiée"}
                     </Text>
                   </View>
                 )}
@@ -312,8 +312,8 @@ export default function SellerDashboardScreen({
                 >
                   <Text style={{ fontSize: 11.5, color: colors.text, fontWeight: "600", lineHeight: 16 }}>
                     {isEn
-                      ? "⏳ Your workshop is being verified. You can already configure your atelier, add your creations, and manage your cashbook."
-                      : "⏳ Votre atelier est en cours de validation. En attendant l’approbation officielle, vous pouvez dès à présent ajouter vos créations et configurer votre boutique."}
+                      ? "⏳ Your store is being verified. You can already add your products, configure your store, and manage your sales."
+                      : "⏳ Votre boutique est en cours de validation. En attendant l’approbation officielle, vous pouvez dès à présent ajouter vos produits et configurer votre boutique."}
                   </Text>
                 </View>
               )}
@@ -490,10 +490,10 @@ export default function SellerDashboardScreen({
         <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
             {[
-              { label: isEn ? "Creations" : "Créations", symbol: "◈", action: onOpenShop || onOpenCashbook },
+              { label: isEn ? "Products" : "Articles", symbol: "◈", action: onOpenShop || onOpenCashbook },
               { label: isEn ? "Orders" : "Commandes", symbol: "☵", action: onOpenOrders },
-              { label: isEn ? "Bespoke" : "Sur-Mesure", symbol: "✦", action: onOpenOpportunities },
-              { label: isEn ? "Atelier" : "Mon Atelier", symbol: "🏛", action: onOpenShop || onOpenCashbook },
+              { label: isEn ? "Requests" : "Demandes", symbol: "✦", action: onOpenOpportunities },
+              { label: isEn ? "My Store" : "Ma Boutique", symbol: "🏪", action: onOpenShop || onOpenCashbook },
             ].map((item, idx) => (
               <Pressable
                 key={idx}
@@ -612,7 +612,7 @@ export default function SellerDashboardScreen({
                       </View>
                     </View>
                     <Text style={{ fontSize: 12, color: colors.text, marginTop: 2, fontWeight: "600" }} numberOfLines={1}>
-                      {order.lines?.[0]?.itemTitle || (isEn ? "Creation Order" : "Commande de création")}
+                      {order.lines?.[0]?.itemTitle || (isEn ? "Product Order" : "Commande d'article")}
                     </Text>
                     <Text style={{ fontSize: 10, color: colors.muted }}>
                       Client : {order.buyerName}
@@ -735,8 +735,8 @@ export default function SellerDashboardScreen({
               </Text>
               <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
                 {isEn
-                  ? "Your workshop is ready! Client purchases will appear here in real time."
-                  : "Votre atelier est configuré ! Vos commandes clients apparaîtront ici dès vos premières ventes."}
+                  ? "Your store is active! Client purchases will appear here as orders come in."
+                  : "Votre boutique est configurée ! Vos commandes clients apparaîtront ici dès vos premières ventes."}
               </Text>
             </View>
           )}
@@ -774,7 +774,7 @@ export default function SellerDashboardScreen({
                 <Text style={{ fontSize: 11, color: colors.action, fontWeight: "700", marginTop: 2 }}>
                   {totalVendu > 0
                     ? `↗ +38% ${isEn ? "vs last month" : "vs mois dernier"}`
-                    : (isEn ? "Workshop active · Ready for sales" : "Atelier actif · Prêt pour les encaissements")}
+                    : (isEn ? "Store active · Ready for sales" : "Boutique active · Prête pour les ventes")}
                 </Text>
               </View>
 
@@ -833,7 +833,7 @@ export default function SellerDashboardScreen({
                 color: colors.text,
               }}
             >
-              {isEn ? "Pending Bespoke Requests" : "Demandes sur-mesure en attente"}
+              {isEn ? "Pending Buyer Requests" : "Demandes acheteurs en attente"}
             </Text>
             <Pressable onPress={onOpenOpportunities}>
               <Text style={{ fontSize: 12, fontWeight: "700", color: colors.action }}>
@@ -847,13 +847,13 @@ export default function SellerDashboardScreen({
               {[
                 {
                   buyer: "Amina Diop",
-                  title: "Montre chronographe sur-mesure or rose",
+                  title: "Lot de sacs en cuir et accessoires",
                   budget: "300 000 FCFA",
                   time: "Il y a 2h",
                 },
                 {
                   buyer: "Jean-Marc Dossou",
-                  title: "Cabas cuir pleine fleur avec gravure initiale",
+                  title: "Commande spéciale maroquinerie",
                   budget: "75 000 FCFA",
                   time: "Il y a 5h",
                 },
@@ -921,12 +921,12 @@ export default function SellerDashboardScreen({
             >
               <Text style={{ fontSize: 24, marginBottom: 6 }}>✦</Text>
               <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, textAlign: "center" }}>
-                {isEn ? "No pending bespoke requests" : "Aucune demande sur-mesure pour le moment"}
+                {isEn ? "No pending buyer requests" : "Aucune demande d'acheteur pour le moment"}
               </Text>
               <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
                 {isEn
-                  ? "Clients looking for custom creations will be matched to your workshop here."
-                  : "Les demandes de devis et créations sur-mesure des acheteurs apparaîtront ici."}
+                  ? "Specific product requests from buyers will appear here."
+                  : "Les demandes de produits spécifiques et devis des acheteurs apparaîtront ici."}
               </Text>
             </View>
           )}

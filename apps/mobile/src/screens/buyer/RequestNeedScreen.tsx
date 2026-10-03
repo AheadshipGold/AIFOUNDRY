@@ -63,8 +63,8 @@ export default function RequestNeedScreen({
     setTimeout(() => {
       setIsAiStructuring(false);
       const enriched = description.trim()
-        ? `${description.trim()}\n\n[Spécification optimisée IA]\n• Matériaux : Cuir pleine fleur tannage végétal ou métaux nobles\n• Finitions : Coutures sellier main et poinçon artisan certifié\n• Délai estimé : 10 à 14 jours ouvrés`
-        : "Recherche d'une pièce d'artisanat d'exception sur-mesure, avec matériaux nobles authentiques et finitions soignées d'atelier.";
+        ? `${description.trim()}\n\n[Spécification optimisée IA]\n• Caractéristiques : Finitions soignées et matériaux de qualité\n• État souhaité : Neuf ou Très bon état\n• Délai estimé : 5 à 10 jours ouvrés`
+        : "Recherche d'un produit spécifique de qualité, avec garantie boutique et facture commerciale.";
       setDescription(enriched);
     }, 600);
   };
@@ -74,8 +74,8 @@ export default function RequestNeedScreen({
       Alert.alert(
         isEn ? "Description Required" : "Description Requise",
         isEn
-          ? "Please describe the piece you are looking for."
-          : "Veuillez décrire la création que vous recherchez."
+          ? "Please describe the product you are looking for."
+          : "Veuillez décrire le produit que vous recherchez."
       );
       return;
     }
@@ -93,16 +93,16 @@ export default function RequestNeedScreen({
       Alert.alert(
         isEn ? "Request Published!" : "Demande publiée !",
         isEn
-          ? "Verified master ateliers have received your specification and will send you direct quotes."
-          : "Les maîtres artisans certifiés ont reçu votre cahier des charges et vous transmettront leurs devis.",
+          ? "Verified merchants and stores have received your request and will send you direct offers."
+          : "Les commerçants et boutiques vérifiés ont reçu votre demande et vous transmettront leurs offres.",
         [{ text: "OK", onPress: onSubmitted }]
       );
     } catch {
       Alert.alert(
         isEn ? "Request Published!" : "Demande publiée !",
         isEn
-          ? "Verified ateliers have received your specification."
-          : "Les ateliers certifiés ont bien reçu votre demande.",
+          ? "Verified stores have received your request."
+          : "Les boutiques certifiées ont bien reçu votre demande.",
         [{ text: "OK", onPress: onSubmitted }]
       );
     } finally {
@@ -153,7 +153,7 @@ export default function RequestNeedScreen({
             color: colors.text,
           }}
         >
-          {isEn ? "Express a Custom Need" : "Exprimer un besoin"}
+          {isEn ? "Express a Product Need" : "Exprimer un besoin produit"}
         </Text>
 
         <Pressable
@@ -161,8 +161,8 @@ export default function RequestNeedScreen({
             Alert.alert(
               isEn ? "Need Help?" : "Besoin d'aide ?",
               isEn
-                ? "Post your custom specifications to verified master artisans in Benin."
-                : "Décrivez votre création sur-mesure aux maîtres artisans vérifiés pour recevoir des devis directs."
+                ? "Post your product search to verified merchants and stores in Benin."
+                : "Décrivez votre recherche de produit aux commerçants vérifiés pour recevoir des offres directes."
             )
           }
           style={({ pressed }) => [{
@@ -305,8 +305,8 @@ export default function RequestNeedScreen({
             onChangeText={setDescription}
             placeholder={
               isEn
-                ? "e.g. I am looking for a custom artisan creation with premium leather or bronze details..."
-                : "Ex. : Je recherche une création d'artisan sur-mesure en cuir pleine fleur, ou parure en bronze ciselé..."
+                ? "e.g. I am looking for a specific leather bag, smartwatch, or home decor item..."
+                : "Ex. : Je recherche un sac en cuir de voyage, une montre chronographe, ou mobilier de salon..."
             }
             placeholderTextColor={colors.muted}
             multiline
@@ -581,8 +581,8 @@ export default function RequestNeedScreen({
             </Text>
             <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2, lineHeight: 15 }}>
               {isEn
-                ? "Your request is visible to selected professional artisans on our marketplace."
-                : "Votre demande est visible par des vendeurs professionnels sélectionnés sur notre marketplace."}
+                ? "Your request is visible to verified professional merchants and stores on our marketplace."
+                : "Votre demande est visible par des commerçants professionnels vérifiés sur notre marketplace."}
             </Text>
           </View>
         </View>

@@ -97,7 +97,7 @@ export default function StandaloneSellerDashboard() {
             <div className="brand-symbol">Ọ</div>
             <div className="brand-text-block">
               <span className="brand-title">OJAR盤KET</span>
-              <span className="brand-sub">SELLER OS · ATELIER PRO</span>
+              <span className="brand-sub">SELLER OS · BOUTIQUE PRO</span>
             </div>
           </Link>
           <div className="landing-header-actions">
@@ -120,7 +120,7 @@ export default function StandaloneSellerDashboard() {
               TABLEAU DE BORD VENDEUR PRO (S20)
             </div>
             <h1 style={{ margin: "8px 0 0", fontSize: "28px", color: "var(--oj-text-primary)", fontFamily: "Playfair Display, Georgia, serif" }}>
-              Maison Ganvié & Fils · Atelier Cotonou
+              Maison Ganvié & Fils · Boutique Cotonou
             </h1>
           </div>
           <div style={{ display: "flex", gap: "12px" }}>
@@ -157,7 +157,7 @@ export default function StandaloneSellerDashboard() {
           </div>
 
           <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid var(--oj-border)", backgroundColor: "var(--oj-surface)" }}>
-            <div style={{ fontSize: "12px", color: "var(--oj-text-secondary)", fontWeight: 600 }}>ALERTES STOCK ATELIER</div>
+            <div style={{ fontSize: "12px", color: "var(--oj-text-secondary)", fontWeight: 600 }}>ALERTES STOCK BOUTIQUE</div>
             <div style={{ fontSize: "26px", fontWeight: 700, color: "#DC2626", margin: "10px 0 4px", fontVariantNumeric: "tabular-nums" }}>
               2 pièces
             </div>
@@ -168,7 +168,7 @@ export default function StandaloneSellerDashboard() {
         {/* Priority Action Tasks (S20 Section) */}
         <div style={{ marginBottom: "36px", padding: "24px", borderRadius: "16px", border: "1px solid var(--oj-border)", backgroundColor: "var(--oj-surface)" }}>
           <h3 style={{ margin: "0 0 16px", fontSize: "18px", color: "var(--oj-text-primary)" }}>
-            À faire aujourd&apos;hui (Priorités d&apos;atelier)
+            À faire aujourd&apos;hui (Priorités de boutique)
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "8px", backgroundColor: "rgba(220, 38, 38, 0.05)", borderLeft: "4px solid #DC2626" }}>

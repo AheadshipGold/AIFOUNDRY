@@ -67,7 +67,7 @@ const CATALOG: Product[] = [
     id: "prod-2",
     title: "Chronographe Héritage",
     subtitle: "Automatique · Or & Acier",
-    seller: "Atelier Horlogerie",
+    seller: "Horlogerie Prestige",
     price: 285000,
     currency: "XOF",
     rating: 5.0,
@@ -92,8 +92,8 @@ const CATALOG: Product[] = [
   {
     id: "prod-4",
     title: "Sculpture Artistique en Bronze",
-    subtitle: "Création originale · Bronze noble ciselé",
-    seller: "Atelier d'Art & Fonderie",
+    subtitle: "Bronze noble ciselé · Décoration prestige",
+    seller: "Fonderie Royale",
     price: 195000,
     currency: "XOF",
     rating: 5.0,
@@ -182,7 +182,7 @@ function mapApiProduct(prod: ProductItem): Product {
   
   let cleanTitle = prod.title || "";
   let cleanSubtitle = prod.description || "";
-  let cleanSeller = prod.artisanShop?.name || "Artisan d'Excellence";
+  let cleanSeller = prod.artisanShop?.name || "Boutique Partenaire";
 
   const lowerT = cleanTitle.toLowerCase();
   const lowerS = cleanSeller.toLowerCase();
@@ -193,7 +193,7 @@ function mapApiProduct(prod: ProductItem): Product {
   }
 
   if (lowerS.includes("ouidah") || lowerS.includes("sculpture")) {
-    cleanSeller = "Atelier d'Art & Fonderie Royale";
+    cleanSeller = "Galerie d'Art Royale";
   }
 
   return {
@@ -287,9 +287,9 @@ export default function BuyerHomeScreen({
     { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true },
     { id: "watches", label: isEn ? "Watches" : "Montres", image: imgWatchChrono, isAll: false },
     { id: "leather", label: isEn ? "Leather" : "Maroquinerie", image: imgLeatherTote, isAll: false },
-    { id: "fashion", label: isEn ? "Jewelry" : "Bijoux d'Art", image: imgJewelryGold, isAll: false },
-    { id: "home", label: isEn ? "Home" : "Mobilier d'Art", image: imgArmchair, isAll: false },
-    { id: "art", label: isEn ? "Sculptures" : "Art & Bronze", image: imgArtBronze, isAll: false },
+    { id: "fashion", label: isEn ? "Jewelry & Fashion" : "Bijoux & Mode", image: imgJewelryGold, isAll: false },
+    { id: "home", label: isEn ? "Home & Decor" : "Maison & Mobilier", image: imgArmchair, isAll: false },
+    { id: "art", label: isEn ? "Art & Sculptures" : "Art & Décoration", image: imgArtBronze, isAll: false },
     { id: "digital", label: isEn ? "Digital" : "Numérique", image: imgDigitalPatterns, isAll: false },
   ];
 
@@ -432,12 +432,12 @@ export default function BuyerHomeScreen({
               marginBottom: 4,
             }}
           >
-            {isEn ? "Discover the Exceptional" : "Découvrez l'exceptionnel"}
+            {isEn ? "Discover the Marketplace" : "Découvrez la marketplace"}
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
             {isEn
-              ? "Unique pieces crafted by master artisans for discerning collectors."
-              : "Des créations uniques confectionnées par des maîtres artisans d'exception."}
+              ? "Unique products and commercial selections from verified merchants."
+              : "Des produits de qualité et sélections exclusives proposés par nos commerçants vérifiés."}
           </Text>
         </View>
 
@@ -464,8 +464,8 @@ export default function BuyerHomeScreen({
             <TextInput
               placeholder={
                 isEn
-                  ? "Search for creations, watches, artisans..."
-                  : "Rechercher une création, une montre, un atelier..."
+                  ? "Search for products, watches, boutiques..."
+                  : "Rechercher un produit, une montre, une boutique..."
               }
               placeholderTextColor={colors.muted}
               value={search}
@@ -1126,16 +1126,16 @@ export default function BuyerHomeScreen({
               {
                 name: "Maison Laurent",
                 initials: "ML",
-                specialty: "Maroquinerie d'art",
+                specialty: "Maroquinerie & Bagagerie",
                 rating: 4.9,
                 reviews: 320,
                 img1: imgLeatherTote,
                 img2: imgArmchair,
               },
               {
-                name: "Atelier Horlogerie",
-                initials: "AH",
-                specialty: "Horlogerie & Joaillerie",
+                name: "Horlogerie Prestige",
+                initials: "HP",
+                specialty: "Horlogerie & Montres",
                 rating: 5.0,
                 reviews: 186,
                 img1: imgWatchChrono,
@@ -1144,7 +1144,7 @@ export default function BuyerHomeScreen({
               {
                 name: "Studio Djoliba",
                 initials: "SD",
-                specialty: "Design & Textiles nobles",
+                specialty: "Maison, Déco & Mobilier",
                 rating: 4.8,
                 reviews: 340,
                 img1: imgArmchair,
@@ -1220,7 +1220,7 @@ export default function BuyerHomeScreen({
                     >
                       <Text style={{ fontSize: 9 }}>👑</Text>
                       <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
-                        Vendeur Pro
+                        Boutique Vérifiée
                       </Text>
                     </View>
                     <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
@@ -1267,7 +1267,7 @@ export default function BuyerHomeScreen({
           </ScrollView>
         </View>
 
-        {/* ==================== ARTISAN REQUEST PROMPT ==================== */}
+        {/* ==================== COMMERCIAL PRODUCT REQUEST PROMPT ==================== */}
         <View style={{ paddingHorizontal: 20 }}>
           <View
             style={{
@@ -1289,7 +1289,7 @@ export default function BuyerHomeScreen({
                 marginBottom: 6,
               }}
             >
-              {isEn ? "ARTISAN NETWORK" : "RÉSEAU D'ARTISANS"}
+              {isEn ? "MERCHANT & STORE NETWORK" : "RÉSEAU DE COMMERÇANTS & BOUTIQUES"}
             </Text>
 
             <Text
@@ -1304,8 +1304,8 @@ export default function BuyerHomeScreen({
               }}
             >
               {isEn
-                ? "Cannot find the ideal creation?"
-                : "Vous ne trouvez pas la création idéale ?"}
+                ? "Looking for a specific product?"
+                : "Vous cherchez un produit spécifique ?"}
             </Text>
 
             <Text
@@ -1318,8 +1318,8 @@ export default function BuyerHomeScreen({
               }}
             >
               {isEn
-                ? "Describe your custom need. Master artisans submit tailored quotes directly to your inbox."
-                : "Décrivez votre projet sur-mesure. Les maîtres artisans d'art vous soumettent directement leurs devis personnalisés."}
+                ? "Describe what you are looking for. Verified merchants and stores will provide direct offers."
+                : "Décrivez votre recherche de produit. Les commerçants et boutiques vérifiés vous soumettront directement leurs offres et devis."}
             </Text>
 
             <Pressable
@@ -1334,7 +1334,7 @@ export default function BuyerHomeScreen({
               }]}
             >
               <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>
-                {isEn ? "Post bespoke request →" : "Publier ma demande de création →"}
+                {isEn ? "Post product request →" : "Publier une demande de produit →"}
               </Text>
             </Pressable>
           </View>

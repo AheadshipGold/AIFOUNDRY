@@ -80,14 +80,14 @@ export default function StandaloneCashbookPage() {
       totalRestantMinor: 12000000,
       varianceMinor: 0,
       status: "EQUILIBRE",
-      closedBy: "Atelier Ganvié",
+      closedBy: "Maison Ganvié",
       closedAt: "2026-09-29T19:45:00Z",
     },
   ]);
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [physicalCashFcfa, setPhysicalCashFcfa] = useState("");
-  const [operatorName, setOperatorName] = useState("Maître Artisan Ganvié");
+  const [operatorName, setOperatorName] = useState("Commerçant Vendeur Ganvié");
   const [closeSuccess, setCloseSuccess] = useState<any>(null);
 
   useEffect(() => {

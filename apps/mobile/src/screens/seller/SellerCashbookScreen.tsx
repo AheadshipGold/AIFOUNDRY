@@ -88,7 +88,7 @@ export default function SellerCashbookScreen({
             try {
               await SellerApi.closeDay({
                 physicalCashMinor: cashbook?.summary?.totalEncaisseMinor || 0,
-                closedBy: currentUser?.name || (isEn ? 'Artisan Merchant' : 'Artisan Vendeur'),
+                closedBy: currentUser?.name || (isEn ? 'Store Merchant' : 'Commerçant Vendeur'),
               });
               setClosed(true);
             } catch (error) {
@@ -120,7 +120,7 @@ export default function SellerCashbookScreen({
     },
     {
       time: "11:35",
-      desc: "Encaissement Espèces atelier (Vente directe)",
+      desc: "Encaissement Espèces boutique (Vente directe)",
       amount: "+25 000 FCFA",
       tag: "Caisse physique",
     },
@@ -425,8 +425,8 @@ export default function SellerCashbookScreen({
               </Text>
               <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
                 {isEn
-                  ? "Record incoming cash or mobile money payments received at your workshop."
-                  : "Enregistrez vos encaissements d'espèces ou paiements Mobile Money reçus à l'atelier."}
+                  ? "Record incoming cash or mobile money payments received at your store."
+                  : "Enregistrez vos encaissements d'espèces ou paiements Mobile Money reçus en boutique."}
               </Text>
             </View>
           )}
@@ -489,7 +489,7 @@ export default function SellerCashbookScreen({
                 }}
                 value={collectLabel}
                 onChangeText={setCollectLabel}
-                placeholder="ex: Sacoche cuir vendue à l'atelier"
+                placeholder="ex: Sacoche cuir vendue en boutique"
                 placeholderTextColor={colors.muted}
               />
 

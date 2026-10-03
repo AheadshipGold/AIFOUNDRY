@@ -15,14 +15,14 @@ interface SellerOnboardingModalProps {
 }
 
 const CRAFT_TYPES = [
-  { key: 'maroquinerie', labelFr: 'Maroquinerie', labelEn: 'Leather Goods' },
-  { key: 'joaillerie', labelFr: 'Joaillerie & Bronze', labelEn: 'Jewelry & Bronze' },
-  { key: 'mobilier', labelFr: 'Mobilier & Ébénisterie', labelEn: 'Furniture & Woodwork' },
-  { key: 'mode', labelFr: 'Mode & Textile', labelEn: 'Fashion & Textiles' },
-  { key: 'sculpture', labelFr: 'Sculpture & Art', labelEn: 'Sculpture & Art' },
-  { key: 'poterie', labelFr: 'Poterie & Céramique', labelEn: 'Pottery & Ceramics' },
-  { key: 'numerique', labelFr: 'Créations Numériques', labelEn: 'Digital Creations' },
-  { key: 'autre', labelFr: 'Autre', labelEn: 'Other' },
+  { key: 'maroquinerie', labelFr: 'Maroquinerie & Sacs', labelEn: 'Leather & Bags' },
+  { key: 'joaillerie', labelFr: 'Bijoux & Montres', labelEn: 'Jewelry & Watches' },
+  { key: 'mode', labelFr: 'Mode & Habillement', labelEn: 'Fashion & Clothing' },
+  { key: 'mobilier', labelFr: 'Maison & Mobilier', labelEn: 'Home & Furniture' },
+  { key: 'electronique', labelFr: 'Électronique & High-Tech', labelEn: 'Electronics' },
+  { key: 'art', labelFr: 'Art & Décoration', labelEn: 'Art & Decor' },
+  { key: 'numerique', labelFr: 'Produits Numériques', labelEn: 'Digital Products' },
+  { key: 'autre', labelFr: 'Autre Commerce', labelEn: 'General Store' },
 ];
 
 const CITIES = [
@@ -70,11 +70,11 @@ export default function SellerOnboardingModal({
 
   const handleSubmit = async () => {
     if (!shopName.trim()) {
-      setError(isEn ? 'Workshop name is required' : 'Le nom de l\'atelier est obligatoire');
+      setError(isEn ? 'Store name is required' : 'Le nom de la boutique est obligatoire');
       return;
     }
     if (!craftType) {
-      setError(isEn ? 'Select your craft type' : 'Sélectionnez votre type d\'artisanat');
+      setError(isEn ? 'Select your product category' : 'Sélectionnez votre catégorie de produits');
       return;
     }
 
@@ -82,8 +82,8 @@ export default function SellerOnboardingModal({
     if (!token && !currentUser) {
       setError(
         isEn
-          ? 'You must sign in or create an account before opening a workshop.'
-          : 'Vous devez vous connecter ou créer un compte avant d\'enregistrer votre atelier.'
+          ? 'You must sign in or create an account before opening a store.'
+          : 'Vous devez vous connecter ou créer un compte avant d\'enregistrer votre boutique.'
       );
       if (onRequireAuth) {
         setTimeout(() => {
@@ -107,18 +107,18 @@ export default function SellerOnboardingModal({
       });
 
       Alert.alert(
-        isEn ? 'Workshop Registered!' : 'Atelier Enregistré !',
+        isEn ? 'Store Registered!' : 'Boutique Enregistrée !',
         isEn
-          ? 'Your workshop is under review by the Ojarket team. You can start preparing your products while awaiting approval.'
-          : 'Votre atelier est en cours de vérification par l\'équipe Ojarket. Vous pouvez commencer à préparer vos produits en attendant l\'approbation.',
+          ? 'Your store is ready! You can start adding your products and configuring your store.'
+          : 'Votre boutique est créée ! Vous pouvez dès à présent ajouter vos produits et configurer votre catalogue.',
         [{ text: 'OK', onPress: () => onShopCreated(result) }]
       );
     } catch (err: any) {
       setError(
         err?.message ||
           (isEn
-            ? 'Unable to register workshop. Please try again.'
-            : 'Impossible d\'enregistrer l\'atelier. Veuillez réessayer.')
+            ? 'Unable to register store. Please try again.'
+            : 'Impossible d\'enregistrer la boutique. Veuillez réessayer.')
       );
     } finally {
       setLoading(false);
@@ -145,30 +145,30 @@ export default function SellerOnboardingModal({
 
             <Text style={[styles.brand, { color: colors.action }]}>OJARKET</Text>
             <Text style={[styles.title, { color: colors.text }]}>
-              {isEn ? 'Open Your Workshop' : 'Ouvrir Votre Atelier'}
+              {isEn ? 'Open Your Store' : 'Ouvrir Votre Boutique'}
             </Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>
               {isEn
-                ? 'Register your artisan workshop and start showcasing your creations to thousands of buyers.'
-                : 'Enregistrez votre atelier d\'artisan et commencez à présenter vos créations à des milliers d\'acheteurs.'
+                ? 'Create your merchant store and start selling your products to thousands of buyers on Ojarket.'
+                : 'Créez votre boutique de vendeur et commencez à vendre vos produits à des milliers d\'acheteurs sur Ojarket.'
               }
             </Text>
 
             {/* Shop name */}
             <Text style={[styles.label, { color: colors.text }]}>
-              {isEn ? 'Workshop / Brand Name *' : 'Nom de l\'Atelier / Marque *'}
+              {isEn ? 'Store / Brand Name *' : 'Nom de la Boutique / Enseigne *'}
             </Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
               value={shopName}
               onChangeText={(t) => { setShopName(t); setError(''); }}
-              placeholder={isEn ? 'e.g. Maison Ganvié & Fils' : 'ex. Maison Ganvié & Fils'}
+              placeholder={isEn ? 'e.g. Mode & Style Cotonou' : 'ex. Boutique Élégance Bénin'}
               placeholderTextColor={colors.muted}
             />
 
-            {/* Craft type */}
+            {/* Craft type / Category */}
             <Text style={[styles.label, { color: colors.text }]}>
-              {isEn ? 'Craft Type *' : 'Type d\'Artisanat *'}
+              {isEn ? 'Product Category *' : 'Catégorie Principale de Produits *'}
             </Text>
             <View style={styles.pillsRow}>
               {CRAFT_TYPES.map((ct) => (
@@ -192,7 +192,7 @@ export default function SellerOnboardingModal({
 
             {/* City */}
             <Text style={[styles.label, { color: colors.text }]}>
-              {isEn ? 'City / Market' : 'Ville / Marché'}
+              {isEn ? 'City / Market Location' : 'Ville / Emplacement'}
             </Text>
             <View style={styles.pillsRow}>
               {CITIES.map((c) => (
@@ -214,13 +214,13 @@ export default function SellerOnboardingModal({
 
             {/* Description */}
             <Text style={[styles.label, { color: colors.text }]}>
-              {isEn ? 'Description (optional)' : 'Description (facultatif)'}
+              {isEn ? 'Store & Products Description' : 'Description de votre commerce & Produits'}
             </Text>
             <TextInput
               style={[styles.input, styles.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
               value={description}
               onChangeText={setDescription}
-              placeholder={isEn ? 'Describe your craft, materials, and specialty...' : 'Décrivez votre savoir-faire, matériaux et spécialité...'}
+              placeholder={isEn ? 'Describe your products, brands, and commercial activity...' : 'Décrivez vos articles, marques, produits et activités commerciales...'}
               placeholderTextColor={colors.muted}
               multiline
               numberOfLines={3}
@@ -228,7 +228,7 @@ export default function SellerOnboardingModal({
 
             {/* Merchant phone for Mobile Money */}
             <Text style={[styles.label, { color: colors.text }]}>
-              {isEn ? 'Mobile Money Number (MTN / Moov)' : 'Numéro Mobile Money (MTN / Moov)'}
+              {isEn ? 'Merchant Mobile Money (MTN / Moov)' : 'Numéro de réception Mobile Money (MTN / Moov)'}
             </Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.canvas }]}
@@ -244,8 +244,8 @@ export default function SellerOnboardingModal({
               <Text style={[styles.kycIcon]}>📋</Text>
               <Text style={[styles.kycText, { color: colors.muted }]}>
                 {isEn
-                  ? 'Your workshop will be reviewed by the Ojarket team for quality and compliance. You can start setting up your products immediately, but they will only be published publicly after approval.'
-                  : 'Votre atelier sera examiné par l\'équipe Ojarket pour la qualité et la conformité. Vous pouvez commencer à préparer vos produits immédiatement, mais ils ne seront publiés publiquement qu\'après approbation.'
+                  ? 'Your store will be verified for buyer trust. You can add your products immediately to start selling.'
+                  : 'Votre boutique sera validée par l\'équipe Ojarket. Vous pouvez ajouter vos produits et configurer votre catalogue immédiatement.'
                 }
               </Text>
             </View>
@@ -261,7 +261,7 @@ export default function SellerOnboardingModal({
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.primaryBtnText}>
-                  {isEn ? 'Register My Workshop' : 'Enregistrer Mon Atelier'}
+                  {isEn ? 'Create My Store' : 'Créer Ma Boutique Vendeur'}
                 </Text>
               )}
             </TouchableOpacity>
