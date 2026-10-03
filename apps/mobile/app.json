@@ -7,11 +7,6 @@
     "icon": "./assets/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png",
     "userInterfaceStyle": "automatic",
     "scheme": "ojarket",
-    "splash": {
-      "image": "./assets/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0D2E26"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -55,6 +50,14 @@
     "owner": "scriptura",
     "plugins": [
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/Ojarket_05_AppIcon_Master_1024_Transparent.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0D2E26"
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "Ojarket a besoin d'accéder à l'appareil photo pour photographier vos créations et scanner les codes de vérification."
@@ -79,10 +82,14 @@
           "color": "#C5A059"
         }
       ],
+      "expo-image",
+      "expo-web-browser",
+      "expo-sharing",
       [
         "expo-build-properties",
         {
           "android": {
+            "usePrecompiledHeaders": true,
             "largeHeap": true,
             "enableMinifyInReleaseBuilds": true,
             "shrinkResources": true,
