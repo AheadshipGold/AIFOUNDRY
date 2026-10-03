@@ -31,11 +31,21 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "BILLING"
+      ],
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.QUERY_ALL_PACKAGES"
       ]
     },
     "web": {
       "favicon": "./assets/brand/Ojarket_04_Favicon_512_Transparent.png"
+    },
+    "experiments": {
+      "reactCompiler": true
     },
     "extra": {
       "eas": {
@@ -67,6 +77,30 @@
         {
           "icon": "./assets/brand/Ojarket_01_Icon_UltraPremium_Transparent.png",
           "color": "#C5A059"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "largeHeap": true,
+            "enableMinifyInReleaseBuilds": true,
+            "shrinkResources": true,
+            "useHermes": true,
+            "kotlinVersion": "2.2.21",
+            "gradleProperties": {
+              "android.kotlinVersion": "2.2.21",
+              "org.gradle.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC"
+            },
+            "proguardRules": "-keep class expo.modules.** { *; }\n-keepclassmembers class expo.modules.** { *; }\n-keep class * extends expo.modules.kotlin.records.Record { *; }\n-keepclassmembers class * extends expo.modules.kotlin.records.Record { *; }\n-keep class expo.modules.sqlite.** { *; }\n-keepclassmembers class expo.modules.sqlite.** { *; }",
+            "abiFilters": [
+              "arm64-v8a",
+              "x86_64"
+            ]
+          },
+          "ios": {
+            "useHermes": true
+          }
         }
       ]
     ]
