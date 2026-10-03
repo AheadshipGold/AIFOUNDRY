@@ -1,4 +1,5 @@
-import React, { useRef, useState, type ReactNode } from "react";
+import React, { useRef, useState } from "react";
+type ReactNode = any;
 import {
   ActivityIndicator,
   Image,

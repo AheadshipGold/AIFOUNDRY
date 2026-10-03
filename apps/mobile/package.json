@@ -15,18 +15,18 @@
   "dependencies": {
     "@aifoundry/design-system": "0.1.0",
     "@aifoundry/shared": "*",
-    "@expo/metro-runtime": "~3.2.3",
-    "@react-native-async-storage/async-storage": "1.23.1",
-    "expo": "~51.0.28",
-    "expo-constants": "~16.0.2",
-    "expo-dev-client": "~4.0.29",
-    "react": "18.2.0",
-    "react-native": "0.74.5",
-    "react-native-web": "~0.19.10"
+    "@expo/metro-runtime": "~57.0.16",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~57.0.26",
+    "expo-constants": "~57.0.20",
+    "expo-dev-client": "~57.0.19",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "@types/react": "~18.2.45",
-    "typescript": "^5.1.3"
+    "@babel/core": "^7.24.0",
+    "@types/react": "~19.2.10",
+    "typescript": "^5.4.0"
   }
 }
