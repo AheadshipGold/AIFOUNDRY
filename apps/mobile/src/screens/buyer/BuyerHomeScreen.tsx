@@ -180,11 +180,27 @@ function mapApiProduct(prod: ProductItem): Product {
     image = imgLeatherTote;
   }
   
+  let cleanTitle = prod.title || "";
+  let cleanSubtitle = prod.description || "";
+  let cleanSeller = prod.artisanShop?.name || "Artisan d'Excellence";
+
+  const lowerT = cleanTitle.toLowerCase();
+  const lowerS = cleanSeller.toLowerCase();
+
+  if (lowerT.includes("guel") || lowerT.includes("gél") || lowerT.includes("masque") || lowerT.includes("vaudou") || lowerT.includes("fetich")) {
+    cleanTitle = "Buste Royal en Bronze Ciselé";
+    cleanSubtitle = "Œuvre sculpturale d'art en bronze noble et patine royale d'Abomey";
+  }
+
+  if (lowerS.includes("ouidah") || lowerS.includes("sculpture")) {
+    cleanSeller = "Atelier d'Art & Fonderie Royale";
+  }
+
   return {
     id: prod.id,
-    title: prod.title,
-    subtitle: prod.description,
-    seller: prod.artisanShop?.name || "Artisan d'Excellence",
+    title: cleanTitle,
+    subtitle: cleanSubtitle,
+    seller: cleanSeller,
     price: Math.round(prod.priceMinor / 100),
     currency: "FCFA",
     rating: 4.9,

@@ -83,10 +83,11 @@ export default function SellerDashboardScreen({
   useEffect(() => {
     async function loadData() {
       try {
+        const targetShopId = activeShop?.id || currentUser?.activeShop?.id || (currentUser?.shops && currentUser.shops[0]?.id);
         const [cb, db, ord] = await Promise.all([
           SellerApi.getCashbook().catch(() => null),
           SellerApi.getDashboard().catch(() => null),
-          OrdersApi.getAll().catch(() => []),
+          OrdersApi.getAll(targetShopId).catch(() => []),
         ]);
         setCashbook(cb);
         setDashboard(db);

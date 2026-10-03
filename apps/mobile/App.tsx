@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Platform, BackHandler, ToastAndroid } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { DesignProvider, useDesign } from "./src/design-system/provider";
@@ -25,14 +25,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Universe = "buyer" | "seller";
 
+interface NavEntry {
+  universe: Universe;
+  screen: string;
+}
+
 const BottomNav = ({ 
   universe, 
   currentScreen, 
-  setCurrentScreen 
+  onSelectTab 
 }: { 
   universe: Universe; 
   currentScreen: string; 
-  setCurrentScreen: (s: string) => void;
+  onSelectTab: (screen: string) => void;
 }) => {
   const insets = useSafeAreaInsets();
   const { colors, locale, mode } = useDesign();
@@ -82,7 +87,7 @@ const BottomNav = ({
                 borderRadius: 16,
               }
             ]} 
-            onPress={() => setCurrentScreen(tab.key)}
+            onPress={() => onSelectTab(tab.key)}
           >
             <Text 
               style={{ 
@@ -124,9 +129,14 @@ const BottomNav = ({
 };
 
 const MainNavigator = () => {
-  const { colors, mode } = useDesign();
+  const { colors, mode, locale } = useDesign();
+  const isEn = locale === "en";
+
   const [universe, setUniverse] = useState<Universe>("buyer");
   const [currentScreen, setCurrentScreen] = useState<string>("home");
+  const [navHistory, setNavHistory] = useState<NavEntry[]>([
+    { universe: "buyer", screen: "home" },
+  ]);
 
   // Authentication state
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -134,6 +144,8 @@ const MainNavigator = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+
+  const lastBackPressTime = useRef<number>(0);
 
   // Restore session on startup
   useEffect(() => {
@@ -145,6 +157,92 @@ const MainNavigator = () => {
     });
     return () => stopPeriodicSync();
   }, []);
+
+  // Central Navigation Dispatcher
+  const navigateTo = useCallback((targetUniverse: Universe, targetScreen: string) => {
+    setUniverse(targetUniverse);
+    setCurrentScreen(targetScreen);
+    setNavHistory((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.universe === targetUniverse && last.screen === targetScreen) {
+        return prev;
+      }
+      return [...prev, { universe: targetUniverse, screen: targetScreen }];
+    });
+  }, []);
+
+  // Hardware Back Handler & App-wide back navigation
+  const goBack = useCallback((): boolean => {
+    // 1. Close open modals first
+    if (selectedProduct) {
+      setSelectedProduct(null);
+      return true;
+    }
+    if (showAuthModal) {
+      setShowAuthModal(false);
+      setPendingAction(null);
+      return true;
+    }
+    if (showOnboarding) {
+      setShowOnboarding(false);
+      return true;
+    }
+
+    // 2. Walk backwards through navigation history stack
+    if (navHistory.length > 1) {
+      const newHistory = [...navHistory];
+      newHistory.pop(); // Pop current screen
+      const previous = newHistory[newHistory.length - 1];
+      setNavHistory(newHistory);
+      setUniverse(previous.universe);
+      setCurrentScreen(previous.screen);
+      return true;
+    }
+
+    // 3. Fallback hierarchical navigation if history is 1-level deep
+    if (universe === "seller") {
+      if (currentScreen !== "dashboard") {
+        setUniverse("seller");
+        setCurrentScreen("dashboard");
+        setNavHistory([{ universe: "seller", screen: "dashboard" }]);
+        return true;
+      } else {
+        // Return from Seller Universe to Buyer Home
+        setUniverse("buyer");
+        setCurrentScreen("home");
+        setNavHistory([{ universe: "buyer", screen: "home" }]);
+        return true;
+      }
+    } else if (currentScreen !== "home") {
+      setUniverse("buyer");
+      setCurrentScreen("home");
+      setNavHistory([{ universe: "buyer", screen: "home" }]);
+      return true;
+    }
+
+    // 4. On root buyer home: prevent accidental exit with double-press toast
+    const now = Date.now();
+    if (now - lastBackPressTime.current < 2000) {
+      return false; // Exit app
+    }
+    lastBackPressTime.current = now;
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(
+        isEn ? "Press back again to exit" : "Appuyez à nouveau pour quitter",
+        ToastAndroid.SHORT
+      );
+    }
+    return true; // Intercept first press
+  }, [selectedProduct, showAuthModal, showOnboarding, navHistory, universe, currentScreen, isEn]);
+
+  // Register Android Hardware Back Listener
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => goBack()
+    );
+    return () => subscription.remove();
+  }, [goBack]);
 
   // Request auth if not logged in, then perform the action
   const requireAuth = useCallback((action: string) => {
@@ -164,20 +262,19 @@ const MainNavigator = () => {
     // Execute pending action after auth
     if (pendingAction === 'switchToSeller') {
       if (user.shops && user.shops.length > 0) {
-        setUniverse("seller");
-        setCurrentScreen("dashboard");
+        navigateTo("seller", "dashboard");
       } else {
         setShowOnboarding(true);
       }
     } else if (pendingAction === 'need') {
-      setCurrentScreen("need");
+      navigateTo("buyer", "need");
     } else if (pendingAction === 'purchases') {
-      setCurrentScreen("purchases");
+      navigateTo("buyer", "purchases");
     } else if (pendingAction === 'profile') {
-      setCurrentScreen("profile");
+      navigateTo("buyer", "profile");
     }
     setPendingAction(null);
-  }, [pendingAction]);
+  }, [pendingAction, navigateTo]);
 
   const handleSelectProduct = useCallback((product: any) => {
     setSelectedProduct(product);
@@ -193,34 +290,31 @@ const MainNavigator = () => {
       setShowOnboarding(true);
       return;
     }
-    setUniverse("seller");
-    setCurrentScreen("dashboard");
-  }, [currentUser, requireAuth]);
+    navigateTo("seller", "dashboard");
+  }, [currentUser, requireAuth, navigateTo]);
 
   const switchToBuyer = useCallback(() => {
-    setUniverse("buyer");
-    setCurrentScreen("home");
-  }, []);
+    navigateTo("buyer", "home");
+  }, [navigateTo]);
 
   const handleOpenNeed = useCallback(() => {
-    setCurrentScreen("need");
-  }, []);
+    navigateTo("buyer", "need");
+  }, [navigateTo]);
 
   const handleOpenPurchases = useCallback(() => {
-    setCurrentScreen("purchases");
-  }, []);
+    navigateTo("buyer", "purchases");
+  }, [navigateTo]);
 
   const handleOpenProfile = useCallback(() => {
-    setCurrentScreen("profile");
-  }, []);
+    navigateTo("buyer", "profile");
+  }, [navigateTo]);
 
   const handleLogout = useCallback(async () => {
     await clearSession();
     setCurrentUser(null);
-    setUniverse("buyer");
-    setCurrentScreen("home");
+    navigateTo("buyer", "home");
     stopPeriodicSync();
-  }, []);
+  }, [navigateTo]);
 
   const handleUpdateProfile = useCallback(async (updatedUser: AuthUser) => {
     setCurrentUser(updatedUser);
@@ -264,9 +358,8 @@ const MainNavigator = () => {
       })).catch(() => {});
     }
     setShowOnboarding(false);
-    setUniverse("seller");
-    setCurrentScreen("dashboard");
-  }, [currentUser]);
+    navigateTo("seller", "dashboard");
+  }, [currentUser, navigateTo]);
 
   const renderScreen = () => {
     if (universe === "buyer") {
@@ -286,19 +379,19 @@ const MainNavigator = () => {
           />;
         case "need":
           return <RequestNeedScreen 
-            onBack={() => setCurrentScreen("home")} 
-            onSubmitted={() => setCurrentScreen("purchases")} 
+            onBack={goBack} 
+            onSubmitted={() => navigateTo("buyer", "purchases")} 
           />;
         case "purchases":
           return <PurchasesScreen 
-            onBack={() => setCurrentScreen("home")} 
+            onBack={goBack} 
             onContactSupport={() => {}} 
             onOpenNeed={handleOpenNeed}
           />;
         case "profile":
           return <ProfileScreen 
             currentUser={currentUser}
-            onBack={() => setCurrentScreen("home")}
+            onBack={goBack}
             onOpenAuth={() => {
               setPendingAction(null);
               setShowAuthModal(true);
@@ -311,7 +404,7 @@ const MainNavigator = () => {
           />;
         default:
           return <BuyerHomeScreen 
-            onSelectProduct={() => {}} 
+            onSelectProduct={handleSelectProduct} 
             onOpenNeed={handleOpenNeed} 
             onOpenCart={handleOpenPurchases} 
             onSwitchToSeller={switchToSeller} 
@@ -322,40 +415,40 @@ const MainNavigator = () => {
         case "dashboard":
           return <SellerDashboardScreen 
             currentUser={currentUser}
-            onOpenCashbook={() => setCurrentScreen("cashbook")} 
-            onOpenOrders={() => setCurrentScreen("orders")} 
-            onOpenOpportunities={() => setCurrentScreen("opportunities")} 
-            onOpenShop={() => setCurrentScreen("shop")}
+            onOpenCashbook={() => navigateTo("seller", "cashbook")} 
+            onOpenOrders={() => navigateTo("seller", "orders")} 
+            onOpenOpportunities={() => navigateTo("seller", "opportunities")} 
+            onOpenShop={() => navigateTo("seller", "shop")}
             onSwitchToBuyer={switchToBuyer} 
           />;
         case "orders":
           return <SellerOrdersScreen 
             currentUser={currentUser}
-            onBack={() => setCurrentScreen("dashboard")} 
+            onBack={goBack} 
           />;
         case "cashbook":
           return <SellerCashbookScreen 
             currentUser={currentUser}
-            onBack={() => setCurrentScreen("dashboard")} 
+            onBack={goBack} 
           />;
         case "opportunities":
           return <SellerOpportunitiesScreen 
             currentUser={currentUser}
-            onBack={() => setCurrentScreen("dashboard")} 
+            onBack={goBack} 
           />;
         case "shop":
           return <SellerShopScreen 
             currentUser={currentUser}
             onSwitchToBuyer={switchToBuyer} 
-            onBack={() => setCurrentScreen("dashboard")} 
+            onBack={goBack} 
           />;
         default:
           return <SellerDashboardScreen 
             currentUser={currentUser}
-            onOpenCashbook={() => setCurrentScreen("cashbook")} 
-            onOpenOrders={() => setCurrentScreen("orders")} 
-            onOpenOpportunities={() => setCurrentScreen("opportunities")} 
-            onOpenShop={() => setCurrentScreen("shop")}
+            onOpenCashbook={() => navigateTo("seller", "cashbook")} 
+            onOpenOrders={() => navigateTo("seller", "orders")} 
+            onOpenOpportunities={() => navigateTo("seller", "opportunities")} 
+            onOpenShop={() => navigateTo("seller", "shop")}
             onSwitchToBuyer={switchToBuyer} 
           />;
       }
@@ -371,7 +464,7 @@ const MainNavigator = () => {
       <BottomNav 
         universe={universe} 
         currentScreen={currentScreen} 
-        setCurrentScreen={(screen) => setCurrentScreen(screen)} 
+        onSelectTab={(tabKey) => navigateTo(universe, tabKey)} 
       />
 
       {/* Auth Modal */}
@@ -405,7 +498,7 @@ const MainNavigator = () => {
         }}
         onOrderCompleted={(_order) => {
           setSelectedProduct(null);
-          setCurrentScreen("purchases");
+          navigateTo("buyer", "purchases");
         }}
       />
     </View>

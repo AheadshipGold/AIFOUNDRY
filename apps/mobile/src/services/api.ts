@@ -232,12 +232,17 @@ export interface OrderRecord {
 }
 
 export const OrdersApi = {
-  async getAll(): Promise<OrderRecord[]> {
-    return request<OrderRecord[]>('/v1/orders');
+  async getAll(shopId?: string): Promise<OrderRecord[]> {
+    const query = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
+    return request<OrderRecord[]>(`/v1/orders${query}`, {
+      headers: authHeaders(),
+    });
   },
 
   async getOne(id: string): Promise<OrderRecord> {
-    return request<OrderRecord>(`/v1/orders/${id}`);
+    return request<OrderRecord>(`/v1/orders/${id}`, {
+      headers: authHeaders(),
+    });
   },
 
   async create(order: {
@@ -250,6 +255,7 @@ export const OrdersApi = {
     return request<OrderRecord>('/v1/orders', {
       method: 'POST',
       body: JSON.stringify(order),
+      headers: authHeaders(),
     });
   },
 
@@ -260,6 +266,7 @@ export const OrdersApi = {
     return request<OrderRecord>(`/v1/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
+      headers: authHeaders(),
     });
   },
 };

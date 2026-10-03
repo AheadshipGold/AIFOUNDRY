@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuthService } from '../src/auth/auth.service';
 import { CatalogService } from '../src/catalog/catalog.service';
 import { AdminService } from '../src/admin/admin.service';
+import { auth } from '../src/auth/better-auth';
 
 const prisma = new PrismaClient();
 const authService = new AuthService(prisma as any);
@@ -30,71 +31,67 @@ async function runAuthKycProof() {
   }
 
   try {
-    // -----------------------------------------------------------------
-    // TEST 1: Request OTP for a West African phone number (+229)
-    // -----------------------------------------------------------------
-    const phone = '+22997112233';
-    const otpRes = await authService.requestOtp({ identifier: phone });
-    assert(
-      otpRes.success === true && typeof otpRes.code === 'string',
-      'Test 1.1: Request OTP succeeds and creates valid verification token',
-      `Identifier: ${otpRes.identifier}, Code generated: ${otpRes.code}`
-    );
+    const timestamp = Date.now();
+    const testEmail = `kyc.artisan.${timestamp}@ojarket.test`;
+    const testUsername = `artisan_${timestamp.toString().slice(-6)}`;
+    const testPassword = 'SecurePassword2026!';
+    const testPhone = '+22997112233';
 
-    // Verify token exists in database
-    const dbToken = await prisma.otpToken.findFirst({
-      where: { identifier: phone, code: otpRes.code! },
+    // -----------------------------------------------------------------
+    // TEST 1: Better Auth Sign-Up
+    // -----------------------------------------------------------------
+    const signUpRes = await auth.api.signUpEmail({
+      body: {
+        email: testEmail,
+        password: testPassword,
+        name: 'Artisan Bronze Test',
+        username: testUsername,
+      },
     });
+
     assert(
-      !!dbToken && dbToken.used === false && dbToken.expiresAt > new Date(),
-      'Test 1.2: OTP token exists in PostgreSQL with valid expiration and used=false'
+      !!signUpRes?.user?.id,
+      'Test 1: Better Auth Native Sign-Up establishes user account',
+      `UserId: ${signUpRes?.user?.id}, Email: ${signUpRes?.user?.email}`
     );
 
     // -----------------------------------------------------------------
-    // TEST 2: Reject invalid OTP code
+    // TEST 2: Sign-In via Username
     // -----------------------------------------------------------------
-    let failedAsExpected = false;
-    try {
-      await authService.verifyOtp({ identifier: phone, code: '000000' });
-    } catch (err: any) {
-      failedAsExpected = true;
-    }
+    const signInRes = await auth.api.signInUsername({
+      body: {
+        username: testUsername,
+        password: testPassword,
+      },
+    });
+
     assert(
-      failedAsExpected,
-      'Test 2: Bad OTP code is strictly rejected with BadRequestException'
+      !!signInRes?.token,
+      'Test 2: Better Auth Sign-In by username generates bearer token',
+      `Token: ${signInRes?.token?.substring(0, 16)}...`
     );
 
     // -----------------------------------------------------------------
-    // TEST 3: Successfully verify OTP and establish user session
+    // TEST 3: Profile Resolution via Bearer Token
     // -----------------------------------------------------------------
-    const verifyRes = await authService.verifyOtp({ identifier: phone, code: otpRes.code! });
+    const sessionRes = await auth.api.getSession({
+      headers: new Headers({ authorization: `Bearer ${signInRes.token}` }),
+    });
+
     assert(
-      !!verifyRes.token && verifyRes.token.startsWith('ojk_sess_'),
-      'Test 3.1: Valid OTP returns authenticated session token',
-      `Token: ${verifyRes.token}`
-    );
-    assert(
-      verifyRes.user.phone === phone && verifyRes.user.role === 'BUYER',
-      'Test 3.2: User created as BUYER by default (Guest First model)',
-      `UserId: ${verifyRes.user.id}, Role: ${verifyRes.user.role}`
+      sessionRes?.user?.id === signUpRes.user.id,
+      'Test 3: Session successfully validated from Bearer Token',
+      `Session User: ${sessionRes?.user?.name}`
     );
 
-    const usedDbToken = await prisma.otpToken.findUnique({ where: { id: dbToken!.id } });
-    assert(
-      usedDbToken?.used === true,
-      'Test 3.3: Token marked as used in PostgreSQL to prevent replay attacks'
-    );
+    const newArtisanUserId = signUpRes.user.id;
 
-    // -----------------------------------------------------------------
-    // TEST 4: Register Artisan Shop with initial KYC_PENDING status
-    // -----------------------------------------------------------------
-    const newArtisanUserId = verifyRes.user.id;
     const registerRes = await authService.registerSeller(newArtisanUserId, {
-      shopName: 'Atelier de Sculpture de Ouidah',
-      craftType: 'sculpture',
-      city: 'Ouidah',
-      description: 'Sculptures sacrées en bois ébène et iroko',
-      merchantPhone: phone,
+      shopName: "Atelier d'Art & Fonderie Royale",
+      craftType: 'bronze',
+      city: 'Abomey',
+      description: "Créations d'art en bronze noble et ébène sculpté",
+      merchantPhone: testPhone,
     });
 
     assert(
@@ -119,9 +116,9 @@ async function runAuthKycProof() {
       data: {
         id: `prd-test-sculpture-${Date.now()}`,
         shopId: registerRes.shop.id,
-        title: 'Sculpture Bronze Contemporaine',
-        description: 'Sculpture d’art en bronze noble poli main',
-        category: 'sculpture',
+        title: 'Buste Royal en Bronze Ciselé',
+        description: "Œuvre sculpturale d'art en bronze noble et patine royale",
+        category: 'art',
         variants: {
           create: [
             {
@@ -179,6 +176,17 @@ async function runAuthKycProof() {
       'Test 6.3: Immutable audit log recorded with admin identity, IP, and state transition',
       `LogId: ${auditLog?.id}, Action: ${auditLog?.action}, Target: ${auditLog?.targetId}`
     );
+
+    // Clean up test fixtures to avoid polluting the database
+    await prisma.offerVariant.deleteMany({ where: { productId: testProduct.id } });
+    await prisma.product.deleteMany({ where: { id: testProduct.id } });
+    await prisma.adminAuditLog.deleteMany({ where: { targetId: registerRes.shop.id } });
+    await prisma.shopPaymentConnection.deleteMany({ where: { shopId: registerRes.shop.id } });
+    await prisma.shopMembership.deleteMany({ where: { shopId: registerRes.shop.id } });
+    await prisma.shop.deleteMany({ where: { id: registerRes.shop.id } });
+    await prisma.session.deleteMany({ where: { userId: newArtisanUserId } });
+    await prisma.account.deleteMany({ where: { userId: newArtisanUserId } });
+    await prisma.user.deleteMany({ where: { id: newArtisanUserId } });
 
   } catch (err) {
     console.error('CRITICAL UNEXPECTED ERROR IN TEST RUNNER:', err);

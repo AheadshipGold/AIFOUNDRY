@@ -43,7 +43,8 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
   async function loadOrders() {
     try {
       setLoading(true);
-      const data = await OrdersApi.getAll();
+      const targetShopId = currentUser?.activeShop?.id || (currentUser?.shops && currentUser.shops[0]?.id);
+      const data = await OrdersApi.getAll(targetShopId);
       setOrders(data || []);
     } catch (err) {
       console.warn("Failed to load orders", err);
