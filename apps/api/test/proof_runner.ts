@@ -38,10 +38,84 @@ async function runTest(
   }
 }
 
+async function cleanupProofData() {
+  try {
+    await prisma.orderLine.deleteMany({
+      where: {
+        OR: [
+          { order: { orderNumber: { startsWith: 'OJK-PROOF' } } },
+          { order: { orderNumber: { startsWith: 'OJK-D02' } } },
+          { order: { buyer: { email: { contains: 'proof' } } } },
+          { order: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } } },
+        ],
+      },
+    });
+    await prisma.financialEvent.deleteMany({
+      where: {
+        OR: [
+          { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
+          { order: { orderNumber: { startsWith: 'OJK-PROOF' } } },
+        ],
+      },
+    });
+    await prisma.order.deleteMany({
+      where: {
+        OR: [
+          { orderNumber: { startsWith: 'OJK-PROOF' } },
+          { orderNumber: { startsWith: 'OJK-D02' } },
+          { buyer: { email: { contains: 'proof' } } },
+          { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
+        ],
+      },
+    });
+    await prisma.sellerProposal.deleteMany({
+      where: {
+        OR: [
+          { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
+          { requestId: { startsWith: 'req-proof' } },
+          { request: { buyer: { email: { contains: 'proof' } } } },
+        ],
+      },
+    });
+    await prisma.purchaseRequest.deleteMany({
+      where: {
+        OR: [
+          { id: { startsWith: 'req-proof' } },
+          { buyer: { email: { contains: 'proof' } } },
+          { buyerId: 'usr-proof-buyer' },
+        ],
+      },
+    });
+    await prisma.offerVariant.deleteMany({
+      where: { product: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } } },
+    });
+    await prisma.product.deleteMany({
+      where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
+    });
+    await prisma.cashbookEntry.deleteMany({
+      where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
+    });
+    await prisma.dayClosure.deleteMany({
+      where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
+    });
+    await prisma.shop.deleteMany({
+      where: { id: { in: ['shp-proof-a', 'shp-proof-b'] } },
+    });
+    await prisma.user.deleteMany({
+      where: { id: { in: ['usr-proof-buyer', 'usr-proof-seller-a', 'usr-proof-seller-b'] } },
+    });
+  } catch (err) {
+    console.warn('Cleanup warning:', err);
+  }
+}
+
 async function main() {
   console.log('════════════════════════════════════════════════════════════════');
   console.log('  OJARKET — EXÉCUTION DE LA SUITE DE PREUVES T01 À T06 (V1.3)  ');
   console.log('════════════════════════════════════════════════════════════════\n');
+
+  // Purge any lingering proof fixtures before starting
+  await cleanupProofData();
 
   // Setup test isolation fixtures
   const testBuyer = await prisma.user.upsert({
@@ -548,6 +622,9 @@ async function main() {
   console.log(`Échecs (FAIL)   : ${failed} / ${total}`);
   console.log('════════════════════════════════════════════════════════════════\n');
 
+  await cleanupProofData();
+  await prisma.$disconnect();
+
   if (failed > 0) {
     process.exit(1);
   } else {
@@ -556,53 +633,9 @@ async function main() {
 }
 
 main()
-  .catch((err) => {
+  .catch(async (err) => {
     console.error('Erreur critique pendant la suite de tests :', err);
-    process.exit(1);
-  })
-  .finally(async () => {
-    try {
-      await prisma.orderLine.deleteMany({
-        where: {
-          OR: [
-            { order: { orderNumber: { startsWith: 'OJK-PROOF' } } },
-            { order: { orderNumber: { startsWith: 'OJK-D02' } } },
-            { order: { buyer: { email: { contains: 'proof' } } } },
-            { order: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } } },
-          ],
-        },
-      });
-      await prisma.financialEvent.deleteMany({
-        where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
-      });
-      await prisma.order.deleteMany({
-        where: {
-          OR: [
-            { orderNumber: { startsWith: 'OJK-PROOF' } },
-            { orderNumber: { startsWith: 'OJK-D02' } },
-            { buyer: { email: { contains: 'proof' } } },
-            { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
-          ],
-        },
-      });
-      await prisma.offerVariant.deleteMany({
-        where: { product: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } } },
-      });
-      await prisma.product.deleteMany({
-        where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
-      });
-      await prisma.cashbookEntry.deleteMany({
-        where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
-      });
-      await prisma.dayClosure.deleteMany({
-        where: { shopId: { in: ['shp-proof-a', 'shp-proof-b'] } },
-      });
-      await prisma.shop.deleteMany({
-        where: { id: { in: ['shp-proof-a', 'shp-proof-b'] } },
-      });
-      await prisma.user.deleteMany({
-        where: { id: { in: ['usr-proof-buyer', 'usr-proof-seller-a', 'usr-proof-seller-b'] } },
-      });
-    } catch {}
+    await cleanupProofData();
     await prisma.$disconnect();
+    process.exit(1);
   });
