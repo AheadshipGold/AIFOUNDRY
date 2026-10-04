@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { DigitalModule } from './digital/digital.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { CmsModule } from './cms/cms.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     DigitalModule,
     IncidentsModule,
     SubscriptionsModule,
+    CmsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

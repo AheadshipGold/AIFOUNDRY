@@ -16,20 +16,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
           OJARKET
         </Link>
         <div style={{ display: 'flex', gap: 12 }}>
-          <Link
-            href="/admin"
-            style={{
-              padding: '8px 16px',
-              borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              color: '#FAF9F6',
-              textDecoration: 'none',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            Console Admin
-          </Link>
+
           <a
             href={`ojarket://product/${slug}`}
             style={{

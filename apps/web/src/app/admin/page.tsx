@@ -58,7 +58,7 @@ export default function AdminPage() {
   // Admin Session & Security Gate State
   const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("admin@ojarket.bj");
+  const [loginEmail, setLoginEmail] = useState("");
   const [loginPasscode, setLoginPasscode] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
