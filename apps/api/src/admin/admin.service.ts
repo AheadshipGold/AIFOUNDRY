@@ -256,4 +256,34 @@ export class AdminService {
       createdAt: l.createdAt.toISOString(),
     }));
   }
+
+
+  async getAdmins() {
+    return this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true, name: true, email: true, createdAt: true, isActive: true }
+    });
+  }
+
+  async createAdmin(email, name) {
+    const existing = await this.prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      return this.prisma.user.update({
+        where: { id: existing.id },
+        data: { role: 'ADMIN' }
+      });
+    }
+    const username = email.split('@')[0] + Math.floor(Math.random() * 1000);
+    return this.prisma.user.create({
+      data: {
+        email,
+        name,
+        username,
+        displayUsername: username,
+        role: 'ADMIN',
+        isEmailVerified: true
+      }
+    });
+  }
+
 }

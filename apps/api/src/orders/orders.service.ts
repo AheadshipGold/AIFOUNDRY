@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentStatus, FulfillmentStatus, PaymentChannel } from '@prisma/client';
+import { PaymentStatus, FulfillmentStatus, PaymentChannel, EntryType, FinancialEventType } from '@prisma/client';
 
 export interface OrderItemLine {
   variantId: string;
@@ -221,17 +221,21 @@ export class OrdersService {
       fulfillmentStatus?: 'PENDING' | 'PREPARING' | 'SHIPPED' | 'DELIVERED';
     },
   ): Promise<OrderRecord> {
-    const o = await this.prisma.order.findUnique({
-      where: { id },
-    });
-    if (!o) throw new NotFoundException(`Order ${id} not found`);
-
-    let newPaymentStatus = o.paymentStatus;
-    if (updates.paymentStatus) {
-      newPaymentStatus = updates.paymentStatus === 'SETTLED_TO_MERCHANT' ? PaymentStatus.CONFIRMED : (updates.paymentStatus as PaymentStatus);
-    }
-
     return this.prisma.$transaction(async (tx) => {
+      const o = await tx.order.findUnique({
+        where: { id },
+      });
+      if (!o) throw new NotFoundException(`Order ${id} not found`);
+
+      if (updates.paymentStatus === 'SETTLED_TO_MERCHANT' && o.paymentStatus === PaymentStatus.CONFIRMED) {
+        throw new BadRequestException(`Order ${id} is already settled.`);
+      }
+
+      let newPaymentStatus = o.paymentStatus;
+      if (updates.paymentStatus) {
+        newPaymentStatus = updates.paymentStatus === 'SETTLED_TO_MERCHANT' ? PaymentStatus.CONFIRMED : (updates.paymentStatus as PaymentStatus);
+      }
+
       const updatedOrder = await tx.order.update({
         where: { id },
         data: {
@@ -245,17 +249,28 @@ export class OrdersService {
         }
       });
 
-      if (o.paymentStatus !== PaymentStatus.CONFIRMED && newPaymentStatus === PaymentStatus.CONFIRMED) {
+      if (updates.paymentStatus === 'SETTLED_TO_MERCHANT') {
         await tx.financialEvent.create({
           data: {
             shopId: updatedOrder.shopId,
             orderId: updatedOrder.id,
-            eventType: 'PAYMENT_CONFIRMED',
+            eventType: FinancialEventType.PAYMENT_CONFIRMED,
             amountMinor: updatedOrder.totalAmountMinor,
             currency: updatedOrder.currency,
             source: 'UNKNOWN',
             channel: updatedOrder.paymentChannel,
-            reference: updatedOrder.orderNumber,
+            reference: updatedOrder.id,
+          }
+        });
+
+        await tx.cashbookEntry.create({
+          data: {
+            shopId: updatedOrder.shopId,
+            type: EntryType.ENCAISSEMENT,
+            amountMinor: updatedOrder.totalAmountMinor,
+            currency: updatedOrder.currency,
+            channel: updatedOrder.paymentChannel,
+            reference: updatedOrder.id,
           }
         });
       }

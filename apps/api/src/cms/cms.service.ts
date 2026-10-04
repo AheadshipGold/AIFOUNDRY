@@ -17,7 +17,7 @@ export class CmsService {
 
   async updateLandingConfig(data: any, userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role !== 'PLATFORM_OWNER') {
+    if (!user || user.role !== 'ADMIN') {
       throw new UnauthorizedException('Access denied');
     }
 

@@ -13,6 +13,7 @@ import {
   StatusBar,
   Keyboard,
   KeyboardAvoidingView,
+  Share,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
@@ -65,6 +66,10 @@ export default function SellerShopScreen({
   const [newStock, setNewStock] = useState('3');
   const [newDescription, setNewDescription] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const [storefrontTheme, setStorefrontTheme] = useState('Light');
+  const [bannerUrl, setBannerUrl] = useState('');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   useEffect(() => {
     const showSub = Keyboard.addListener(
@@ -168,6 +173,31 @@ export default function SellerShopScreen({
       isEn ? 'Product Published!' : 'Produit Mis en Vente !',
       isEn ? 'Your product is now listed in your store catalog.' : 'Votre produit a été enregistré et mis en vente dans votre boutique.'
     );
+  };
+
+  const handleShareStore = async () => {
+    try {
+      const shopSlug = activeShop?.id || 'my-shop';
+      const url = `https://ojarket.bj/shop/${shopSlug}`;
+      await Share.share({
+        message: isEn ? `Check out my store on Ojarket: ${url}` : `Découvrez ma boutique sur Ojarket: ${url}`,
+        url: url,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdateStorefront = () => {
+    setIsUpdatingProfile(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsUpdatingProfile(false);
+      Alert.alert(
+        isEn ? 'Storefront Updated' : 'Vitrine Mise à Jour',
+        isEn ? 'Your storefront customization has been saved.' : 'La personnalisation de votre vitrine a été enregistrée.'
+      );
+    }, 1000);
   };
 
   return (
@@ -401,6 +431,108 @@ export default function SellerShopScreen({
             </Text>
           </View>
         ))}
+
+        {/* Storefront Customization */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            {isEn ? 'Storefront Customization' : 'Personnalisation Vitrine'}
+          </Text>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 }}>
+            {isEn ? 'Direct Shop URL' : 'Lien direct de votre boutique'}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ flex: 1, backgroundColor: colors.canvas, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>
+                https://ojarket.bj/shop/{activeShop?.id || 'my-shop'}
+              </Text>
+            </View>
+            <Pressable
+              onPress={handleShareStore}
+              style={{
+                marginLeft: 12,
+                backgroundColor: colors.action,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
+                {isEn ? 'Share' : 'Partager'}
+              </Text>
+            </Pressable>
+          </View>
+
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 }}>
+            {isEn ? 'Storefront Theme' : 'Thème de la Vitrine'}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            {['Light', 'Dark', 'Luxury'].map((themeOpt) => (
+              <Pressable
+                key={themeOpt}
+                onPress={() => setStorefrontTheme(themeOpt)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: storefrontTheme === themeOpt ? colors.action : colors.border,
+                  borderRadius: 8,
+                  backgroundColor: storefrontTheme === themeOpt ? (themeOpt === 'Dark' ? '#111' : themeOpt === 'Luxury' ? '#2c2518' : '#f0f9ff') : colors.canvas,
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: storefrontTheme === themeOpt ? (themeOpt === 'Light' ? colors.action : '#fff') : colors.text
+                }}>
+                  {themeOpt}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 }}>
+            {isEn ? 'Cover Banner URL' : 'Image de couverture (URL)'}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 10,
+              fontSize: 13,
+              color: colors.text,
+              backgroundColor: colors.canvas,
+              marginBottom: 16,
+            }}
+            value={bannerUrl}
+            onChangeText={setBannerUrl}
+            placeholder="https://..."
+            placeholderTextColor={colors.muted}
+          />
+
+          <Pressable
+            onPress={handleUpdateStorefront}
+            disabled={isUpdatingProfile}
+            style={{
+              backgroundColor: colors.text,
+              paddingVertical: 12,
+              borderRadius: 8,
+              alignItems: 'center',
+            }}
+          >
+            {isUpdatingProfile ? (
+              <ActivityIndicator size="small" color={colors.surface} />
+            ) : (
+              <Text style={{ color: colors.surface, fontWeight: '700', fontSize: 13 }}>
+                {isEn ? 'Save Customization' : 'Enregistrer la personnalisation'}
+              </Text>
+            )}
+          </Pressable>
+        </View>
 
         {/* Switch to Buyer Mode */}
         <Pressable

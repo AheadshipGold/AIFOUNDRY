@@ -50,4 +50,16 @@ export class AdminController {
   async getAuditLogs() {
     return this.adminService.getAuditLogs();
   }
+
+
+  @Get('users')
+  async getAdmins() {
+    return this.adminService.getAdmins();
+  }
+
+  @Patch('users/create')
+  async createAdmin(@Body() body) {
+    return this.adminService.createAdmin(body.email, body.name);
+  }
+
 }

@@ -52,8 +52,20 @@ export default function AdminPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState<
-    "overview" | "shops" | "corridors" | "d02" | "finops" | "audit"
+    "overview" | "shops" | "corridors" | "d02" | "finops" | "audit" | "cms" | "admins"
   >("overview");
+
+  // CMS State
+  const [cmsConfig, setCmsConfig] = useState<any>(null);
+  const [cmsLoading, setCmsLoading] = useState(false);
+  const [cmsSaving, setCmsSaving] = useState(false);
+
+  // Admin Users State
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminName, setNewAdminName] = useState("");
+  const [adminSaving, setAdminSaving] = useState(false);
 
   // Admin Session & Security Gate State
   const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
@@ -126,6 +138,84 @@ export default function AdminPage() {
   const handleAdminLogout = () => {
     AuthApi.logout();
     setCurrentUser(null);
+  };
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    if (activeNav === "cms" && !cmsConfig) {
+      setCmsLoading(true);
+      fetch(`${apiBase}/v1/cms/landing`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` }
+      })
+      .then(r => r.json())
+      .then(data => setCmsConfig(data))
+      .catch(console.error)
+      .finally(() => setCmsLoading(false));
+    }
+    if (activeNav === "admins" && adminUsers.length === 0) {
+      setAdminLoading(true);
+      fetch(`${apiBase}/v1/admin/users`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` }
+      })
+      .then(r => r.json())
+      .then(data => setAdminUsers(data))
+      .catch(console.error)
+      .finally(() => setAdminLoading(false));
+    }
+  }, [activeNav]);
+
+  const handleSaveCms = async () => {
+    setCmsSaving(true);
+    try {
+      const res = await fetch(`${apiBase}/v1/cms/landing`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getStoredToken()}` 
+        },
+        body: JSON.stringify(cmsConfig)
+      });
+      if (res.ok) alert(isEn ? "CMS Config Saved!" : "Configuration CMS sauvegardée !");
+      else alert("Error saving CMS Config");
+    } catch (e) {
+      console.error(e);
+      alert("Error saving CMS Config");
+    } finally {
+      setCmsSaving(false);
+    }
+  };
+
+  const handlePromoteAdmin = async () => {
+    if (!newAdminEmail) return;
+    setAdminSaving(true);
+    try {
+      const res = await fetch(`${apiBase}/v1/admin/users/create`, {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getStoredToken()}` 
+        },
+        body: JSON.stringify({ email: newAdminEmail, name: newAdminName })
+      });
+      if (res.ok) {
+        alert(isEn ? "Admin created successfully!" : "Administrateur créé avec succès !");
+        // refresh admins
+        const data = await fetch(`${apiBase}/v1/admin/users`, {
+          headers: { Authorization: `Bearer ${getStoredToken()}` }
+        }).then(r => r.json());
+        setAdminUsers(data);
+        setNewAdminEmail("");
+        setNewAdminName("");
+      } else {
+        alert("Error creating admin");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error creating admin");
+    } finally {
+      setAdminSaving(false);
+    }
   };
 
   const [corridors, setCorridors] = useState<CorridorRule[]>([
@@ -889,6 +979,39 @@ export default function AdminPage() {
                 </span>
               </button>
             </div>
+
+            {/* GROUP 4: SETTINGS */}
+            <div className="oj-admin-nav-group">
+              <div className="oj-admin-group-title">
+                {isEn ? "Platform Settings" : "Paramètres & Plateforme"}
+              </div>
+
+              <button
+                className={`oj-admin-nav-item ${activeNav === "cms" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveNav("cms");
+                  setMobileSidebarOpen(false);
+                }}
+              >
+                <span className="oj-admin-nav-icon">🎨</span>
+                <span className="oj-admin-nav-label">
+                  {isEn ? "CMS Landing Page" : "Contenu CMS"}
+                </span>
+              </button>
+
+              <button
+                className={`oj-admin-nav-item ${activeNav === "admins" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveNav("admins");
+                  setMobileSidebarOpen(false);
+                }}
+              >
+                <span className="oj-admin-nav-icon">👥</span>
+                <span className="oj-admin-nav-label">
+                  {isEn ? "Admin Users" : "Administrateurs"}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Sidebar Footer */}
@@ -1431,6 +1554,132 @@ export default function AdminPage() {
                             {log.status}
                           </span>
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ==================== TAB 7: CMS Landing Page ==================== */}
+          {activeNav === "cms" && (
+            <div>
+              <div className="oj-admin-header-row">
+                <div className="oj-admin-title-wrap">
+                  <h1>{isEn ? "CMS Landing Page Builder" : "Gestion de la page d'accueil"}</h1>
+                  <p>
+                    {isEn
+                      ? "Configure banners, featured products, intemporel icons, and trusted shops."
+                      : "Configurez les bannières, produits mis en avant, icônes intemporelles et boutiques de confiance."}
+                  </p>
+                </div>
+                <button
+                  className="oj-btn-primary"
+                  disabled={cmsSaving || cmsLoading}
+                  onClick={handleSaveCms}
+                  style={{ height: "40px", padding: "0 20px" }}
+                >
+                  {cmsSaving ? (isEn ? "Saving..." : "Sauvegarde...") : (isEn ? "Save Changes" : "Sauvegarder")}
+                </button>
+              </div>
+
+              {cmsLoading ? (
+                <p>Loading CMS config...</p>
+              ) : cmsConfig ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  <div className="oj-admin-table-card" style={{ padding: "20px" }}>
+                    <h3>{isEn ? "Raw Config Data (JSON)" : "Données de Configuration (JSON)"}</h3>
+                    <textarea
+                      style={{
+                        width: "100%",
+                        height: "400px",
+                        fontFamily: "monospace",
+                        fontSize: "13px",
+                        padding: "10px",
+                        border: "1px solid var(--oj-color-border)",
+                        backgroundColor: "var(--oj-color-bg)",
+                        color: "var(--oj-color-text)",
+                        borderRadius: "8px"
+                      }}
+                      value={JSON.stringify(cmsConfig, null, 2)}
+                      onChange={(e) => {
+                        try {
+                          setCmsConfig(JSON.parse(e.target.value));
+                        } catch(err) {
+                          // ignore parse errors while typing
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p>Failed to load CMS Config.</p>
+              )}
+            </div>
+          )}
+
+          {/* ==================== TAB 8: ADMIN USERS ==================== */}
+          {activeNav === "admins" && (
+            <div>
+              <div className="oj-admin-header-row">
+                <div className="oj-admin-title-wrap">
+                  <h1>{isEn ? "Admin Users Management" : "Gestion des Administrateurs"}</h1>
+                  <p>
+                    {isEn
+                      ? "Manage platform administrators and compliance officers."
+                      : "Gérez les administrateurs et officiers de conformité de la plateforme."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="oj-admin-table-card" style={{ padding: "20px", marginBottom: "24px" }}>
+                <h3>{isEn ? "Promote User to Admin" : "Promouvoir un Utilisateur"}</h3>
+                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={newAdminEmail}
+                    onChange={(e) => setNewAdminEmail(e.target.value)}
+                    style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid var(--oj-color-border)", background: "var(--oj-color-bg)", color: "var(--oj-color-text)" }}
+                  />
+                  <input
+                    type="text"
+                    placeholder={isEn ? "Name (optional)" : "Nom (optionnel)"}
+                    value={newAdminName}
+                    onChange={(e) => setNewAdminName(e.target.value)}
+                    style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid var(--oj-color-border)", background: "var(--oj-color-bg)", color: "var(--oj-color-text)" }}
+                  />
+                  <button
+                    className="oj-btn-primary"
+                    disabled={adminSaving || !newAdminEmail}
+                    onClick={handlePromoteAdmin}
+                    style={{ padding: "0 20px" }}
+                  >
+                    {adminSaving ? "..." : (isEn ? "Promote" : "Promouvoir")}
+                  </button>
+                </div>
+              </div>
+
+              <div className="oj-admin-table-card">
+                <table className="oj-admin-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>{isEn ? "Name" : "Nom"}</th>
+                      <th>Role</th>
+                      <th>ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminLoading ? (
+                      <tr><td colSpan={4}>Loading...</td></tr>
+                    ) : adminUsers.map((u) => (
+                      <tr key={u.id}>
+                        <td style={{ fontWeight: 600 }}>{u.email}</td>
+                        <td>{u.name}</td>
+                        <td><span className="oj-status-pill success">{u.role}</span></td>
+                        <td style={{ fontFamily: "monospace", fontSize: "11px", color: "var(--oj-color-muted)" }}>{u.id}</td>
                       </tr>
                     ))}
                   </tbody>
