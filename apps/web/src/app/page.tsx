@@ -16,6 +16,7 @@ import {
   SellerApi,
   OrdersApi,
   RequestsApi,
+  CmsApi,
   type AuthUser,
   type OrderRecord,
   type PurchaseRequestItem,
@@ -49,211 +50,7 @@ interface Product {
   variants: { name: string; color: string }[];
 }
 
-const CATALOG: Product[] = [
-  {
-    id: "prod-1",
-    title: "Cabas Studio en Cuir Tanné",
-    subtitle: "Cuir pleine fleur · Cognac naturel",
-    category: "leather",
-    price: 48000,
-    currency: "XOF",
-    rating: 4.9,
-    reviewsCount: 124,
-    seller: {
-      name: "Maison Laurent",
-      city: "Cotonou",
-      verified: true,
-      rating: 4.9,
-      salesCount: 520,
-      initials: "ML",
-    },
-    image: "/products/leather-tote.jpg",
-    description:
-      "Un sac cabas intemporel façonné à la main en cuir pleine fleur tanné aux écorces végétales. Anses ergonomiques renforcées pour le port quotidien.",
-    stock: 5,
-    variants: [
-      { name: "Cognac Naturel", color: "#8E502B" },
-      { name: "Noir Onyx", color: "#1F2326" },
-      { name: "Terre Cuite", color: "#A85D42" },
-    ],
-  },
-  {
-    id: "prod-2",
-    title: "Chronographe Héritage",
-    subtitle: "Automatique · Or & Acier",
-    category: "watches",
-    price: 285000,
-    currency: "XOF",
-    rating: 5.0,
-    reviewsCount: 68,
-    seller: {
-      name: "Horlogerie Prestige",
-      city: "Abidjan",
-      verified: true,
-      rating: 5.0,
-      salesCount: 186,
-      initials: "HP",
-    },
-    image: "/products/watch-chrono.jpg",
-    description:
-      "Pièce de haute précision avec mouvement mécanique automatique, cadran brossé soleil et lunette ciselée avec inserts en or champagne 18 carats.",
-    stock: 2,
-    variants: [
-      { name: "Or Champagne & Noir", color: "#D4B483" },
-      { name: "Acier Brossé & Bleu", color: "#3B5266" },
-    ],
-  },
-  {
-    id: "prod-3",
-    title: "Fauteuil Club Travertin",
-    subtitle: "Pierre & Lin brut teint",
-    category: "home",
-    price: 145000,
-    currency: "XOF",
-    rating: 4.8,
-    reviewsCount: 42,
-    seller: {
-      name: "Studio Djoliba",
-      city: "Bamako",
-      verified: true,
-      rating: 4.8,
-      salesCount: 340,
-      initials: "SD",
-    },
-    image: "/products/armchair.jpg",
-    description:
-      "Assise sculpturale alliant socle minéral en travertin massif poli et coussin tapissé de lin écru tissé aux métiers traditionnels.",
-    stock: 3,
-    variants: [
-      { name: "Lin Écru", color: "#E7E1D9" },
-      { name: "Terre d'Ombre", color: "#54463A" },
-    ],
-  },
-  {
-    id: "prod-4",
-    title: "Buste Royal Dahomey en Bronze",
-    subtitle: "Bronze noble · Cire perdue d'Abomey",
-    category: "art",
-    price: 195000,
-    currency: "XOF",
-    rating: 5.0,
-    reviewsCount: 89,
-    seller: {
-      name: "Fonderie Royale d'Abomey",
-      city: "Abomey",
-      verified: true,
-      rating: 5.0,
-      salesCount: 140,
-      initials: "FA",
-    },
-    image: "/products/art-bronze.jpg",
-    description:
-      "Sculpture royale en bronze massif patiné à l'or et à la cire perdue, pièce d'art de prestige du plateau d'Abomey.",
-    stock: 2,
-    variants: [
-      { name: "Bronze Doré Patiné", color: "#B8860B" },
-      { name: "Bronze Noir Antique", color: "#2B241F" },
-    ],
-  },
-  {
-    id: "prod-5",
-    title: "Bague Sculpturale Or 18K & Émeraude",
-    subtitle: "Or jaune 18K · Émeraude ovale",
-    category: "fashion",
-    price: 320000,
-    currency: "XOF",
-    rating: 4.9,
-    reviewsCount: 31,
-    seller: {
-      name: "Orfèvrerie Ashanti",
-      city: "Kumasi",
-      verified: true,
-      rating: 4.9,
-      salesCount: 210,
-      initials: "OA",
-    },
-    image: "/products/jewelry-gold.jpg",
-    description:
-      "Anneau en or jaune brossé martelé à la flamme, serti d'une tourmaline verte taille émeraude issue de gisements responsables certifiés.",
-    stock: 4,
-    variants: [
-      { name: "Or Jaune 18K", color: "#D4B483" },
-      { name: "Or Rose 18K", color: "#B87363" },
-    ],
-  },
-  {
-    id: "prod-6",
-    title: "Traité de Modélisme & Patrons 1:1",
-    subtitle: "Patrons vectoriels A0/A4 · Sac Cabas Royal",
-    category: "digital",
-    price: 6500,
-    currency: "XOF",
-    rating: 4.9,
-    reviewsCount: 215,
-    seller: {
-      name: "Studio Éditions",
-      city: "Dakar",
-      verified: true,
-      rating: 4.9,
-      salesCount: 890,
-      initials: "SE",
-    },
-    image: "/products/digital-patterns.jpg",
-    description:
-      "Guide complet et patrons vectoriels haute résolution A0/A4 détaillant le traçage, le parage et l'assemblage au point sellier.",
-    stock: 999,
-    variants: [{ name: "PDF Vectoriel A0/A4 (14.5 Mo)", color: "#0D4A38" }],
-  },
-  {
-    id: "prod-7",
-    title: "Guide Fonte à la Cire Perdue",
-    subtitle: "Manuel d'alliages & moulage noble",
-    category: "digital",
-    price: 12000,
-    currency: "XOF",
-    rating: 5.0,
-    reviewsCount: 54,
-    seller: {
-      name: "Fonderie Royale d'Abomey",
-      city: "Abomey",
-      verified: true,
-      rating: 5.0,
-      salesCount: 140,
-      initials: "FA",
-    },
-    image: "/products/digital-patterns.jpg",
-    description:
-      "Traité technique complet sur la préparation des cires d'abeille, les moules réfractaires et les alliages de bronze traditionnels.",
-    stock: 999,
-    variants: [{ name: "E-Book Haute Définition (28.4 Mo)", color: "#D4B483" }],
-  },
-  {
-    id: "prod-8",
-    title: "Tenture Murale Bogolan & Soie",
-    subtitle: "Soie sauvage · Pigments d'argile",
-    category: "art",
-    price: 36000,
-    currency: "XOF",
-    rating: 4.8,
-    reviewsCount: 89,
-    seller: {
-      name: "Studio Djoliba",
-      city: "Bamako",
-      verified: true,
-      rating: 4.8,
-      salesCount: 340,
-      initials: "SD",
-    },
-    image: "/products/leather-tote.jpg",
-    description:
-      "Œuvre textile unique aux pigments d'argile fermentée, mêlant motifs géométriques ancestraux et lisière de soie sauvage filée à la main.",
-    stock: 7,
-    variants: [
-      { name: "Noir & Ocre", color: "#2B241F" },
-      { name: "Indigo Profond", color: "#1D283E" },
-    ],
-  },
-];
+
 
 function formatPrice(amount: number, currency: string = "XOF"): string {
   return `${new Intl.NumberFormat("fr-FR").format(amount)} ${currency}`;
@@ -425,6 +222,32 @@ function MainMarketplaceView() {
   const [needCategory, setNeedCategory] = useState("leather");
   const [needSubmitted, setNeedSubmitted] = useState(false);
   const [aiStructuring, setAiStructuring] = useState(false);
+
+  // CMS state
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [intemporelIcons, setIntemporelIcons] = useState<any[]>([]);
+  const [trustedShops, setTrustedShops] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
+
+  useEffect(() => {
+    CmsApi.getLandingConfig()
+      .then((res) => {
+        const d = res.data;
+        if (d) {
+          setBanners(d.banners || []);
+          setFeaturedProducts(d.featuredProducts || []);
+          setIntemporelIcons(d.intemporelIcons || []);
+          setTrustedShops(d.trustedShops || []);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch landing config", err);
+        setBanners([]);
+        setFeaturedProducts([]);
+        setIntemporelIcons([]);
+        setTrustedShops([]);
+      });
+  }, []);
 
   // Load real session on mount & sync with Better Auth backend
   useEffect(() => {
@@ -657,7 +480,7 @@ function MainMarketplaceView() {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const filteredProducts = CATALOG.filter((p) => {
+  const filteredProducts = featuredProducts.filter((p) => {
     const matchesCat = activeCategory === "all" || p.category === activeCategory;
     const matchesSearch =
       searchQuery === "" ||
@@ -738,22 +561,7 @@ function MainMarketplaceView() {
               >
                 {t.nav.sellerUniverse}
               </button>
-              {currentUser?.role === "ADMIN" && (
-                <Link
-                  href="/admin"
-                  className="oj-pill-opt"
-                  style={{
-                    textDecoration: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontWeight: 700,
-                    color: "var(--oj-color-accent)",
-                  }}
-                >
-                  <span>👑</span> {t.nav.admin}
-                </Link>
-              )}
+
             </div>
 
             <button
@@ -846,26 +654,7 @@ function MainMarketplaceView() {
                       </div>
                     </div>
 
-                    {currentUser.role === "ADMIN" && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setUserMenuOpen(false)}
-                        style={{
-                          textDecoration: "none",
-                          color: "var(--oj-color-accent)",
-                          fontWeight: 700,
-                          fontSize: "12px",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          backgroundColor: "rgba(212, 180, 131, 0.15)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        👑 Panel Administration →
-                      </Link>
-                    )}
+
 
                     <button
                       onClick={() => {
@@ -997,46 +786,47 @@ function MainMarketplaceView() {
           </section>
 
           {/* Hero Collection Carousel */}
-          <section className="oj-hero-section">
-            <div className="oj-section">
-              <div className="oj-hero-card">
-                <div className="oj-hero-content">
-                  <span className="oj-hero-eyebrow">
-                    {isEn ? "CURATED COLLECTION" : "COLLECTION SÉLECTIONNÉE"}
-                  </span>
-                  <h1 className="oj-hero-title">
-                    {isEn ? "Timeless Icons" : "Icônes Intemporelles"}
-                  </h1>
-                  <p className="oj-hero-desc">
-                    {isEn
-                      ? "Exceptional pieces from yesterday, today, and tomorrow."
-                      : "Des pièces d'exception, hier, aujourd'hui et demain."}
-                  </p>
-                  <button
-                    className="oj-hero-cta"
-                    onClick={() => {
-                      const el = document.getElementById("catalog-grid");
-                      el?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  >
-                    {isEn ? "Discover →" : "Découvrir →"}
-                  </button>
-                </div>
-                <div className="oj-hero-visual">
-                  <img src="/products/watch-chrono.jpg" alt="Collection" />
-                </div>
-                <div className="oj-hero-controls">
-                  <div className="oj-hero-dots">
-                    <span className="oj-hero-dot active" />
-                    <span className="oj-hero-dot" />
-                    <span className="oj-hero-dot" />
-                    <span className="oj-hero-dot" />
+          {intemporelIcons.length > 0 && (
+            <section className="oj-hero-section">
+              <div className="oj-section">
+                <div className="oj-hero-card">
+                  <div className="oj-hero-content">
+                    <span className="oj-hero-eyebrow">
+                      {isEn ? "CURATED COLLECTION" : "COLLECTION SÉLECTIONNÉE"}
+                    </span>
+                    <h1 className="oj-hero-title">
+                      {intemporelIcons[0]?.title || (isEn ? "Timeless Icons" : "Icônes Intemporelles")}
+                    </h1>
+                    <p className="oj-hero-desc">
+                      {intemporelIcons[0]?.description || (isEn
+                        ? "Exceptional pieces from yesterday, today, and tomorrow."
+                        : "Des pièces d'exception, hier, aujourd'hui et demain.")}
+                    </p>
+                    <button
+                      className="oj-hero-cta"
+                      onClick={() => {
+                        const el = document.getElementById("catalog-grid");
+                        el?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                    >
+                      {isEn ? "Discover →" : "Découvrir →"}
+                    </button>
                   </div>
-                  <span className="oj-hero-page-count">1 / 4</span>
+                  <div className="oj-hero-visual">
+                    <img src={intemporelIcons[0]?.image} alt="Collection" />
+                  </div>
+                  <div className="oj-hero-controls">
+                    <div className="oj-hero-dots">
+                      {intemporelIcons.map((_, idx) => (
+                        <span key={idx} className={`oj-hero-dot ${idx === 0 ? "active" : ""}`} />
+                      ))}
+                    </div>
+                    <span className="oj-hero-page-count">1 / {intemporelIcons.length}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Recommandé pour vous */}
           <section className="oj-section" id="catalog-grid">
@@ -1152,32 +942,7 @@ function MainMarketplaceView() {
               </button>
             </div>
             <div className="oj-shops-scroll">
-              {[
-                {
-                  name: "Maison Laurent",
-                  initials: "ML",
-                  rating: 4.8,
-                  reviews: 320,
-                  verified: true,
-                  products: ["/products/leather-tote.jpg", "/products/armchair.jpg"],
-                },
-                {
-                  name: "Maison Horlogerie",
-                  initials: "MH",
-                  rating: 4.9,
-                  reviews: 186,
-                  verified: true,
-                  products: ["/products/watch-chrono.jpg", "/products/leather-tote.jpg"],
-                },
-                {
-                  name: "Studio Djoliba",
-                  initials: "SD",
-                  rating: 4.8,
-                  reviews: 340,
-                  verified: true,
-                  products: ["/products/armchair.jpg", "/products/watch-chrono.jpg"],
-                },
-              ].map((shop, i) => (
+              {trustedShops.map((shop, i) => (
                 <div key={i} className="oj-shop-card">
                   <div className="oj-shop-header">
                     <div className="oj-shop-avatar">{shop.initials}</div>

@@ -22,14 +22,6 @@ interface SearchScreenProps {
   onOpenCart: () => void;
 }
 
-// Local image assets
-const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
-const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
-const imgArmchair = require("../../../assets/products/armchair.jpg");
-const imgJewelryGold = require("../../../assets/products/jewelry-gold.jpg");
-const imgArtBronze = require("../../../assets/products/art-bronze.jpg");
-const imgDigitalPatterns = require("../../../assets/products/digital-patterns.jpg");
-
 export interface Product {
   id: string;
   title: string;
@@ -45,136 +37,13 @@ export interface Product {
   format?: string;
 }
 
-const CATALOG: Product[] = [
-  {
-    id: "prod-1",
-    title: "Cabas Studio en Cuir",
-    subtitle: "Cuir tanné végétal · Cognac",
-    seller: "Maison Laurent",
-    price: 48000,
-    currency: "XOF",
-    rating: 4.9,
-    reviews: 124,
-    image: imgLeatherTote,
-    category: "leather",
-    isDigital: false,
-  },
-  {
-    id: "prod-2",
-    title: "Chronographe Héritage",
-    subtitle: "Automatique · Or & Acier",
-    seller: "Horlogerie Prestige",
-    price: 285000,
-    currency: "XOF",
-    rating: 5.0,
-    reviews: 68,
-    image: imgWatchChrono,
-    category: "watches",
-    isDigital: false,
-  },
-  {
-    id: "prod-3",
-    title: "Fauteuil Club Travertin",
-    subtitle: "Pierre & Lin brut écru",
-    seller: "Studio Djoliba",
-    price: 145000,
-    currency: "XOF",
-    rating: 4.8,
-    reviews: 42,
-    image: imgArmchair,
-    category: "home",
-    isDigital: false,
-  },
-  {
-    id: "prod-4",
-    title: "Sculpture Artistique en Bronze",
-    subtitle: "Bronze noble ciselé · Décoration prestige",
-    seller: "Fonderie Royale",
-    price: 195000,
-    currency: "XOF",
-    rating: 5.0,
-    reviews: 89,
-    image: imgArtBronze,
-    category: "art",
-    isDigital: false,
-  },
-  {
-    id: "prod-5",
-    title: "Bague Sculpturale Or & Émeraude",
-    subtitle: "Or jaune 18K · Émeraude ovale",
-    seller: "Orfèvrerie Ashanti",
-    price: 320000,
-    currency: "XOF",
-    rating: 4.9,
-    reviews: 31,
-    image: imgJewelryGold,
-    category: "fashion",
-    isDigital: false,
-  },
-  {
-    id: "prod-6",
-    title: "Traité de Modélisme & Patrons 1:1",
-    subtitle: "Patrons vectoriels A0/A4 · Sac Cabas Royal",
-    seller: "Studio Éditions",
-    price: 6500,
-    currency: "XOF",
-    rating: 4.9,
-    reviews: 215,
-    image: imgDigitalPatterns,
-    category: "digital",
-    isDigital: true,
-    format: "PDF Vectoriel (14.5 Mo)",
-  },
-  {
-    id: "prod-7",
-    title: "Guide Fonte Cire Perdue",
-    subtitle: "Manuel technique d'alliages nobles",
-    seller: "Fonderie Royale d'Abomey",
-    price: 12000,
-    currency: "XOF",
-    rating: 5.0,
-    reviews: 54,
-    image: imgDigitalPatterns,
-    category: "digital",
-    isDigital: true,
-    format: "E-Book Illustré (28.4 Mo)",
-  },
-  {
-    id: "prod-8",
-    title: "Tenture Bogolan & Soie",
-    subtitle: "Soie sauvage · Pigments d'argile",
-    seller: "Studio Djoliba",
-    price: 36000,
-    currency: "XOF",
-    rating: 4.8,
-    reviews: 89,
-    image: imgLeatherTote,
-    category: "art",
-    isDigital: false,
-  },
-];
-
 function formatXOF(price: number, currency = "FCFA") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
 
 function mapApiProduct(prod: ProductItem): Product {
-  let image = imgLeatherTote;
   const cat = (prod.category || "").toLowerCase();
   const isDigital = cat.includes("digital") || cat.includes("patron") || cat.includes("guide");
-  if (cat.includes("watch") || cat.includes("montre") || cat.includes("horlog")) {
-    image = imgWatchChrono;
-  } else if (cat.includes("home") || cat.includes("mobilier") || cat.includes("deco") || cat.includes("fauteuil")) {
-    image = imgArmchair;
-  } else if (cat.includes("jewel") || cat.includes("bijou") || cat.includes("or") || cat.includes("bague")) {
-    image = imgJewelryGold;
-  } else if (isDigital) {
-    image = imgDigitalPatterns;
-  } else if (cat.includes("art") || cat.includes("bronze") || cat.includes("sculpt")) {
-    image = imgArtBronze;
-  } else if (cat.includes("leather") || cat.includes("maroquinerie") || cat.includes("sac")) {
-    image = imgLeatherTote;
-  }
   
   let cleanTitle = prod.title || "";
   let cleanSubtitle = prod.description || "";
@@ -201,7 +70,7 @@ function mapApiProduct(prod: ProductItem): Product {
     currency: prod.currency || "XOF",
     rating: 4.8,
     reviews: 12,
-    image,
+    image: prod.image ? { uri: prod.image } : undefined,
     category: prod.category || "other",
     isDigital: !!isDigital,
     format: isDigital ? "PDF Vectoriel (14.5 Mo)" : undefined,
@@ -223,7 +92,7 @@ export default function SearchScreen({
   const [activeCat, setActiveCat] = useState("all");
   const [activePrice, setActivePrice] = useState("all");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [products, setProducts] = useState<any[]>(CATALOG);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -235,45 +104,17 @@ export default function SearchScreen({
         const apiProds = await CatalogApi.getProducts(query, category);
         const mappedApi = (apiProds || []).map(mapApiProduct);
 
-        // Filter CATALOG baseline
-        const filteredCatalog = CATALOG.filter((p) => {
-          if (activeCat !== "all" && p.category !== activeCat) return false;
-          if (search.trim()) {
-            const q = search.toLowerCase();
-            if (!p.title.toLowerCase().includes(q) && !p.seller.toLowerCase().includes(q)) return false;
-          }
+        const filteredApi = mappedApi.filter((p) => {
           if (activePrice === "low" && p.price >= 50000) return false;
           if (activePrice === "mid" && (p.price < 50000 || p.price > 150000)) return false;
           if (activePrice === "high" && p.price <= 150000) return false;
           return true;
         });
 
-        // Merge API products without duplicating IDs
-        const combined = [...filteredCatalog];
-        for (const apiP of mappedApi) {
-          if (!combined.some((p) => p.id === apiP.id)) {
-            if (activePrice === "low" && apiP.price >= 50000) continue;
-            if (activePrice === "mid" && (apiP.price < 50000 || apiP.price > 150000)) continue;
-            if (activePrice === "high" && apiP.price <= 150000) continue;
-            combined.push(apiP);
-          }
-        }
-        setProducts(combined);
+        setProducts(filteredApi);
       } catch (err) {
-        console.warn("API failed, falling back to CATALOG", err);
-        // Fallback filter
-        const filtered = CATALOG.filter((p) => {
-          if (activeCat !== "all" && p.category !== activeCat) return false;
-          if (search.trim()) {
-            const q = search.toLowerCase();
-            if (!p.title.toLowerCase().includes(q) && !p.seller.toLowerCase().includes(q)) return false;
-          }
-          if (activePrice === "low" && p.price >= 50000) return false;
-          if (activePrice === "mid" && (p.price < 50000 || p.price > 150000)) return false;
-          if (activePrice === "high" && p.price <= 150000) return false;
-          return true;
-        });
-        setProducts(filtered);
+        console.warn("API failed", err);
+        setProducts([]);
       } finally {
         setLoading(false);
       }

@@ -23,12 +23,6 @@ interface BuyerHomeScreenProps {
 }
 
 // Local image assets
-const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
-const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
-const imgArmchair = require("../../../assets/products/armchair.jpg");
-const imgJewelryGold = require("../../../assets/products/jewelry-gold.jpg");
-const imgArtBronze = require("../../../assets/products/art-bronze.jpg");
-const imgDigitalPatterns = require("../../../assets/products/digital-patterns.jpg");
 const logoDark = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Dark_Transparent.png");
 const logoLight = require("../../../assets/brand/Ojarket_03_Compact_Wordmark_Transparent.png");
 const iconBrandDark = require("../../../assets/brand/Ojarket_01_Icon_UltraPremium_Dark_Transparent.png");
@@ -49,163 +43,22 @@ export interface Product {
   format?: string;
 }
 
-const CATALOG: Product[] = [
-  {
-    id: "prod-1",
-    title: "Cabas Studio en Cuir",
-    subtitle: "Cuir tanné végétal · Cognac",
-    seller: "Maison Laurent",
-    price: 48000,
-    currency: "XOF",
-    rating: 4.9,
-    reviews: 124,
-    image: imgLeatherTote,
-    category: "leather",
-    isDigital: false,
-  },
-  {
-    id: "prod-2",
-    title: "Chronographe Héritage",
-    subtitle: "Automatique · Or & Acier",
-    seller: "Horlogerie Prestige",
-    price: 285000,
-    currency: "XOF",
-    rating: 5.0,
-    reviews: 68,
-    image: imgWatchChrono,
-    category: "watches",
-    isDigital: false,
-  },
-  {
-    id: "prod-3",
-    title: "Fauteuil Club Travertin",
-    subtitle: "Pierre & Lin brut écru",
-    seller: "Studio Djoliba",
-    price: 145000,
-    currency: "XOF",
-    rating: 4.8,
-    reviews: 42,
-    image: imgArmchair,
-    category: "home",
-    isDigital: false,
-  },
-  {
-    id: "prod-4",
-    title: "Sculpture Artistique en Bronze",
-    subtitle: "Bronze noble ciselé · Décoration prestige",
-    seller: "Fonderie Royale",
-    price: 195000,
-    currency: "XOF",
-    rating: 5.0,
-    reviews: 89,
-    image: imgArtBronze,
-    category: "art",
-    isDigital: false,
-  },
-  {
-    id: "prod-5",
-    title: "Bague Sculpturale Or & Émeraude",
-    subtitle: "Or jaune 18K · Émeraude ovale",
-    seller: "Orfèvrerie Ashanti",
-    price: 320000,
-    currency: "XOF",
-    rating: 4.9,
-    reviews: 31,
-    image: imgJewelryGold,
-    category: "fashion",
-    isDigital: false,
-  },
-  {
-    id: "prod-6",
-    title: "Traité de Modélisme & Patrons 1:1",
-    subtitle: "Patrons vectoriels A0/A4 · Sac Cabas Royal",
-    seller: "Studio Éditions",
-    price: 6500,
-    currency: "XOF",
-    rating: 4.9,
-    reviews: 215,
-    image: imgDigitalPatterns,
-    category: "digital",
-    isDigital: true,
-    format: "PDF Vectoriel (14.5 Mo)",
-  },
-  {
-    id: "prod-7",
-    title: "Guide Fonte Cire Perdue",
-    subtitle: "Manuel technique d'alliages nobles",
-    seller: "Fonderie Royale d'Abomey",
-    price: 12000,
-    currency: "XOF",
-    rating: 5.0,
-    reviews: 54,
-    image: imgDigitalPatterns,
-    category: "digital",
-    isDigital: true,
-    format: "E-Book Illustré (28.4 Mo)",
-  },
-  {
-    id: "prod-8",
-    title: "Tenture Bogolan & Soie",
-    subtitle: "Soie sauvage · Pigments d'argile",
-    seller: "Studio Djoliba",
-    price: 36000,
-    currency: "XOF",
-    rating: 4.8,
-    reviews: 89,
-    image: imgLeatherTote,
-    category: "art",
-    isDigital: false,
-  },
-];
-
 function formatXOF(price: number, currency = "FCFA") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
 
 function mapApiProduct(prod: ProductItem): Product {
-  let image = imgLeatherTote;
-  const cat = (prod.category || "").toLowerCase();
-  const isDigital = cat.includes("digital") || cat.includes("patron") || cat.includes("guide");
-  if (cat.includes("watch") || cat.includes("montre") || cat.includes("horlog")) {
-    image = imgWatchChrono;
-  } else if (cat.includes("home") || cat.includes("mobilier") || cat.includes("deco") || cat.includes("fauteuil")) {
-    image = imgArmchair;
-  } else if (cat.includes("jewel") || cat.includes("bijou") || cat.includes("or") || cat.includes("bague")) {
-    image = imgJewelryGold;
-  } else if (isDigital) {
-    image = imgDigitalPatterns;
-  } else if (cat.includes("art") || cat.includes("bronze") || cat.includes("sculpt")) {
-    image = imgArtBronze;
-  } else if (cat.includes("leather") || cat.includes("maroquinerie") || cat.includes("sac")) {
-    image = imgLeatherTote;
-  }
-  
-  let cleanTitle = prod.title || "";
-  let cleanSubtitle = prod.description || "";
-  let cleanSeller = prod.artisanShop?.name || "Boutique Partenaire";
-
-  const lowerT = cleanTitle.toLowerCase();
-  const lowerS = cleanSeller.toLowerCase();
-
-  if (lowerT.includes("guel") || lowerT.includes("gél") || lowerT.includes("masque") || lowerT.includes("vaudou") || lowerT.includes("fetich")) {
-    cleanTitle = "Buste Royal en Bronze Ciselé";
-    cleanSubtitle = "Œuvre sculpturale d'art en bronze noble et patine royale d'Abomey";
-  }
-
-  if (lowerS.includes("ouidah") || lowerS.includes("sculpture")) {
-    cleanSeller = "Galerie d'Art Royale";
-  }
-
+  const isDigital = (prod.category || "").toLowerCase().includes("digital");
   return {
     id: prod.id,
-    title: cleanTitle,
-    subtitle: cleanSubtitle,
-    seller: cleanSeller,
+    title: prod.title || "",
+    subtitle: prod.description || "",
+    seller: prod.artisanShop?.name || "Boutique Partenaire",
     price: Math.round(prod.priceMinor / 100),
     currency: "FCFA",
     rating: 4.9,
     reviews: 24,
-    image,
+    image: prod.image ? { uri: prod.image } : null,
     category: prod.category || "other",
     isDigital: !!isDigital,
     format: isDigital ? "PDF Vectoriel (14.5 Mo)" : undefined,
@@ -226,7 +79,7 @@ export default function BuyerHomeScreen({
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [products, setProducts] = useState<any[]>(CATALOG);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -237,36 +90,10 @@ export default function BuyerHomeScreen({
         const category = activeCat !== "all" ? activeCat : undefined;
         const apiProds = await CatalogApi.getProducts(query, category);
         const mappedApi = (apiProds || []).map(mapApiProduct);
-
-        // Filter CATALOG baseline
-        const filteredCatalog = CATALOG.filter((p) => {
-          const matchCat = activeCat === "all" || p.category === activeCat;
-          const matchSearch =
-            !search ||
-            p.title.toLowerCase().includes(search.toLowerCase()) ||
-            p.seller.toLowerCase().includes(search.toLowerCase());
-          return matchCat && matchSearch;
-        });
-
-        // Combine CATALOG with API products (avoiding duplicates by id)
-        const combined = [...filteredCatalog];
-        for (const apiP of mappedApi) {
-          if (!combined.some((p) => p.id === apiP.id)) {
-            combined.push(apiP);
-          }
-        }
-        setProducts(combined);
+        setProducts(mappedApi);
       } catch (err) {
-        console.warn("API fallback to CATALOG", err);
-        const filtered = CATALOG.filter((p) => {
-          const matchCat = activeCat === "all" || p.category === activeCat;
-          const matchSearch =
-            !search ||
-            p.title.toLowerCase().includes(search.toLowerCase()) ||
-            p.seller.toLowerCase().includes(search.toLowerCase());
-          return matchCat && matchSearch;
-        });
-        setProducts(filtered);
+        console.warn("API Error", err);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -284,13 +111,13 @@ export default function BuyerHomeScreen({
   };
 
   const categories = [
-    { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true },
-    { id: "watches", label: isEn ? "Watches" : "Montres", image: imgWatchChrono, isAll: false },
-    { id: "leather", label: isEn ? "Leather" : "Maroquinerie", image: imgLeatherTote, isAll: false },
-    { id: "fashion", label: isEn ? "Jewelry & Fashion" : "Bijoux & Mode", image: imgJewelryGold, isAll: false },
-    { id: "home", label: isEn ? "Home & Decor" : "Maison & Mobilier", image: imgArmchair, isAll: false },
-    { id: "art", label: isEn ? "Art & Sculptures" : "Art & Décoration", image: imgArtBronze, isAll: false },
-    { id: "digital", label: isEn ? "Digital" : "Numérique", image: imgDigitalPatterns, isAll: false },
+    { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true, icon: "🏷" },
+    { id: "watches", label: isEn ? "Watches" : "Montres", image: null, isAll: false, icon: "⌚" },
+    { id: "leather", label: isEn ? "Leather" : "Maroquinerie", image: null, isAll: false, icon: "👜" },
+    { id: "fashion", label: isEn ? "Jewelry & Fashion" : "Bijoux & Mode", image: null, isAll: false, icon: "💍" },
+    { id: "home", label: isEn ? "Home & Decor" : "Maison & Mobilier", image: null, isAll: false, icon: "🛋" },
+    { id: "art", label: isEn ? "Art & Sculptures" : "Art & Décoration", image: null, isAll: false, icon: "🏺" },
+    { id: "digital", label: isEn ? "Digital" : "Numérique", image: null, isAll: false, icon: "💻" },
   ];
 
   const filtered = products;
@@ -552,15 +379,9 @@ export default function BuyerHomeScreen({
                       />
                     </View>
                   ) : (
-                    <Image
-                      source={c.image}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: 27,
-                        resizeMode: "cover",
-                      }}
-                    />
+                    <View style={{width: "100%", height: "100%", borderRadius: 27, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center"}}>
+                      <Text style={{fontSize: 22}}>{(c as any).icon}</Text>
+                    </View>
                   )}
                 </View>
                 <Text
@@ -667,10 +488,7 @@ export default function BuyerHomeScreen({
                 position: "relative",
               }}
             >
-              <Image
-                source={imgWatchChrono}
-                style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-              />
+              <View style={{ width: "100%", height: "100%", backgroundColor: "rgba(212, 180, 131, 0.1)" }} />
               <View
                 style={{
                   position: "absolute",
@@ -741,7 +559,24 @@ export default function BuyerHomeScreen({
           </View>
 
           {/* 2-Column Grid of Creations */}
-          <View style={{ flexDirection: "row", gap: 12 }}>
+          {filtered.length === 0 && !loading ? (
+            <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 60, paddingHorizontal: 20 }}>
+              <Text style={{ fontSize: 48, marginBottom: 16 }}>🍃</Text>
+              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text, marginBottom: 8, fontFamily: Platform.OS === "android" ? "serif" : "Georgia" }}>
+                {isEn ? "No creations found" : "Aucune création trouvée"}
+              </Text>
+              <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 20 }}>
+                {isEn 
+                  ? "We couldn't find any creations matching your search. Try different keywords or browse all categories." 
+                  : "Nous n'avons trouvé aucune création correspondant à votre recherche. Essayez d'autres mots-clés ou parcourez toutes les catégories."}
+              </Text>
+            </View>
+          ) : loading ? (
+            <View style={{ paddingVertical: 60, alignItems: "center" }}>
+              <ActivityIndicator size="large" color={colors.accent} />
+            </View>
+          ) : (
+            <View style={{ flexDirection: "row", gap: 12 }}>
               {/* Column 1 */}
               <View style={{ flex: 1, gap: 14 }}>
                 {filtered
@@ -775,11 +610,12 @@ export default function BuyerHomeScreen({
                         }}
                       >
                         <Image
-                          source={prod.image}
+                          source={prod.image || (isDark ? iconBrandDark : iconBrandLight)}
                           style={{
                             width: "100%",
                             height: "100%",
-                            resizeMode: "cover",
+                            resizeMode: prod.image ? "cover" : "contain",
+                            opacity: prod.image ? 1 : 0.3,
                           }}
                         />
                         {/* Digital Badge */}
@@ -947,11 +783,12 @@ export default function BuyerHomeScreen({
                         }}
                       >
                         <Image
-                          source={prod.image}
+                          source={prod.image || (isDark ? iconBrandDark : iconBrandLight)}
                           style={{
                             width: "100%",
                             height: "100%",
-                            resizeMode: "cover",
+                            resizeMode: prod.image ? "cover" : "contain",
+                            opacity: prod.image ? 1 : 0.3,
                           }}
                         />
                         {/* Digital Badge */}
@@ -1086,6 +923,7 @@ export default function BuyerHomeScreen({
                   ))}
               </View>
             </View>
+            )}
         </View>
 
         {/* ==================== BOUTIQUES DE CONFIANCE (TRUSTED SHOPS) ==================== */}
@@ -1129,8 +967,8 @@ export default function BuyerHomeScreen({
                 specialty: "Maroquinerie & Bagagerie",
                 rating: 4.9,
                 reviews: 320,
-                img1: imgLeatherTote,
-                img2: imgArmchair,
+                img1: iconBrandLight,
+                img2: iconBrandLight,
               },
               {
                 name: "Horlogerie Prestige",
@@ -1138,8 +976,8 @@ export default function BuyerHomeScreen({
                 specialty: "Horlogerie & Montres",
                 rating: 5.0,
                 reviews: 186,
-                img1: imgWatchChrono,
-                img2: imgLeatherTote,
+                img1: iconBrandLight,
+                img2: iconBrandLight,
               },
               {
                 name: "Studio Djoliba",
@@ -1147,8 +985,8 @@ export default function BuyerHomeScreen({
                 specialty: "Maison, Déco & Mobilier",
                 rating: 4.8,
                 reviews: 340,
-                img1: imgArmchair,
-                img2: imgWatchChrono,
+                img1: iconBrandLight,
+                img2: iconBrandLight,
               },
             ].map((shop, i) => (
               <View
@@ -1229,38 +1067,11 @@ export default function BuyerHomeScreen({
                   </View>
                 </View>
 
-                {/* Right: 2 product preview images */}
+                {/* Right: Actions */}
                 <View style={{ flexDirection: "row", gap: 6 }}>
-                  <View
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                  >
-                    <Image
-                      source={shop.img1}
-                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-                    />
-                  </View>
-                  <View
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                  >
-                    <Image
-                      source={shop.img2}
-                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-                    />
-                  </View>
+                  <Pressable style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.subtle }}>
+                    <Text style={{ fontSize: 11, fontWeight: "600", color: colors.text }}>Visiter</Text>
+                  </Pressable>
                 </View>
               </View>
             ))}

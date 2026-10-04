@@ -350,3 +350,16 @@ export const RequestsApi = {
     });
   },
 };
+
+
+export const CmsApi = {
+  async getLandingConfig(): Promise<{ data: any }> {
+    return request<{ data: any }>('/v1/cms/landing');
+  },
+  async updateLandingConfig(data: any): Promise<{ data: any }> {
+    return request<{ data: any }>('/v1/cms/landing', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+};
