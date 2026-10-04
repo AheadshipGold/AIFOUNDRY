@@ -676,8 +676,28 @@ function MainMarketplaceView() {
                       {universe === "buyer" ? "Basculer vers Espace Vendeur ↗" : "Basculer vers Espace Acheteur ↗"}
                     </button>
 
-                    <button
-                      onClick={handleLogout}
+                    {currentUser.role === "ADMIN" && (
+                        <Link
+                          href="/admin"
+                          style={{
+                            display: "block",
+                            textDecoration: "none",
+                            padding: "6px 8px",
+                            fontSize: "12px",
+                            color: "#FFFFFF",
+                            backgroundColor: "var(--oj-color-accent)",
+                            borderRadius: "6px",
+                            fontWeight: 600,
+                            marginBottom: "8px",
+                            textAlign: "center"
+                          }}
+                        >
+                          Panel d'Administration ??
+                        </Link>
+                      )}
+
+                      <button
+                        onClick={handleLogout}
                       style={{
                         background: "none",
                         border: "none",
@@ -958,7 +978,7 @@ function MainMarketplaceView() {
                     </div>
                   </div>
                   <div className="oj-shop-thumbnails">
-                    {shop.products.slice(0, 2).map((img, j) => (
+                    {(shop.products || []).slice(0, 2).map((img: string, j: number) => (
                       <div key={j} className="oj-shop-thumb">
                         <img src={img} alt="" />
                       </div>
