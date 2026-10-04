@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DesignProvider, useDesign } from "../design-system/provider";
 import { translations, Locale } from "@aifoundry/shared";
 import "../design-system/styles.css";
+import "./landing.css";
 import { WebAuthModal } from "../components/WebAuthModal";
 import { WebSellerOnboardingModal } from "../components/WebSellerOnboardingModal";
 import {
