@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
+import { Icon } from '../../design-system/Icon';
 import { AuthApi, type AuthUser } from '../../services/api';
 import { clearSession } from '../../components/auth/AuthModal';
 
@@ -365,9 +366,12 @@ export default function ProfileScreen({
                 <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
                   {currentUser.email}
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
-                  📍 Cotonou, Bénin · {currentUser.phone || '+229 non renseigné'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                  <Icon name="map-pin" size={12} color={colors.muted} />
+                  <Text style={{ fontSize: 12, color: colors.muted }}>
+                    Cotonou, Bénin · {currentUser.phone || '+229 non renseigné'}
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -386,7 +390,7 @@ export default function ProfileScreen({
                 opacity: pressed ? 0.7 : 1,
               }]}
             >
-              <Text style={{ fontSize: 14 }}>✏️</Text>
+              <Icon name="pencil" size={14} color={colors.action} />
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.action }}>
                 {isEn ? 'Edit My Profile Details' : 'Modifier mes informations'}
               </Text>
@@ -407,7 +411,7 @@ export default function ProfileScreen({
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <Text style={{ fontSize: 28 }}>👑</Text>
+              <Icon name="crown" size={26} color={isDark ? '#D4AF37' : colors.action} />
               <View>
                 <Text style={{ fontFamily: headingFont, fontSize: 18, fontWeight: '700', color: colors.text }}>
                   {isEn ? 'Welcome to Ojarket' : 'Bienvenue sur Ojarket'}
@@ -436,9 +440,12 @@ export default function ProfileScreen({
                 transform: [{ scale: pressed ? 0.98 : 1 }],
               }]}
             >
-              <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 15, letterSpacing: 0.5 }}>
-                ✨ {isEn ? 'Sign In / Create Account' : 'Se Connecter / Créer un Compte'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="sparkle" size={16} color="#ffffff" weight="fill" />
+                <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 15, letterSpacing: 0.5 }}>
+                  {isEn ? 'Sign In / Create Account' : 'Se Connecter / Créer un Compte'}
+                </Text>
+              </View>
             </Pressable>
           </View>
         )}
@@ -458,9 +465,12 @@ export default function ProfileScreen({
             borderLeftColor: isDark ? '#D4AF37' : colors.action,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
-            🏪 {isEn ? 'Merchant & Store Space' : 'Espace Commerçant & Boutique'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Icon name="storefront" size={18} color={isDark ? '#D4AF37' : colors.action} />
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>
+              {isEn ? 'Merchant & Store Space' : 'Espace Commerçant & Boutique'}
+            </Text>
+          </View>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 14 }}>
             {currentUser?.shops && currentUser.shops.length > 0
               ? (isEn
@@ -509,7 +519,7 @@ export default function ProfileScreen({
               transform: [{ scale: pressed ? 0.97 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 24, marginBottom: 6 }}>🛍</Text>
+            <Icon name="bag-handle" size={24} color={colors.action} style={{ marginBottom: 6 }} />
             <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
               {isEn ? 'My Orders' : 'Mes Commandes'}
             </Text>
@@ -529,7 +539,7 @@ export default function ProfileScreen({
               transform: [{ scale: pressed ? 0.97 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 24, marginBottom: 6 }}>✦</Text>
+            <Icon name="file-text" size={24} color={colors.action} style={{ marginBottom: 6 }} />
             <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
               {isEn ? 'My Requests' : 'Mes Demandes'}
             </Text>
@@ -554,9 +564,12 @@ export default function ProfileScreen({
             borderWidth: 1,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 10 }}>
-            🌐 {isEn ? 'Language' : 'Langue d’affichage'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Icon name="globe" size={16} color={colors.action} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+              {isEn ? 'Language' : 'Langue d’affichage'}
+            </Text>
+          </View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
               onPress={() => setLocale('fr')}
@@ -607,9 +620,12 @@ export default function ProfileScreen({
             borderWidth: 1,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 10 }}>
-            🎨 {isEn ? 'Display Mode' : 'Mode Lumineux'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Icon name="palette" size={16} color={colors.action} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+              {isEn ? 'Display Mode' : 'Mode Lumineux'}
+            </Text>
+          </View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
               onPress={() => setMode('light')}
@@ -624,9 +640,12 @@ export default function ProfileScreen({
                 opacity: pressed ? 0.8 : 1,
               }]}
             >
-              <Text style={{ fontWeight: '700', color: !isDark ? '#ffffff' : colors.text }}>
-                ☼ {isEn ? 'Light Mode' : 'Clair'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="sun" size={14} color={!isDark ? '#ffffff' : colors.text} />
+                <Text style={{ fontWeight: '700', color: !isDark ? '#ffffff' : colors.text }}>
+                  {isEn ? 'Light Mode' : 'Clair'}
+                </Text>
+              </View>
             </Pressable>
 
             <Pressable
@@ -642,9 +661,12 @@ export default function ProfileScreen({
                 opacity: pressed ? 0.8 : 1,
               }]}
             >
-              <Text style={{ fontWeight: '700', color: isDark ? '#ffffff' : colors.text }}>
-                ☾ {isEn ? 'Dark Luxury' : 'Sombre'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="moon" size={14} color={isDark ? '#ffffff' : colors.text} />
+                <Text style={{ fontWeight: '700', color: isDark ? '#ffffff' : colors.text }}>
+                  {isEn ? 'Dark Luxury' : 'Sombre'}
+                </Text>
+              </View>
             </Pressable>
           </View>
         </View>
@@ -667,7 +689,7 @@ export default function ProfileScreen({
             }]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 18 }}>🔐</Text>
+              <Icon name="lock" size={18} color={colors.action} />
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
                   {isEn ? 'Account Security' : 'Sécurité du Compte'}
@@ -702,9 +724,12 @@ export default function ProfileScreen({
             opacity: pressed ? 0.7 : 1,
           }]}
         >
-          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.action }}>
-            🛡 {isEn ? 'Ojarket Concierge Support & Security' : 'Conciergerie Ojarket & Sécurité'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Icon name="shield" size={16} color={colors.action} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.action }}>
+              {isEn ? 'Ojarket Concierge Support & Security' : 'Conciergerie Ojarket & Sécurité'}
+            </Text>
+          </View>
         </Pressable>
 
         {/* ------------------------------------------------------------- */}
@@ -727,7 +752,7 @@ export default function ProfileScreen({
               transform: [{ scale: pressed ? 0.98 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 16 }}>🚪</Text>
+            <Icon name="logout" size={16} color="#EF4444" />
             <Text style={{ fontSize: 14, fontWeight: '800', color: '#EF4444', letterSpacing: 0.3 }}>
               {isEn ? 'Sign Out of Ojarket' : 'Se Déconnecter'}
             </Text>
@@ -750,7 +775,7 @@ export default function ProfileScreen({
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <Text style={{ fontSize: 15 }}>⚠️</Text>
+              <Icon name="warning" size={16} color="#DC2626" />
               <Text style={{ fontSize: 13, fontWeight: '800', color: '#DC2626', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {isEn ? 'Data Privacy & Account Deletion' : 'Confidentialité & Suppression du Compte'}
               </Text>
@@ -776,9 +801,12 @@ export default function ProfileScreen({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#DC2626', fontWeight: '800', fontSize: 13 }}>
-                🗑 {isEn ? 'Delete My Account' : 'Supprimer Définitivement Mon Compte'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="trash" size={14} color="#DC2626" />
+                <Text style={{ color: '#DC2626', fontWeight: '800', fontSize: 13 }}>
+                  {isEn ? 'Delete My Account' : 'Supprimer Définitivement Mon Compte'}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
         )}
@@ -826,7 +854,7 @@ export default function ProfileScreen({
               {editError ? (
                 <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', padding: 10, borderRadius: 8 }}>
                   <Text style={{ color: '#EF4444', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
-                    ⚠️ {editError}
+                    {editError}
                   </Text>
                 </View>
               ) : null}
@@ -966,7 +994,7 @@ export default function ProfileScreen({
               {passwordError ? (
                 <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', padding: 10, borderRadius: 8 }}>
                   <Text style={{ color: '#EF4444', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
-                    ⚠️ {passwordError}
+                    {passwordError}
                   </Text>
                 </View>
               ) : null}
@@ -1067,7 +1095,7 @@ export default function ProfileScreen({
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ fontSize: 20 }}>⚠️</Text>
+                <Icon name="warning" size={20} color="#DC2626" />
                 <Text style={{ fontFamily: headingFont, fontSize: 19, fontWeight: '700', color: '#DC2626' }}>
                   {isEn ? 'Delete Account' : 'Supprimer le Compte'}
                 </Text>
@@ -1110,7 +1138,7 @@ export default function ProfileScreen({
               {deleteError ? (
                 <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: 10, borderRadius: 8 }}>
                   <Text style={{ color: '#EF4444', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
-                    ⚠️ {deleteError}
+                    {deleteError}
                   </Text>
                 </View>
               ) : null}

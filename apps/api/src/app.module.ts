@@ -12,6 +12,11 @@ import { DigitalModule } from './digital/digital.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { CmsModule } from './cms/cms.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AiModule } from './ai/ai.module';
+import { SyncModule } from './sync/sync.module';
 
 @Module({
   imports: [
@@ -26,6 +31,11 @@ import { CmsModule } from './cms/cms.module';
     IncidentsModule,
     SubscriptionsModule,
     CmsModule,
+    ReviewsModule,
+    FavoritesModule,
+    NotificationsModule,
+    AiModule,
+    SyncModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,22 +1,78 @@
-// Ojarket Offline-First Sync Manager
-// Stores operations locally when offline and syncs when connectivity resumes
+// Ojarket Advanced Bidirectional Offline-First Sync Engine (Handoff V3 / PRD 0.8)
+// Handles local queue persistence (LOCAL_PENDING_SYNC), server batch reconciliation,
+// explicit stock conflict detection, and idempotent resolution.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from './api';
 
-const OFFLINE_QUEUE_KEY = 'ojarket.offline.queue';
+const OFFLINE_QUEUE_KEY = 'ojarket.offline.queue.v2';
+const OFFLINE_CONFLICTS_KEY = 'ojarket.offline.conflicts.v2';
 
-export interface OfflineOperation {
-  id: string;
-  endpoint: string;
-  method: string;
-  body: any;
-  createdAt: string;
+export type SyncActionType = 'RECORD_EXTERNAL_SALE' | 'UPDATE_STOCK' | 'CREATE_DRAFT_PRODUCT';
+
+export interface OfflineSyncItem {
+  clientId: string; // Idempotent Client UUID
+  action: SyncActionType;
+  shopId: string;
+  productId?: string;
+  variantId?: string;
+  quantity?: number;
+  amountMinor?: number;
+  paymentChannel?: 'ESPECES' | 'MTN_MOMO' | 'MOOV_MONEY' | 'CARTE_BANCAIRE' | 'AUTRE';
+  clientTimestamp: string;
+  clientVersion?: number;
+  metadata?: Record<string, any>;
+  status: 'LOCAL_PENDING_SYNC' | 'SYNCED' | 'CONFLICT' | 'FAILED';
   retries: number;
+  errorMessage?: string;
 }
 
-// Check network connectivity by pinging the API health endpoint
-async function isOnline(): Promise<boolean> {
+export interface SyncConflict {
+  conflictId: string;
+  clientId: string;
+  shopId: string;
+  action: string;
+  reason: 'INSUFFICIENT_STOCK' | 'VERSION_MISMATCH' | 'PRODUCT_NOT_FOUND';
+  serverStockOnHand: number;
+  requestedQuantity: number;
+  productTitle: string;
+  variantName?: string;
+  createdAt: string;
+  status: 'PENDING_RESOLVE' | 'RESOLVED_OVERRIDE' | 'RESOLVED_CANCELLED';
+}
+
+export interface SyncEngineStatus {
+  isOnline: boolean;
+  pendingCount: number;
+  conflictCount: number;
+  lastSyncAt: string | null;
+}
+
+// Listeners pour notifier les composants UI lors des changements d'état
+type SyncListener = (status: SyncEngineStatus) => void;
+const listeners = new Set<SyncListener>();
+
+function notifyListeners(status: SyncEngineStatus) {
+  listeners.forEach((fn) => {
+    try {
+      fn(status);
+    } catch {
+      // ignore
+    }
+  });
+}
+
+export function subscribeSyncStatus(fn: SyncListener): () => void {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+
+let lastSuccessfulSyncTimestamp: string | null = null;
+
+// Vérifier la connectivité réseau
+export async function isNetworkOnline(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE_URL}/v1/products?limit=1`, {
       method: 'GET',
@@ -28,8 +84,8 @@ async function isOnline(): Promise<boolean> {
   }
 }
 
-// Load queued operations from local storage
-async function loadQueue(): Promise<OfflineOperation[]> {
+// Charger la file d'attente locale
+export async function loadSyncQueue(): Promise<OfflineSyncItem[]> {
   try {
     const raw = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
     if (!raw) return [];
@@ -39,114 +95,258 @@ async function loadQueue(): Promise<OfflineOperation[]> {
   }
 }
 
-// Save queue to local storage
-async function saveQueue(queue: OfflineOperation[]): Promise<void> {
+async function saveSyncQueue(queue: OfflineSyncItem[]): Promise<void> {
   await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue)).catch(() => {});
 }
 
-// Add an operation to the offline queue
-export async function enqueueOfflineOperation(
-  endpoint: string,
-  method: string,
-  body: any
-): Promise<void> {
-  const queue = await loadQueue();
-  const op: OfflineOperation = {
-    id: `offline_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
-    endpoint,
-    method,
-    body,
-    createdAt: new Date().toISOString(),
+// Charger les conflits locaux
+export async function loadSyncConflicts(): Promise<SyncConflict[]> {
+  try {
+    const raw = await AsyncStorage.getItem(OFFLINE_CONFLICTS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+async function saveSyncConflicts(conflicts: SyncConflict[]): Promise<void> {
+  await AsyncStorage.setItem(OFFLINE_CONFLICTS_KEY, JSON.stringify(conflicts)).catch(() => {});
+}
+
+// Ajouter une vente externe physique dans la file hors-ligne
+export async function enqueueOfflineSale(params: {
+  shopId: string;
+  productId: string;
+  variantId?: string;
+  productTitle: string;
+  quantity: number;
+  amountMinor: number;
+  paymentChannel?: 'ESPECES' | 'MTN_MOMO' | 'MOOV_MONEY' | 'CARTE_BANCAIRE' | 'AUTRE';
+}): Promise<OfflineSyncItem> {
+  const queue = await loadSyncQueue();
+  const clientId = `ext_sale_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const item: OfflineSyncItem = {
+    clientId,
+    action: 'RECORD_EXTERNAL_SALE',
+    shopId: params.shopId,
+    productId: params.productId,
+    variantId: params.variantId,
+    quantity: params.quantity,
+    amountMinor: params.amountMinor,
+    paymentChannel: params.paymentChannel || 'ESPECES',
+    clientTimestamp: new Date().toISOString(),
+    status: 'LOCAL_PENDING_SYNC',
     retries: 0,
+    metadata: {
+      productTitle: params.productTitle,
+    },
   };
-  queue.push(op);
-  await saveQueue(queue);
-  console.log(`[OFFLINE] Operation queued: ${method} ${endpoint} (Queue size: ${queue.length})`);
+
+  queue.push(item);
+  await saveSyncQueue(queue);
+
+  console.log(`[OFFLINE SYNC] Vente externe en file d'attente (LOCAL_PENDING_SYNC) : ${clientId}`);
+  await updateStatus();
+
+  return item;
 }
 
-// Get current queue size
-export async function getQueueSize(): Promise<number> {
-  const queue = await loadQueue();
-  return queue.length;
+// Ajouter une mise à jour d'inventaire physique dans la file hors-ligne
+export async function enqueueStockUpdate(params: {
+  shopId: string;
+  variantId: string;
+  productTitle: string;
+  newStockOnHand: number;
+}): Promise<OfflineSyncItem> {
+  const queue = await loadSyncQueue();
+  const clientId = `stock_adj_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const item: OfflineSyncItem = {
+    clientId,
+    action: 'UPDATE_STOCK',
+    shopId: params.shopId,
+    variantId: params.variantId,
+    quantity: params.newStockOnHand,
+    clientTimestamp: new Date().toISOString(),
+    status: 'LOCAL_PENDING_SYNC',
+    retries: 0,
+    metadata: {
+      productTitle: params.productTitle,
+    },
+  };
+
+  queue.push(item);
+  await saveSyncQueue(queue);
+  await updateStatus();
+
+  return item;
 }
 
-// Attempt to sync all queued operations
-export async function syncOfflineQueue(): Promise<{ synced: number; failed: number; remaining: number }> {
-  const online = await isOnline();
+// Obtenir le statut global du moteur de synchronisation
+export async function getSyncEngineStatus(): Promise<SyncEngineStatus> {
+  const online = await isNetworkOnline();
+  const queue = await loadSyncQueue();
+  const conflicts = await loadSyncConflicts();
+
+  return {
+    isOnline: online,
+    pendingCount: queue.filter((i) => i.status === 'LOCAL_PENDING_SYNC').length,
+    conflictCount: conflicts.filter((c) => c.status === 'PENDING_RESOLVE').length,
+    lastSyncAt: lastSuccessfulSyncTimestamp,
+  };
+}
+
+async function updateStatus() {
+  const status = await getSyncEngineStatus();
+  notifyListeners(status);
+}
+
+// Réconciliation en lot avec le serveur NestJS (/v1/sync/reconcile)
+export async function reconcileOfflineBatch(shopId?: string): Promise<{
+  syncedCount: number;
+  conflictCount: number;
+  remainingPending: number;
+}> {
+  const online = await isNetworkOnline();
   if (!online) {
-    const queue = await loadQueue();
-    return { synced: 0, failed: 0, remaining: queue.length };
+    const queue = await loadSyncQueue();
+    return { syncedCount: 0, conflictCount: 0, remainingPending: queue.length };
   }
 
-  const queue = await loadQueue();
-  if (queue.length === 0) {
-    return { synced: 0, failed: 0, remaining: 0 };
+  const queue = await loadSyncQueue();
+  const pendingItems = queue.filter((i) => i.status === 'LOCAL_PENDING_SYNC');
+
+  if (pendingItems.length === 0) {
+    return { syncedCount: 0, conflictCount: 0, remainingPending: 0 };
   }
 
-  console.log(`[OFFLINE] Attempting to sync ${queue.length} queued operations...`);
+  console.log(`[OFFLINE SYNC] Envoi du lot de synchronisation (${pendingItems.length} opérations)...`);
 
-  let synced = 0;
-  let failed = 0;
-  const remaining: OfflineOperation[] = [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/v1/sync/reconcile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shopId,
+        items: pendingItems.map((item) => ({
+          clientId: item.clientId,
+          action: item.action,
+          shopId: item.shopId,
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+          amountMinor: item.amountMinor,
+          paymentChannel: item.paymentChannel,
+          clientTimestamp: item.clientTimestamp,
+          metadata: item.metadata,
+        })),
+      }),
+    });
 
-  for (const op of queue) {
-    try {
-      const res = await fetch(`${API_BASE_URL}${op.endpoint}`, {
-        method: op.method,
-        headers: { 'Content-Type': 'application/json' },
-        body: op.body ? JSON.stringify(op.body) : undefined,
-      });
-
-      if (res.ok) {
-        synced++;
-        console.log(`[OFFLINE] ✓ Synced: ${op.method} ${op.endpoint}`);
-      } else if (res.status >= 400 && res.status < 500) {
-        // Client error: don't retry (data issue)
-        failed++;
-        console.warn(`[OFFLINE] ✗ Permanently failed (${res.status}): ${op.method} ${op.endpoint}`);
-      } else {
-        // Server error: retry later
-        op.retries++;
-        if (op.retries < 5) {
-          remaining.push(op);
-        } else {
-          failed++;
-          console.warn(`[OFFLINE] ✗ Max retries reached: ${op.method} ${op.endpoint}`);
-        }
-      }
-    } catch {
-      // Network error during sync: keep in queue
-      op.retries++;
-      remaining.push(op);
+    if (!res.ok) {
+      console.warn(`[OFFLINE SYNC] Erreur réponse serveur (${res.status})`);
+      return { syncedCount: 0, conflictCount: 0, remainingPending: pendingItems.length };
     }
+
+    const data = await res.json();
+    const currentConflicts = await loadSyncConflicts();
+    const remainingQueue: OfflineSyncItem[] = [];
+
+    // Traitement des résultats retournés par le serveur
+    for (const item of pendingItems) {
+      const result = data.results?.find((r: any) => r.clientId === item.clientId);
+
+      if (result) {
+        if (result.status === 'SYNCED' || result.status === 'DUPLICATE') {
+          // Succès : retiré de la file
+          console.log(`[OFFLINE SYNC] ✓ Synchronisé : ${item.clientId}`);
+        } else if (result.status === 'CONFLICT' && result.conflict) {
+          // Conflit : enregistré dans la liste des conflits pour arbitrage vendeur
+          console.warn(`[OFFLINE SYNC] ⚠️ Conflit détecté : ${item.clientId} (${result.message})`);
+          currentConflicts.push(result.conflict);
+        } else {
+          item.retries++;
+          item.errorMessage = result.message;
+          if (item.retries < 5) remainingQueue.push(item);
+        }
+      } else {
+        remainingQueue.push(item);
+      }
+    }
+
+    await saveSyncQueue(remainingQueue);
+    await saveSyncConflicts(currentConflicts);
+
+    lastSuccessfulSyncTimestamp = new Date().toISOString();
+    await updateStatus();
+
+    return {
+      syncedCount: data.syncedCount || 0,
+      conflictCount: data.conflictCount || 0,
+      remainingPending: remainingQueue.length,
+    };
+  } catch (err: any) {
+    console.error(`[OFFLINE SYNC] Échec réseau lors de la réconciliation:`, err);
+    return { syncedCount: 0, conflictCount: 0, remainingPending: pendingItems.length };
   }
-
-  await saveQueue(remaining);
-  console.log(`[OFFLINE] Sync complete: ${synced} synced, ${failed} failed, ${remaining.length} remaining`);
-
-  return { synced, failed, remaining: remaining.length };
 }
 
-// Start a periodic sync interval (call on app startup)
-let syncInterval: ReturnType<typeof setInterval> | null = null;
+// Résolution explicite d'un conflit par le commerçant
+export async function resolveOfflineConflict(
+  conflictId: string,
+  strategy: 'FORCE_STOCK_OVERRIDE' | 'CANCEL_LOCAL_OPERATION',
+  auditReason?: string
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/v1/sync/conflicts/${conflictId}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        strategy,
+        auditReason: auditReason || 'Résolution mobile explicite',
+      }),
+    });
 
-export function startPeriodicSync(intervalMs: number = 30000): void {
-  if (syncInterval) return;
-  
-  syncInterval = setInterval(async () => {
-    const size = await getQueueSize();
-    if (size > 0) {
-      await syncOfflineQueue();
+    if (res.ok) {
+      const conflicts = await loadSyncConflicts();
+      const updated = conflicts.map((c) =>
+        c.conflictId === conflictId
+          ? { ...c, status: strategy === 'FORCE_STOCK_OVERRIDE' ? 'RESOLVED_OVERRIDE' as const : 'RESOLVED_CANCELLED' as const }
+          : c
+      );
+      await saveSyncConflicts(updated.filter((c) => c.status === 'PENDING_RESOLVE'));
+      await updateStatus();
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+// Démarrage de la boucle périodique de réconciliation
+let syncTimer: ReturnType<typeof setInterval> | null = null;
+
+export function startPeriodicSync(shopId?: string, intervalMs: number = 20000): void {
+  if (syncTimer) return;
+
+  syncTimer = setInterval(async () => {
+    const queue = await loadSyncQueue();
+    if (queue.length > 0) {
+      const targetShopId = shopId || queue[0]?.shopId || 'default-shop';
+      await reconcileOfflineBatch(targetShopId);
     }
   }, intervalMs);
-  
-  console.log(`[OFFLINE] Periodic sync started (every ${intervalMs / 1000}s)`);
+
+  console.log(`[OFFLINE SYNC] Moteur périodique activé (intervalle: ${intervalMs / 1000}s)`);
 }
 
 export function stopPeriodicSync(): void {
-  if (syncInterval) {
-    clearInterval(syncInterval);
-    syncInterval = null;
-    console.log('[OFFLINE] Periodic sync stopped');
+  if (syncTimer) {
+    clearInterval(syncTimer);
+    syncTimer = null;
+    console.log('[OFFLINE SYNC] Moteur périodique arrêté');
   }
 }

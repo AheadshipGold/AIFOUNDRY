@@ -48,6 +48,9 @@ const ICON_MAP: Record<string, keyof typeof Phosphor> = {
   warning: "WarningCircle",
   help: "Question",
   lock: "LockKey",
+  globe: "Globe",
+  sun: "Sun",
+  moon: "Moon",
   eye: "Eye",
   "eye-slash": "EyeSlash",
 
@@ -120,6 +123,12 @@ const ICON_MAP: Record<string, keyof typeof Phosphor> = {
   camera: "Camera",
   image: "Image",
   file: "FileText",
+  "file-text": "FileText",
+  requests: "FileText",
+  purchases: "ShoppingBagOpen",
+  dashboard: "ChartBar",
+  orders: "Package",
+  cashbook: "Wallet",
 
   // Auth & Brands
   google: "GoogleLogo",

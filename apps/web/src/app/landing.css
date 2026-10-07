@@ -80,6 +80,13 @@
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -90,10 +97,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.oj-app {
+.ds-root, .oj-app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  position: relative;
 }
 
 /* --------------------------------------------------------------------------
@@ -258,6 +269,9 @@ body {
   padding: var(--oj-space-4) 0;
   border-bottom: 1px solid var(--oj-color-border);
   background-color: var(--oj-color-surface);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .oj-cats-list {
@@ -267,7 +281,9 @@ body {
   padding: 0 var(--oj-space-4);
   scrollbar-width: none;
   -ms-overflow-style: none;
-  max-width: 1360px;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -351,6 +367,7 @@ body {
   max-width: 1360px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .oj-section-header {
@@ -369,14 +386,51 @@ body {
 }
 
 .oj-link-btn {
-  color: var(--oj-color-action);
+  background: transparent;
+  border: 1px solid rgba(212, 180, 131, 0.45);
+  background-color: rgba(212, 180, 131, 0.08);
+  color: var(--oj-color-accent);
+  padding: 6px 14px;
+  border-radius: var(--oj-radius-pill);
+  font-family: var(--oj-font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.875rem;
 }
 
 .oj-link-btn:hover {
-  text-decoration: underline;
+  background-color: rgba(212, 180, 131, 0.2);
+  border-color: var(--oj-color-accent);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(212, 180, 131, 0.2);
+  text-decoration: none;
+}
+
+.oj-link-btn:active {
+  transform: translateY(0);
+}
+
+[data-theme="light"] .oj-link-btn {
+  color: var(--oj-color-action);
+  border-color: rgba(13, 74, 56, 0.35);
+  background-color: rgba(13, 74, 56, 0.06);
+}
+
+[data-theme="light"] .oj-link-btn:hover {
+  background-color: var(--oj-color-action);
+  color: #FFFFFF;
+  border-color: var(--oj-color-action);
 }
 
 /* --------------------------------------------------------------------------
@@ -491,7 +545,8 @@ body {
 
 .oj-hero-dots {
   display: flex;
-  gap: var(--oj-space-2);
+  align-items: center;
+  gap: 8px;
 }
 
 .oj-hero-dot {
@@ -500,18 +555,59 @@ body {
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  transition: all 0.2s ease;
+  border: none;
+  padding: 0;
+  outline: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oj-hero-dot:hover {
+  background-color: rgba(255, 255, 255, 0.75);
 }
 
 .oj-hero-dot.active {
   background-color: #FFFFFF;
-  transform: scale(1.2);
+  width: 24px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 }
 
 .oj-hero-page-count {
   font-variant-numeric: tabular-nums;
   font-size: 0.875rem;
   font-weight: 500;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+@keyframes ojHeroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ojHeroVisualIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.oj-hero-content-anim {
+  animation: ojHeroFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.oj-hero-visual-anim img {
+  animation: ojHeroVisualIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* --------------------------------------------------------------------------
@@ -690,9 +786,12 @@ body {
   display: flex;
   gap: var(--oj-space-5);
   overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
   padding-bottom: var(--oj-space-4);
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .oj-shops-scroll::-webkit-scrollbar {
@@ -1350,55 +1449,143 @@ body {
     text-align: center;
   }
 
-  /* Bottom Nav for Mobile */
+  /* Bottom Nav for Mobile (Style 2 - Slim Architectural Line Haute Joaillerie) */
   .oj-app {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .oj-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: calc(64px + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
-    background-color: var(--oj-color-surface);
-    border-top: 1px solid var(--oj-color-border);
-    z-index: 90;
-    justify-content: space-around;
-    align-items: center;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    background: var(--oj-color-surface) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(212, 180, 131, 0.28) !important;
+    z-index: 99999 !important;
+    margin: 0 !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25) !important;
   }
 
   .oj-bnav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 3px;
     color: var(--oj-color-muted);
     text-decoration: none;
-    font-size: 11px;
-    min-width: 64px;
-    background: none;
+    background: transparent;
     border: none;
+    outline: none;
     cursor: pointer;
-    padding: 6px 0;
+    padding: 6px 0 4px 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Centered Gold Active Indicator Top Bar */
+  .oj-bnav-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 22px;
+    height: 2.5px;
+    border-radius: 0 0 2px 2px;
+    background-color: var(--oj-color-accent);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .oj-bnav-item.active::before {
+    transform: translateX(-50%) scaleX(1);
   }
 
   .oj-bnav-item.active {
-    color: var(--oj-color-action);
+    color: var(--oj-color-accent);
   }
-  
+
   .oj-bnav-icon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .oj-bnav-item.active .oj-bnav-icon {
+    transform: translateY(-1px);
+  }
+
+  .oj-bnav-label {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
+    color: inherit;
+    padding: 0 2px;
+  }
+
+  .oj-bnav-item.active .oj-bnav-label {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    color: var(--oj-color-accent);
   }
 }
 
 @media (max-width: 480px) {
+  .oj-header {
+    padding: 10px 12px;
+  }
+
+  .oj-header-container {
+    padding: 0;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .oj-master-logo {
+    max-height: 22px;
+    width: auto;
+  }
+
+  .oj-header-actions {
+    gap: 6px;
+  }
+
+  .oj-header-actions .oj-btn-secondary {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    height: 32px !important;
+  }
+
+  .oj-header-actions .oj-icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
   .oj-product-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;

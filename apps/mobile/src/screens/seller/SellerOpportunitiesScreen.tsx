@@ -66,46 +66,12 @@ export default function SellerOpportunitiesScreen({
     };
   }, []);
 
-  // Fallback mock requests for demo account only
-  const fallbackRequests: PurchaseRequestItem[] = [
-    {
-      id: "req-01",
-      buyerName: "Amina Diop",
-      title: "Parure de joaillerie et bijoux en bronze ciselé",
-      description:
-        "Recherche d'une boutique ou fournisseur spécialisé capable de livrer un lot de colliers et manchettes en bronze noble poli sous 15 jours.",
-      category: "Joaillerie & Bronze",
-      targetBudgetMinor: 28000000,
-      currency: "XOF",
-      status: "MATCHED",
-      createdAt: new Date().toISOString(),
-      proposals: [],
-    },
-    {
-      id: "req-02",
-      buyerName: "Marcelle Houngbo",
-      title: "Table console en bois d'Iroko massif",
-      description:
-        "Console d'entrée 140cm x 40cm avec finitions soignées. Meuble de salon / entrée.",
-      category: "Mobilier & Déco",
-      targetBudgetMinor: 45000000,
-      currency: "XOF",
-      status: "OPEN",
-      createdAt: new Date().toISOString(),
-      proposals: [],
-    },
-  ];
-
   const fetchRequests = async () => {
     try {
       const data = await RequestsApi.getAll();
-      if (data && data.length > 0) {
-        setRequests(data);
-      } else {
-        setRequests(isDemo ? fallbackRequests : []);
-      }
+      setRequests(data || []);
     } catch {
-      setRequests(isDemo ? fallbackRequests : []);
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -365,7 +331,7 @@ export default function SellerOpportunitiesScreen({
                 </Text>
 
                 <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 10 }}>
-                  👤 {req.buyerName} · 📍 Bénin
+                  {req.buyerName} · Bénin
                 </Text>
 
                 <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 14 }}>

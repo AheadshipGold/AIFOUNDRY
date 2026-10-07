@@ -28,74 +28,20 @@ interface DayClosureItem {
 }
 
 export default function StandaloneCashbookPage() {
-  const [entries, setEntries] = useState<CashbookEntryItem[]>([
-    {
-      id: "fin-01",
-      type: "ENCAISSEMENT",
-      label: "Commande OJK-2026-0891 (Sac Cabas Grand Marché)",
-      channel: "MTN MoMo",
-      amountMinor: 18500000,
-      currency: "XOF",
-      reference: "TXN-MTN-89021",
-      time: "14:32",
-    },
-    {
-      id: "fin-02",
-      type: "ENCAISSEMENT",
-      label: "Vente directe comptoir — Porte-carte cuir cognac",
-      channel: "Espèces",
-      amountMinor: 4500000,
-      currency: "XOF",
-      reference: "REC-CPT-004",
-      time: "11:15",
-    },
-    {
-      id: "fin-03",
-      type: "DECAISSEMENT",
-      label: "Achat peaux brutes tannerie Djougou",
-      channel: "Espèces",
-      amountMinor: -8000000,
-      currency: "XOF",
-      reference: "EXP-TAN-012",
-      time: "09:40",
-    },
-    {
-      id: "fin-04",
-      type: "VENTE_A_CREDIT",
-      label: "Commande Galerie Royale — Solde à livraison",
-      channel: "Virement",
-      amountMinor: 12000000,
-      currency: "XOF",
-      reference: "CMD-GAL-990",
-      time: "09:10",
-    },
-  ]);
-
-  const [closures, setClosures] = useState<DayClosureItem[]>([
-    {
-      id: "cls-2026-09-29",
-      date: "2026-09-29",
-      totalVenduMinor: 38500000,
-      totalEncaisseMinor: 26500000,
-      totalRestantMinor: 12000000,
-      varianceMinor: 0,
-      status: "EQUILIBRE",
-      closedBy: "Maison Ganvié",
-      closedAt: "2026-09-29T19:45:00Z",
-    },
-  ]);
-
+  const [entries, setEntries] = useState<CashbookEntryItem[]>([]);
+  const [closures, setClosures] = useState<DayClosureItem[]>([]);
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [physicalCashFcfa, setPhysicalCashFcfa] = useState("");
-  const [operatorName, setOperatorName] = useState("Commerçant Vendeur Ganvié");
+  const [operatorName, setOperatorName] = useState("Commerçant Vendeur");
   const [closeSuccess, setCloseSuccess] = useState<any>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/v1/seller/cashbook")
+    fetch("http://localhost:3001/api/v1/seller/cashbook")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data && data.entries) setEntries(data.entries);
-        if (data && data.dayClosures) setClosures(data.dayClosures);
+        if (data && data.recentEntries) setEntries(data.recentEntries);
+        if (data && data.history) setClosures(data.history);
       })
       .catch(() => {});
   }, []);
@@ -119,7 +65,7 @@ export default function StandaloneCashbookPage() {
     e.preventDefault();
     const countMinor = parseInt(physicalCashFcfa.replace(/\s+/g, ""), 10) * 100 || totalEncaisse;
     try {
-      const res = await fetch("http://localhost:3001/v1/seller/cashbook/close", {
+      const res = await fetch("http://localhost:3001/api/v1/seller/cashbook/close", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -132,35 +78,49 @@ export default function StandaloneCashbookPage() {
         const cls = await res.json();
         setCloseSuccess(cls);
         setClosures([cls, ...closures]);
-      } else {
-        const fallbackCls: DayClosureItem = {
-          id: `cls-${new Date().toISOString().slice(0, 10)}`,
-          date: new Date().toISOString().slice(0, 10),
-          totalVenduMinor: totalVendu,
-          totalEncaisseMinor: totalEncaisse,
-          totalRestantMinor: totalRestant,
-          varianceMinor: 0,
-          status: "EQUILIBRE",
-          closedBy: operatorName,
-          closedAt: new Date().toISOString(),
-        };
-        setCloseSuccess(fallbackCls);
-        setClosures([fallbackCls, ...closures]);
       }
-    } catch {
-      const fallbackCls: DayClosureItem = {
-        id: `cls-${new Date().toISOString().slice(0, 10)}`,
-        date: new Date().toISOString().slice(0, 10),
-        totalVenduMinor: totalVendu,
-        totalEncaisseMinor: totalEncaisse,
-        totalRestantMinor: totalRestant,
-        varianceMinor: 0,
-        status: "EQUILIBRE",
-        closedBy: operatorName,
-        closedAt: new Date().toISOString(),
-      };
-      setCloseSuccess(fallbackCls);
-      setClosures([fallbackCls, ...closures]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleExportFec = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/v1/seller/cashbook/export-fec");
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([data.content], { type: data.mimeType || "text/plain;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setExportMessage(`Fichier FEC ${data.filename} téléchargé avec succès.`);
+        setTimeout(() => setExportMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error("Export FEC failed", err);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/v1/seller/cashbook/export-csv");
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([data.content], { type: data.mimeType || "text/csv;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setExportMessage(`Fichier CSV ${data.filename} téléchargé avec succès.`);
+        setTimeout(() => setExportMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error("Export CSV failed", err);
     }
   };
 
@@ -186,8 +146,15 @@ export default function StandaloneCashbookPage() {
 
       {/* Main FinOps Workspace */}
       <main className="landing-container" style={{ padding: "40px 24px", maxWidth: "1240px", margin: "0 auto" }}>
+        {/* Toast notification if exported */}
+        {exportMessage && (
+          <div style={{ backgroundColor: "#075D49", color: "#FFF", padding: "12px 20px", borderRadius: "8px", marginBottom: "20px", fontWeight: 600, fontSize: "14px" }}>
+            ✓ {exportMessage}
+          </div>
+        )}
+
         {/* Title & Action */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
           <div>
             <div style={{ fontSize: "12px", fontWeight: 700, color: "#AD8455", letterSpacing: "0.15em", textTransform: "uppercase" }}>
               GESTION FINANCIÈRE MARCHAND (S43 / S44)
@@ -196,14 +163,51 @@ export default function StandaloneCashbookPage() {
               Livre de Caisse & Rapprochement Bancaire
             </h1>
           </div>
-          <button
-            type="button"
-            onClick={() => setCloseModalOpen(true)}
-            className="btn-portal-primary"
-            style={{ padding: "12px 24px", fontSize: "14px" }}
-          >
-            🔒 Clôturer la caisse du jour
-          </button>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={handleExportFec}
+              style={{
+                backgroundColor: "transparent",
+                border: "1px solid #AD8455",
+                color: "#AD8455",
+                padding: "10px 18px",
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+            >
+              Exporter FEC (SYSCOHADA)
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              style={{
+                backgroundColor: "transparent",
+                border: "1px solid var(--oj-border)",
+                color: "var(--oj-text-primary)",
+                padding: "10px 18px",
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+            >
+              Exporter CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => setCloseModalOpen(true)}
+              className="btn-portal-primary"
+              style={{ padding: "10px 20px", fontSize: "13px" }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Clôturer la caisse du jour
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* The 3 Golden FinOps Pillars */}
@@ -254,229 +258,156 @@ export default function StandaloneCashbookPage() {
               backgroundColor: "var(--oj-surface)",
             }}
           >
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#AD8455", letterSpacing: "0.08em" }}>
-              3. RESTANT DÛ (CRÉANCES EN COURS)
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#D97706", letterSpacing: "0.08em" }}>
+              3. RESTE À RECOUVRER (CRÉANCES / SOLDE)
             </div>
-            <div style={{ fontSize: "30px", fontWeight: 700, color: "#AD8455", margin: "12px 0 6px", fontVariantNumeric: "tabular-nums" }}>
+            <div style={{ fontSize: "30px", fontWeight: 700, color: "#D97706", margin: "12px 0 6px", fontVariantNumeric: "tabular-nums" }}>
               {(totalRestant / 100).toLocaleString("fr-FR")} FCFA
             </div>
             <div style={{ fontSize: "13px", color: "var(--oj-text-secondary)" }}>
-              Soldes à percevoir à la livraison ou sous échéance
+              Acomptes restants exigibles à la livraison ou solde de commande
             </div>
           </div>
         </div>
 
-        {/* Ledger Entries Table */}
-        <div
-          style={{
-            borderRadius: "16px",
-            border: "1px solid var(--oj-border)",
-            backgroundColor: "var(--oj-surface)",
-            padding: "24px",
-            marginBottom: "36px",
-          }}
-        >
-          <h3 style={{ margin: "0 0 20px", fontSize: "18px", color: "var(--oj-text-primary)" }}>
-            Écritures comptables en direct
-          </h3>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--oj-border)", textAlign: "left", fontSize: "12px", color: "var(--oj-text-secondary)" }}>
-                <th style={{ padding: "12px 8px" }}>HEURE</th>
-                <th style={{ padding: "12px 8px" }}>TYPE</th>
-                <th style={{ padding: "12px 8px" }}>LIBELLÉ DE TRANSACTION</th>
-                <th style={{ padding: "12px 8px" }}>CANAL</th>
-                <th style={{ padding: "12px 8px" }}>RÉFÉRENCE</th>
-                <th style={{ padding: "12px 8px", textAlign: "right" }}>MONTANT (FCFA)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((item) => (
-                <tr key={item.id} style={{ borderBottom: "1px solid var(--oj-border)", fontSize: "14px" }}>
-                  <td style={{ padding: "14px 8px", color: "var(--oj-text-secondary)", fontVariantNumeric: "tabular-nums" }}>
-                    {item.time}
-                  </td>
-                  <td style={{ padding: "14px 8px" }}>
-                    <span
-                      style={{
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        backgroundColor:
-                          item.type === "ENCAISSEMENT"
-                            ? "rgba(16, 185, 129, 0.12)"
-                            : item.type === "DECAISSEMENT"
-                            ? "rgba(239, 68, 68, 0.12)"
-                            : "rgba(212, 180, 131, 0.15)",
-                        color:
-                          item.type === "ENCAISSEMENT"
-                            ? "#075D49"
-                            : item.type === "DECAISSEMENT"
-                            ? "#DC2626"
-                            : "#AD8455",
-                      }}
-                    >
-                      {item.type}
-                    </span>
-                  </td>
-                  <td style={{ padding: "14px 8px", fontWeight: 500, color: "var(--oj-text-primary)" }}>
-                    {item.label}
-                  </td>
-                  <td style={{ padding: "14px 8px", color: "var(--oj-text-secondary)" }}>
-                    {item.channel}
-                  </td>
-                  <td style={{ padding: "14px 8px", fontFamily: "monospace", fontSize: "12px", color: "var(--oj-text-secondary)" }}>
-                    {item.reference}
-                  </td>
-                  <td
-                    style={{
-                      padding: "14px 8px",
-                      textAlign: "right",
-                      fontWeight: 700,
-                      fontVariantNumeric: "tabular-nums",
-                      color: item.amountMinor < 0 ? "#DC2626" : "#075D49",
-                    }}
-                  >
-                    {(item.amountMinor / 100).toLocaleString("fr-FR")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Transactions Table */}
+        <section style={{ backgroundColor: "var(--oj-surface)", borderRadius: "14px", border: "1px solid var(--oj-border)", padding: "24px", marginBottom: "36px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--oj-text-primary)", margin: "0 0 16px 0", fontFamily: "Playfair Display, Georgia, serif" }}>
+            Journal des Écritures Immédiates ({entries.length})
+          </h2>
+          {entries.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--oj-border)", color: "var(--oj-text-secondary)" }}>
+                    <th style={{ padding: "10px 12px" }}>HEURE</th>
+                    <th style={{ padding: "10px 12px" }}>LIBELLÉ OPÉRATION</th>
+                    <th style={{ padding: "10px 12px" }}>CANAL</th>
+                    <th style={{ padding: "10px 12px" }}>RÉFÉRENCE</th>
+                    <th style={{ padding: "10px 12px", textAlign: "right" }}>MONTANT (FCFA)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry) => (
+                    <tr key={entry.id} style={{ borderBottom: "1px solid var(--oj-border)" }}>
+                      <td style={{ padding: "12px", color: "var(--oj-text-secondary)" }}>{entry.time}</td>
+                      <td style={{ padding: "12px", fontWeight: 600, color: "var(--oj-text-primary)" }}>{entry.label}</td>
+                      <td style={{ padding: "12px" }}>
+                        <span style={{ padding: "3px 8px", backgroundColor: "rgba(173,132,85,0.12)", color: "#AD8455", borderRadius: "4px", fontSize: "11px", fontWeight: 700 }}>
+                          {entry.channel}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px", color: "var(--oj-text-secondary)" }}>{entry.reference || "—"}</td>
+                      <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: entry.type === "DECAISSEMENT" ? "#DC2626" : "#075D49" }}>
+                        {entry.type === "DECAISSEMENT" ? "-" : "+"}
+                        {(Math.abs(entry.amountMinor) / 100).toLocaleString("fr-FR")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--oj-text-secondary)" }}>
+              Aucune transaction enregistrée pour cette journée.
+            </div>
+          )}
+        </section>
 
-        {/* Day Closures History (S44) */}
-        <div
-          style={{
-            borderRadius: "16px",
-            border: "1px solid var(--oj-border)",
-            backgroundColor: "var(--oj-surface)",
-            padding: "24px",
-          }}
-        >
-          <h3 style={{ margin: "0 0 20px", fontSize: "18px", color: "var(--oj-text-primary)" }}>
-            Historique des clôtures journalières certifiées (S44)
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {closures.map((cls) => (
-              <div
-                key={cls.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                  borderRadius: "10px",
-                  border: "1px solid var(--oj-border)",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--oj-text-primary)" }}>
-                    Clôture du {cls.date} · Validée par {cls.closedBy}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "var(--oj-text-secondary)", marginTop: "4px" }}>
-                    Encaissé : {(cls.totalEncaisseMinor / 100).toLocaleString("fr-FR")} FCFA · Restant dû : {(cls.totalRestantMinor / 100).toLocaleString("fr-FR")} FCFA
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                  <span
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      backgroundColor: "rgba(16, 185, 129, 0.15)",
-                      color: "#075D49",
-                    }}
-                  >
-                    ✓ {cls.status}
-                  </span>
-                  <span style={{ fontSize: "13px", color: "var(--oj-text-secondary)" }}>
-                    {cls.closedAt.slice(11, 16)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* History of Day Closures */}
+        <section style={{ backgroundColor: "var(--oj-surface)", borderRadius: "14px", border: "1px solid var(--oj-border)", padding: "24px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--oj-text-primary)", margin: "0 0 16px 0", fontFamily: "Playfair Display, Georgia, serif" }}>
+            Historique des Clôtures Certifiées ({closures.length})
+          </h2>
+          {closures.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--oj-border)", color: "var(--oj-text-secondary)" }}>
+                    <th style={{ padding: "10px 12px" }}>DATE</th>
+                    <th style={{ padding: "10px 12px" }}>TOTAL ENCAISSÉ</th>
+                    <th style={{ padding: "10px 12px" }}>STATUT CAISSE</th>
+                    <th style={{ padding: "10px 12px" }}>OPÉRATEUR</th>
+                    <th style={{ padding: "10px 12px" }}>DATE & HEURE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {closures.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: "1px solid var(--oj-border)" }}>
+                      <td style={{ padding: "12px", fontWeight: 600 }}>{c.date}</td>
+                      <td style={{ padding: "12px", fontWeight: 700, color: "#075D49" }}>
+                        {(c.totalEncaisseMinor / 100).toLocaleString("fr-FR")} FCFA
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        <span style={{ padding: "3px 8px", backgroundColor: "rgba(16,185,129,0.12)", color: "#10B981", borderRadius: "4px", fontSize: "11px", fontWeight: 700 }}>
+                          ✓ {c.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px", color: "var(--oj-text-secondary)" }}>{c.closedBy}</td>
+                      <td style={{ padding: "12px", color: "var(--oj-text-secondary)" }}>{new Date(c.closedAt).toLocaleString("fr-FR")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--oj-text-secondary)" }}>
+              Aucune clôture de caisse précédente enregistrée.
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* Daily Close Modal (S44) */}
+      {/* Modal Clôture */}
       {closeModalOpen && (
-        <div className="modal-backdrop" onClick={() => setCloseModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Clôture de caisse journalière (S44)</h2>
-              <button className="modal-close" onClick={() => setCloseModalOpen(false)}>✕</button>
-            </div>
-            <div className="modal-body">
-              {closeSuccess ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{ fontSize: "44px", marginBottom: "12px" }}>✅</div>
-                  <h3 style={{ fontSize: "18px", color: "#075D49", margin: "0 0 6px" }}>
-                    Caisse du {closeSuccess.date} Clôturée avec Succès !
-                  </h3>
-                  <p style={{ fontSize: "14px", color: "var(--oj-text-secondary)", lineHeight: 1.6 }}>
-                    La balance a été certifiée sans écart. Le snapshot comptable a été verrouillé dans l&apos;outbox d&apos;audit.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCloseModalOpen(false);
-                      setCloseSuccess(null);
-                    }}
-                    className="btn-portal-primary"
-                    style={{ width: "100%", padding: "12px", marginTop: "16px" }}
-                  >
-                    Terminer
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handlePerformClosure}>
-                  <p style={{ fontSize: "13px", color: "var(--oj-text-secondary)", lineHeight: 1.6, marginBottom: "20px" }}>
-                    Le rapprochement compare le solde théorique calculé depuis les encaissements directs avec le montant physique compté.
-                  </p>
-                  <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>SOLDE ENCAISSÉ THÉORIQUE</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={`${(totalEncaisse / 100).toLocaleString("fr-FR")} FCFA`}
-                      style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid var(--oj-border)", backgroundColor: "rgba(0,0,0,0.03)", color: "var(--oj-text-primary)", fontWeight: 700 }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>MONTANT PHYSIQUE COMPTÉ (ESPÈCES + MOMO)</label>
-                    <input
-                      type="text"
-                      required
-                      value={physicalCashFcfa}
-                      onChange={(e) => setPhysicalCashFcfa(e.target.value)}
-                      placeholder={(totalEncaisse / 100).toString()}
-                      style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid var(--oj-border)", backgroundColor: "var(--oj-surface)", color: "var(--oj-text-primary)" }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: "20px" }}>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>SIGNATAIRE RESPONSABLE DE CLÔTURE</label>
-                    <input
-                      type="text"
-                      required
-                      value={operatorName}
-                      onChange={(e) => setOperatorName(e.target.value)}
-                      style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid var(--oj-border)", backgroundColor: "var(--oj-surface)", color: "var(--oj-text-primary)" }}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="btn-portal-primary"
-                    style={{ width: "100%", padding: "14px", fontSize: "15px" }}
-                  >
-                    Valider et certifier la clôture journalière
-                  </button>
-                </form>
-              )}
-            </div>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ backgroundColor: "#FFF", borderRadius: "14px", padding: "32px", maxWidth: "480px", width: "90%" }}>
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "20px", color: "#1A1A1A", fontFamily: "serif" }}>
+              Clôturer la journée de caisse
+            </h3>
+            <p style={{ fontSize: "13px", color: "#666", marginBottom: "20px" }}>
+              Saisissez le montant d’espèces physiques présent dans le tiroir-caisse pour certifier la concordance avec les écritures.
+            </p>
+            <form onSubmit={handlePerformClosure}>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#333", marginBottom: "6px" }}>
+                  MONTANT PHYSIQUE EN CAISSE (FCFA)
+                </label>
+                <input
+                  type="text"
+                  placeholder={(totalEncaisse / 100).toLocaleString("fr-FR")}
+                  value={physicalCashFcfa}
+                  onChange={(e) => setPhysicalCashFcfa(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: "6px", border: "1px solid #CCC", fontSize: "16px", fontWeight: 600 }}
+                />
+              </div>
+              <div style={{ marginBottom: "24px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#333", marginBottom: "6px" }}>
+                  RESPONSABLE DE CAISSE
+                </label>
+                <input
+                  type="text"
+                  value={operatorName}
+                  onChange={(e) => setOperatorName(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: "6px", border: "1px solid #CCC", fontSize: "14px" }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setCloseModalOpen(false)}
+                  style={{ padding: "10px 16px", borderRadius: "6px", border: "1px solid #CCC", backgroundColor: "#FFF", cursor: "pointer" }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: "10px 20px", borderRadius: "6px", backgroundColor: "#075D49", color: "#FFF", fontWeight: 600, border: "none", cursor: "pointer" }}
+                >
+                  Confirmer la Clôture
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

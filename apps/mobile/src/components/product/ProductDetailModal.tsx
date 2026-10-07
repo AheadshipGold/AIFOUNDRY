@@ -15,7 +15,8 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { useDesign } from "../../design-system/provider";
-import { OrdersApi, type ProductItem, type AuthUser, type OrderRecord } from "../../services/api";
+import Icon from "../../design-system/Icon";
+import { OrdersApi, FavoritesApi, ReviewsApi, type ProductItem, type AuthUser, type OrderRecord } from "../../services/api";
 
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
 const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
@@ -33,9 +34,9 @@ interface ProductDetailModalProps {
 type ModalView = "detail" | "checkout" | "success";
 
 const PAYMENT_METHODS = [
-  { id: "MTN_MOMO", name: "MTN Mobile Money", icon: "🟡", ussdHint: "*880#" },
-  { id: "MOOV_MONEY", name: "Moov Money", icon: "🔵", ussdHint: "*155#" },
-  { id: "CASH_ON_DELIVERY", name: "Espèces à la livraison", icon: "💵", ussdHint: "Règlement en mains propres" },
+  { id: "MTN_MOMO", name: "MTN Mobile Money", iconName: "wallet", ussdHint: "*880#" },
+  { id: "MOOV_MONEY", name: "Moov Money", iconName: "card", ussdHint: "*155#" },
+  { id: "CASH_ON_DELIVERY", name: "Espèces à la livraison", iconName: "cash", ussdHint: "Règlement en mains propres" },
 ];
 
 export default function ProductDetailModal({
@@ -50,15 +51,21 @@ export default function ProductDetailModal({
   const isEn = locale === "en";
   const isDark = mode === "dark";
 
-  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
-  const [view, setView] = useState<ModalView>("detail");
+    const [view, setView] = useState<ModalView>("detail");
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [productReviews, setProductReviews] = useState<any[]>([]);
+  const [canUserReview, setCanUserReview] = useState<{ canReview: boolean; hasPurchased: boolean; existingReview: any | null }>({ canReview: false, hasPurchased: false, existingReview: null });
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.city ? `${currentUser.city}, Bénin` : (isDemo ? "Cotonou, Haie Vive, Rue 380" : ""));
-  const [buyerPhone, setBuyerPhone] = useState(currentUser?.phone || (isDemo ? "+229 97 00 00 00" : ""));
-  const [buyerName, setBuyerName] = useState(currentUser?.name || (isDemo ? "Alexandre Laurent" : ""));
+  const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.city ? `${currentUser.city}, Bénin` : "");
+  const [buyerPhone, setBuyerPhone] = useState(currentUser?.phone || "");
+  const [buyerName, setBuyerName] = useState(currentUser?.name || "");
   const [paymentChannel, setPaymentChannel] = useState("MTN_MOMO");
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
@@ -90,6 +97,53 @@ export default function ProductDetailModal({
     }
   }, [currentUser]);
 
+  // Sync wishlist / favorite from DB
+  React.useEffect(() => {
+    if (product?.id) {
+      FavoritesApi.getMyIds()
+        .then((ids) => {
+          if (Array.isArray(ids)) {
+            setIsFavorite(ids.includes(product.id));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [product?.id]);
+
+  // Sync verified reviews and review eligibility
+  React.useEffect(() => {
+    if (product?.id) {
+      setReviewSuccess(false);
+      setReviewComment("");
+      setShowReviewForm(false);
+      ReviewsApi.getProductReviews(product.id)
+        .then((res) => {
+          setProductReviews(res.reviews || []);
+        })
+        .catch(() => setProductReviews([]));
+
+      if (currentUser) {
+        ReviewsApi.canReview(product.id)
+          .then((res) => setCanUserReview(res))
+          .catch(() => setCanUserReview({ canReview: false, hasPurchased: false, existingReview: null }));
+      } else {
+        setCanUserReview({ canReview: false, hasPurchased: false, existingReview: null });
+      }
+    } else {
+      setProductReviews([]);
+      setCanUserReview({ canReview: false, hasPurchased: false, existingReview: null });
+    }
+  }, [product?.id, currentUser]);
+
+  const handleToggleFavorite = () => {
+    if (!product?.id) return;
+    const next = !isFavorite;
+    setIsFavorite(next);
+    FavoritesApi.toggleFavorite(product.id).catch(() => {
+      setIsFavorite(!next);
+    });
+  };
+
   if (!product) return null;
 
   // Resolve product image
@@ -116,6 +170,19 @@ export default function ProductDetailModal({
     : (product.price || 285000);
   const formattedPrice = new Intl.NumberFormat("fr-FR").format(rawPrice);
   const currency = "FCFA";
+
+  // Seller and category resolution (100% null & object safe)
+  const sellerName: string = typeof product?.seller === "string"
+    ? product.seller
+    : (product?.seller?.name || product?.artisanShop?.name || "Kingston Bio");
+
+  const sellerInitials: string = typeof product?.seller === "object" && product.seller?.initials
+    ? product.seller.initials
+    : (sellerName ? sellerName.split(" ").map((w: string) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() : "KB");
+
+  const categoryName: string = typeof product?.category === "string"
+    ? product.category
+    : "HAUTE CRÉATION";
 
   // Variants
   const variants = product.variants && product.variants.length > 0 
@@ -191,7 +258,7 @@ export default function ProductDetailModal({
         ],
         paymentInstructions: {
           merchantAccount: "+229 90 00 00 03",
-          merchantName: product.artisanShop?.name || product.seller || "Maison Laurent",
+          merchantName: product.artisanShop?.name || sellerName,
           ussdCode: paymentChannel === "MTN_MOMO" ? "*880#" : "*155#",
           reference: `OJK-${Date.now().toString().slice(-4)}`,
         },
@@ -289,7 +356,7 @@ export default function ProductDetailModal({
                   marginTop: 1,
                 }}
               >
-                {product.seller || "Maison Laurent"}
+                {sellerName}
               </Text>
             </View>
 
@@ -299,9 +366,11 @@ export default function ProductDetailModal({
               <Pressable
                 onPress={async () => {
                   try {
+                    const productUrl = `https://ojarket.com/p/${product.id}`;
                     await Share.share({
                       title: product.title,
-                      message: `${product.title} (${formattedPrice} FCFA) sur Ojarket - Marketplace E-Commerce`,
+                      message: `${product.title} (${formattedPrice} FCFA) chez ${sellerName} sur Ojarket — Marketplace de Luxe : ${productUrl}`,
+                      url: productUrl,
                     });
                   } catch {}
                 }}
@@ -318,12 +387,12 @@ export default function ProductDetailModal({
                   transform: [{ scale: pressed ? 0.95 : 1 }],
                 }]}
               >
-                <Text style={{ fontSize: 15 }}>⎋</Text>
+                <Icon name="share" size={16} color={colors.text} weight="bold" />
               </Pressable>
 
               {/* Wishlist Heart */}
               <Pressable
-                onPress={() => setIsFavorite(!isFavorite)}
+                onPress={handleToggleFavorite}
                 style={({ pressed }) => [{
                   width: 36,
                   height: 36,
@@ -337,9 +406,7 @@ export default function ProductDetailModal({
                   transform: [{ scale: pressed ? 0.95 : 1 }],
                 }]}
               >
-                <Text style={{ fontSize: 16, color: isFavorite ? "#EF4444" : colors.text }}>
-                  {isFavorite ? "♥" : "♡"}
-                </Text>
+                <Icon name="heart" size={17} color={isFavorite ? "#EF4444" : colors.text} weight={isFavorite ? "fill" : "regular"} />
               </Pressable>
             </View>
           </View>
@@ -432,7 +499,7 @@ export default function ProductDetailModal({
                       marginBottom: 4,
                     }}
                   >
-                    {product.category?.toUpperCase() || "HORLOGERIE D'ART"} · {product.seller?.toUpperCase() || "MAISON LAURENT"}
+                    {categoryName.toUpperCase()} · {sellerName.toUpperCase()}
                   </Text>
 
                   {/* Title */}
@@ -449,14 +516,36 @@ export default function ProductDetailModal({
                     {product.title}
                   </Text>
 
-                  {/* Ratings Row */}
+                  {/* Ratings Row (Dynamique & Achat Vérifié) */}
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
-                    <Text style={{ fontSize: 13, color: colors.accent, fontWeight: "700" }}>
-                      ★★★★★ 4.9
-                    </Text>
-                    <Text style={{ fontSize: 12, color: colors.muted }}>
-                      (128 avis vérifiés)
-                    </Text>
+                    {productReviews.length > 0 ? (
+                      <>
+                        <Text style={{ fontSize: 13, color: colors.accent, fontWeight: "700" }}>
+                          ★ {(productReviews.reduce((s, r) => s + r.rating, 0) / productReviews.length).toFixed(1)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: colors.muted }}>
+                          ({productReviews.length} {isEn ? "verified reviews" : "avis vérifiés"})
+                        </Text>
+                      </>
+                    ) : (
+                      <View
+                        style={{
+                          backgroundColor: "rgba(212, 180, 131, 0.15)",
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: "rgba(212, 180, 131, 0.3)",
+                        }}
+                      >
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                          <Icon name="sparkle" size={10} color={colors.accent} weight="fill" />
+                          <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                            {isEn ? "NEW ARRIVAL • CERTIFIED" : "NOUVELLE CRÉATION • CERTIFIÉE"}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
                   </View>
 
                   {/* Price & Stock Badge Row */}
@@ -536,14 +625,14 @@ export default function ProductDetailModal({
                             color: colors.accent,
                           }}
                         >
-                          ML
+                          {sellerInitials}
                         </Text>
                       </View>
 
                       <View>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                           <Text style={{ fontSize: 14, fontWeight: "700", color: colors.text }}>
-                            {product.seller || "Maison Laurent"}
+                            {sellerName}
                           </Text>
                           <View
                             style={{
@@ -556,7 +645,7 @@ export default function ProductDetailModal({
                               borderRadius: 8,
                             }}
                           >
-                            <Text style={{ fontSize: 9 }}>👑</Text>
+                            <Icon name="crown" size={11} color={colors.accent} weight="fill" />
                             <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
                               Vendeur Pro
                             </Text>
@@ -564,7 +653,7 @@ export default function ProductDetailModal({
                         </View>
 
                         <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
-                          ★ 4.9 (320 ventes) · 📍 Cotonou, Haie Vive
+                          Vendeur Officiel Certifié · Cotonou, Bénin
                         </Text>
                       </View>
                     </View>
@@ -682,7 +771,7 @@ export default function ProductDetailModal({
                     }}
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                      <Text style={{ fontSize: 18 }}>🚚</Text>
+                      <Icon name="truck" size={18} color={colors.accent} weight="duotone" />
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
                           {isEn ? "Estimated Delivery" : "Livraison estimée : 24h - 48h"}
@@ -696,7 +785,7 @@ export default function ProductDetailModal({
                     <View style={{ height: 1, backgroundColor: colors.border }} />
 
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                      <Text style={{ fontSize: 18 }}>📍</Text>
+                      <Icon name="map-pin" size={18} color={colors.accent} weight="duotone" />
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
                           {isEn ? "Store Pickup" : "Retrait direct en boutique"}
@@ -724,7 +813,7 @@ export default function ProductDetailModal({
                         borderColor: colors.border,
                       }}
                     >
-                      <Text style={{ fontSize: 16 }}>🛡</Text>
+                      <Icon name="shield" size={17} color={colors.accent} weight="duotone" />
                       <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>
                         {isEn ? "100% Secure Payment via MoMo / Moov" : "Paiement 100% sécurisé (MoMo, Moov, Espèces)"}
                       </Text>
@@ -742,7 +831,7 @@ export default function ProductDetailModal({
                         borderColor: colors.border,
                       }}
                     >
-                      <Text style={{ fontSize: 16 }}>🔄</Text>
+                      <Icon name="refresh" size={17} color={colors.accent} weight="duotone" />
                       <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>
                         {isEn ? "14-Day Hassle-Free Returns" : "Retour & Échange sous 14 jours garantis"}
                       </Text>
@@ -760,11 +849,163 @@ export default function ProductDetailModal({
                         borderColor: colors.border,
                       }}
                     >
-                      <Text style={{ fontSize: 16 }}>💎</Text>
+                      <Icon name="certificate" size={17} color={colors.accent} weight="duotone" />
                       <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>
                         {isEn ? "Ojarket Certificate of Authenticity" : "Certificat d'authenticité & facture officielle"}
                       </Text>
                     </View>
+                  </View>
+                </View>
+
+                {/* 9. AVIS CLIENTS VÉRIFIÉS (ACHATS CONFIRMÉS - RÈGLE D'OR AMAZON/AIRBNB) */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 }}>
+                  <View
+                    style={{
+                      backgroundColor: colors.canvas,
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 16,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <Text style={{ fontSize: 13, fontWeight: "800", color: colors.text, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                        {isEn ? "Verified Buyer Reviews" : "Avis Clients Vérifiés"}
+                      </Text>
+                      <View style={{ backgroundColor: "#E6F4EE", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                        <Text style={{ fontSize: 10, color: "#185F46", fontWeight: "700" }}>
+                          ✓ Achat Vérifié
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Eligibility / Leave Review CTA */}
+                    {canUserReview.canReview && !reviewSuccess && (
+                      <View style={{ backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 14 }}>
+                        <Text style={{ fontSize: 12, fontWeight: "700", color: colors.action, marginBottom: 8 }}>
+                          ✓ {isEn ? "You purchased this piece! Leave a review:" : "Vous avez acheté ce produit ! Déposez votre avis certifié :"}
+                        </Text>
+                        <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Pressable key={star} onPress={() => setReviewRating(star)}>
+                              <Text style={{ fontSize: 22, color: star <= reviewRating ? "#E5A93C" : "#D1D5DB" }}>★</Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                        <TextInput
+                          multiline
+                          numberOfLines={2}
+                          placeholder={isEn ? "Share your experience with the craftsmanship and delivery..." : "Partagez votre expérience sur la qualité, la confection et la réception..."}
+                          placeholderTextColor={colors.muted}
+                          value={reviewComment}
+                          onChangeText={setReviewComment}
+                          style={{
+                            backgroundColor: colors.canvas,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            borderRadius: 8,
+                            padding: 8,
+                            fontSize: 12,
+                            color: colors.text,
+                            marginBottom: 8,
+                            minHeight: 50,
+                          }}
+                        />
+                        <Pressable
+                          disabled={reviewSubmitting}
+                          onPress={async () => {
+                            if (!product?.id) return;
+                            setReviewSubmitting(true);
+                            try {
+                              await ReviewsApi.createReview({
+                                productId: product.id,
+                                rating: reviewRating,
+                                comment: reviewComment,
+                              });
+                              setReviewSuccess(true);
+                              const res = await ReviewsApi.getProductReviews(product.id);
+                              setProductReviews(res.reviews || []);
+                            } catch (err: any) {
+                              Alert.alert("Erreur", err?.message || "Impossible d'enregistrer l'avis");
+                            } finally {
+                              setReviewSubmitting(false);
+                            }
+                          }}
+                          style={{
+                            backgroundColor: colors.action,
+                            borderRadius: 8,
+                            paddingVertical: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
+                            {reviewSubmitting ? "..." : (isEn ? "Publish Verified Review" : "Publier l'avis certifié")}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    )}
+
+                    {reviewSuccess && (
+                      <View style={{ backgroundColor: "#E6F4EE", padding: 10, borderRadius: 8, marginBottom: 12 }}>
+                        <Text style={{ color: "#185F46", fontSize: 12, fontWeight: "700" }}>
+                          ✓ {isEn ? "Your verified review has been published!" : "Votre avis vérifié a été publié avec succès !"}
+                        </Text>
+                      </View>
+                    )}
+
+                    {canUserReview.existingReview && !reviewSuccess && (
+                      <View style={{ backgroundColor: "#E6F4EE", padding: 8, borderRadius: 8, marginBottom: 12 }}>
+                        <Text style={{ color: "#185F46", fontSize: 11, fontWeight: "600" }}>
+                          ✓ {isEn ? "You have already reviewed this purchase." : "Vous avez déjà déposé un avis vérifié pour cet achat."}
+                        </Text>
+                      </View>
+                    )}
+
+                    {!currentUser && (
+                      <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 10, fontStyle: "italic" }}>
+                        ✓ {isEn ? "Only verified buyers who completed a paid order can review." : "Seuls les acheteurs ayant payé une commande réelle peuvent déposer un avis."}
+                      </Text>
+                    )}
+
+                    {productReviews.length === 0 ? (
+                      <Text style={{ fontSize: 12, color: colors.muted, fontStyle: "italic" }}>
+                        {isEn ? "No verified reviews yet. Authentic purchases only." : "Aucun avis vérifié pour l'instant. Seules les ventes réelles sont notées."}
+                      </Text>
+                    ) : (
+                      <View style={{ gap: 8 }}>
+                        {productReviews.map((rev) => (
+                          <View
+                            key={rev.id}
+                            style={{
+                              backgroundColor: colors.surface,
+                              borderRadius: 10,
+                              padding: 10,
+                              borderWidth: 1,
+                              borderColor: colors.border,
+                            }}
+                          >
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text }}>
+                                  {rev.buyer?.name || "Client Vérifié"}
+                                </Text>
+                                <Text style={{ fontSize: 9, color: "#185F46", fontWeight: "700" }}>
+                                  ✓ Achat Vérifié
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 11, color: colors.accent, fontWeight: "700" }}>
+                                {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
+                              </Text>
+                            </View>
+                            {rev.comment ? (
+                              <Text style={{ fontSize: 11, color: colors.text, lineHeight: 16 }}>
+                                {rev.comment}
+                              </Text>
+                            ) : null}
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </View>
               </>
@@ -910,7 +1151,7 @@ export default function ProductDetailModal({
                           opacity: pressed ? 0.85 : 1,
                         }]}
                       >
-                        <Text style={{ fontSize: 20 }}>{pm.icon}</Text>
+                        <Icon name={pm.iconName} size={20} color={isSelected ? colors.action : colors.muted} weight="duotone" />
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 13, fontWeight: isSelected ? "800" : "600", color: colors.text }}>
                             {pm.name}
@@ -981,7 +1222,7 @@ export default function ProductDetailModal({
             {/* VIEW 3: ORDER SUCCESS */}
             {view === "success" && createdOrder && (
               <View style={{ padding: 24, alignItems: "center", paddingTop: 30 }}>
-                <Text style={{ fontSize: 44, marginBottom: 12 }}>🎉</Text>
+                <View style={{ marginBottom: 12 }}><Icon name="check-circle" size={48} color={colors.action} weight="duotone" /></View>
                 <Text
                   style={{
                     fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
@@ -1019,7 +1260,7 @@ export default function ProductDetailModal({
                           ? "Please prepare exact amount in cash upon delivery."
                           : "Veuillez préparer le montant exact en espèces pour le livreur lors de la livraison.")
                       : (isEn
-                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to ${product.artisanShop?.name || product.seller || "the store"}.`
+                          ? `Dial ${createdOrder.paymentInstructions?.ussdCode || "*880#"} to confirm the payment of ${totalPriceFormatted} FCFA to ${sellerName}.`
                           : `Composez le ${createdOrder.paymentInstructions?.ussdCode || "*880#"} pour valider le règlement de ${totalPriceFormatted} FCFA auprès de la boutique.`)}
                   </Text>
                   <View style={{ height: 1, backgroundColor: colors.border }} />
@@ -1094,7 +1335,7 @@ export default function ProductDetailModal({
                   transform: [{ scale: pressed ? 0.96 : 1 }],
                 }]}
               >
-                <Text style={{ fontSize: 14 }}>🛒</Text>
+                <Icon name="cart" size={16} color="#FFFFFF" weight="duotone" />
                 <Text style={{ fontSize: 12, fontWeight: "800", color: colors.action }}>
                   {isEn ? "Add to Cart" : "Ajouter au panier"}
                 </Text>

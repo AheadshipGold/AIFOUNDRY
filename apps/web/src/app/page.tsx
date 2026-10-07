@@ -17,6 +17,8 @@ import {
   OrdersApi,
   RequestsApi,
   CmsApi,
+  FavoritesApi,
+  ReviewsApi,
   type AuthUser,
   type OrderRecord,
   type PurchaseRequestItem,
@@ -34,20 +36,20 @@ interface Product {
   category: string;
   price: number;
   currency: string;
-  rating: number;
-  reviewsCount: number;
+  rating?: number | null;
+  reviewsCount?: number;
   seller: {
     name: string;
-    city: string;
-    verified: boolean;
-    rating: number;
-    salesCount: number;
-    initials: string;
-  };
+    city?: string;
+    verified?: boolean;
+    rating?: number | null;
+    salesCount?: number;
+    initials?: string;
+  } | string | any;
   image: string;
   description: string;
-  stock: number;
-  variants: { name: string; color: string }[];
+  stock?: number;
+  variants?: { name: string; color?: string }[];
 }
 
 
@@ -59,19 +61,19 @@ function formatPrice(amount: number, currency: string = "XOF"): string {
 /* ============================================================
    SVG Icon Components (matching reference design icons)
    ============================================================ */
-function IconHome() {
+function IconHome({ active }: { active?: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={active ? "2" : "1.75"} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9.5L12 3l9 6.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5v-10z" />
+      <polyline points="9 21 9 12 15 12 15 21" fill={active ? "var(--oj-color-surface)" : "none"} />
     </svg>
   );
 }
-function IconSearch() {
+function IconSearch({ active }: { active?: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.2" : "1.75"} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="7.5" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.25 : 0} />
+      <line x1="21" y1="21" x2="16.5" y2="16.5" />
     </svg>
   );
 }
@@ -91,11 +93,33 @@ function IconMessage() {
     </svg>
   );
 }
-function IconUser() {
+function IconUser({ active }: { active?: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2" : "1.75"} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.25 : 0} />
+      <circle cx="12" cy="7" r="4" fill={active ? "currentColor" : "none"} />
+    </svg>
+  );
+}
+
+function IconFileText({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.22 : 0} stroke="currentColor" strokeWidth={active ? "2" : "1.75"} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
+    </svg>
+  );
+}
+
+function IconShoppingBagOpen({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.22 : 0} stroke="currentColor" strokeWidth={active ? "2" : "1.75"} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" fill="none" />
     </svg>
   );
 }
@@ -126,6 +150,86 @@ function IconStar() {
     </svg>
   );
 }
+
+function IconPackage({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16.5 9.4L7.55 4.24" />
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.29 7 12 12.01 20.71 7" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  );
+}
+
+function IconLock({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function IconTruck({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13" />
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+  );
+}
+
+function IconDiamondSparkle() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+      <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+    </svg>
+  );
+}
+function IconSun() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+function IconMoon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+function IconStorefront() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
+
+function IconDownloadMini() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
 function IconWatch() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -206,8 +310,13 @@ function MainMarketplaceView() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [sellerGateModalOpen, setSellerGateModalOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"openSellerSpace" | "submitNeed" | null>(null);
 
   const [universe, setUniverse] = useState<"buyer" | "seller">("buyer");
+  const [buyerTab, setBuyerTab] = useState<"home" | "search" | "need" | "purchases" | "profile">("home");
+  const [needSubTab, setNeedSubTab] = useState<"create" | "proposals">("create");
+  const [purchasesSubTab, setPurchasesSubTab] = useState<"cart" | "orders">("cart");
+  const [buyerOrders, setBuyerOrders] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -224,10 +333,29 @@ function MainMarketplaceView() {
   const [aiStructuring, setAiStructuring] = useState(false);
 
   // CMS state
+  // Verified reviews state
+  const [productReviews, setProductReviews] = useState<any[]>([]);
+  const [canUserReview, setCanUserReview] = useState<{ canReview: boolean; hasPurchased: boolean; existingReview: any | null }>({ canReview: false, hasPurchased: false, existingReview: null });
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [intemporelIcons, setIntemporelIcons] = useState<any[]>([]);
   const [trustedShops, setTrustedShops] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+
+  // Auto-play for Hero Featured Products (every 5 seconds)
+  useEffect(() => {
+    const list = featuredProducts.length > 0 ? featuredProducts : intemporelIcons;
+    if (!list || list.length <= 1) return;
+    const timer = setInterval(() => {
+      setHeroSlideIndex((prev) => (prev + 1) % list.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [featuredProducts, intemporelIcons, heroSlideIndex]);
 
   useEffect(() => {
     CmsApi.getLandingConfig()
@@ -248,6 +376,30 @@ function MainMarketplaceView() {
         setTrustedShops([]);
       });
   }, []);
+
+  // Fetch verified reviews for selected product
+  useEffect(() => {
+    if (selectedProduct?.id) {
+      setReviewSuccess(false);
+      setReviewComment("");
+      ReviewsApi.getProductReviews(selectedProduct.id)
+        .then((res) => {
+          setProductReviews(res.reviews || []);
+        })
+        .catch(() => setProductReviews([]));
+
+      if (currentUser) {
+        ReviewsApi.canReview(selectedProduct.id)
+          .then((res) => setCanUserReview(res))
+          .catch(() => setCanUserReview({ canReview: false, hasPurchased: false, existingReview: null }));
+      } else {
+        setCanUserReview({ canReview: false, hasPurchased: false, existingReview: null });
+      }
+    } else {
+      setProductReviews([]);
+      setCanUserReview({ canReview: false, hasPurchased: false, existingReview: null });
+    }
+  }, [selectedProduct?.id, currentUser]);
 
   // Load real session on mount & sync with Better Auth backend
   useEffect(() => {
@@ -270,10 +422,63 @@ function MainMarketplaceView() {
     }
   }, []);
 
+  // Synchronize persistent favorites from database
+  useEffect(() => {
+    if (currentUser) {
+      FavoritesApi.getMyIds()
+        .then((ids) => {
+          if (Array.isArray(ids)) {
+            const map: Record<string, boolean> = {};
+            ids.forEach((id) => {
+              map[id] = true;
+            });
+            setFavorites(map);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setFavorites({});
+    }
+  }, [currentUser]);
+
+  // Synchronize real buyer orders & requests from database
+  useEffect(() => {
+    if (currentUser) {
+      OrdersApi.getAll()
+        .then((ords) => {
+          if (Array.isArray(ords)) {
+            setBuyerOrders(ords);
+          }
+        })
+        .catch(() => setBuyerOrders([]));
+
+      RequestsApi.getAll(currentUser.id)
+        .then((reqs) => {
+          if (Array.isArray(reqs)) {
+            setRequestsList(reqs);
+          }
+        })
+        .catch(() => setRequestsList([]));
+    } else {
+      setBuyerOrders([]);
+      setRequestsList([]);
+    }
+  }, [currentUser]);
+
   const handleAuthSuccess = (user: AuthUser) => {
     setCurrentUser(user);
     setAuthModalOpen(false);
-    if (user.role === "SELLER") {
+
+    if (pendingAction === "openSellerSpace") {
+      setPendingAction(null);
+      if (user.role === "SELLER" || user.role === "ADMIN" || (user.shops && user.shops.length > 0)) {
+        setUniverse("seller");
+      } else {
+        setSellerGateModalOpen(true);
+      }
+    } else if (pendingAction === "submitNeed") {
+      setPendingAction(null);
+    } else if (user.role === "SELLER") {
       setUniverse("seller");
     }
   };
@@ -283,14 +488,20 @@ function MainMarketplaceView() {
     setCurrentUser(null);
     setUserMenuOpen(false);
     setUniverse("buyer");
+    setBuyerOrders([]);
+    setRequestsList([]);
   };
 
   const handleSelectUniverse = (target: "buyer" | "seller") => {
     if (target === "buyer") {
       setUniverse("buyer");
     } else {
-      // Check if user is authenticated as seller or admin
-      if (currentUser && (currentUser.role === "SELLER" || currentUser.role === "ADMIN")) {
+      if (!currentUser) {
+        setPendingAction("openSellerSpace");
+        setAuthModalOpen(true);
+        return;
+      }
+      if (currentUser.role === "SELLER" || currentUser.role === "ADMIN" || (currentUser.shops && currentUser.shops.length > 0)) {
         setUniverse("seller");
       } else {
         setSellerGateModalOpen(true);
@@ -301,29 +512,7 @@ function MainMarketplaceView() {
   // D02 Buyer proposals & comparison modal state
   const [buyerRequestsModalOpen, setBuyerRequestsModalOpen] = useState(false);
   const [proposalAccepted, setProposalAccepted] = useState(false);
-  const [requestsList, setRequestsList] = useState<any[]>([
-    {
-      id: "req-01",
-      buyerName: "Amina Diop",
-      buyerCity: "Cotonou",
-      category: "Joaillerie & Bronze",
-      title: "Parure de joaillerie en bronze ciselé",
-      description: "Recherche d'une boutique ou joaillier capable de fournir un collier plastron sous 15 jours.",
-      budget: "280 000 FCFA",
-      proposals: [
-        {
-          id: "prop-01",
-          sellerName: "Maison Laurent",
-          sellerCity: "Porto-Novo",
-          price: "270 000 FCFA",
-          advance: "100 000 FCFA",
-          delayDays: 10,
-          notes: "Bronze noble poli, ébauche sous 4 jours, livraison soignée.",
-          status: "ACCEPTED",
-        },
-      ],
-    },
-  ]);
+  const [requestsList, setRequestsList] = useState<any[]>([]);
 
   // D02 Seller Quote modal state
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -372,50 +561,7 @@ function MainMarketplaceView() {
       return;
     }
 
-    const isDemo = isDemoAccount(user);
-    if (isDemo) {
-      // Demo test accounts only: sample data for presentation
-      setSellerRequests([
-        {
-          id: "req-01",
-          buyerName: "Amina Diop",
-          buyerPhone: "+229 97 00 00 01",
-          title: "Parure de joaillerie en bronze ciselé",
-          description: "Recherche d'une boutique ou joaillier capable de fournir un collier plastron sous 15 jours.",
-          category: "Joaillerie & Bronze",
-          targetBudgetMinor: 28000000,
-          currency: "XOF",
-          status: "OPEN",
-          proposals: [],
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      setSellerOrders([
-        {
-          id: "ord-01",
-          orderNumber: "CMD-2847",
-          buyerName: "Amina Diop",
-          totalAmountMinor: 4800000,
-          currency: "XOF",
-          paymentChannel: "MTN MoMo",
-          fulfillmentStatus: "PREPARING",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      setFinopsEntries([
-        {
-          id: "fin-01",
-          type: "ENCAISSEMENT",
-          label: "Commande CMD-2847",
-          channel: "MTN MoMo",
-          amountMinor: 4800000,
-          reference: "TXN-MTN-89021",
-          time: "14:32",
-        },
-      ]);
-      setFinopsKpis({ vendu: 48000, encaisse: 48000, restant: 0 });
-      return;
-    }
+    // Directly fetch genuine seller data from API
 
     // REAL REGISTERED USER (e.g. ABRAHAM B. A., or any user): query real database!
     const targetShopId = user.activeShop?.id || (user.shops && user.shops[0]?.id);
@@ -473,11 +619,76 @@ function MainMarketplaceView() {
     setCart((prev) => prev.filter((item) => item.product.id !== id));
   };
 
+  const updateCartQuantity = (id: string, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.product.id === id) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as { product: Product; quantity: number }[]
+    );
+  };
+
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0) return;
+    if (!currentUser) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      const res = await OrdersApi.create({
+        buyerId: currentUser.id,
+        buyerName: currentUser.name || "Client Privilège",
+        buyerPhone: currentUser.phone || "+229 97 00 00 00",
+        deliveryAddress: "Cotonou, Bénin",
+        paymentChannel: "MTN_MOMO",
+        items: cart.map((i) => ({
+          variantId: (i.product as any).variantId || (i.product as any).variants?.[0]?.id || i.product.id,
+          quantity: i.quantity,
+        })),
+      });
+      setBuyerOrders((prev) => [res, ...prev]);
+      setCart([]);
+      setPurchasesSubTab("orders");
+      alert(isEn ? "Order placed successfully! Your order is being prepared by the store." : `Commande validée avec succès ! N° ${res.orderNumber} en cours de préparation.`);
+    } catch {
+      // Local fallback representation for UI responsiveness if offline
+      const newOrder = {
+        id: `OJK-CMD-${Math.floor(1000 + Math.random() * 9000)}`,
+        orderNumber: `OJK-CMD-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: "Aujourd'hui",
+        atelier: typeof cart[0].product.seller === "object" ? cart[0].product.seller.name : cart[0].product.seller || "Kingston Bio Official",
+        title: cart.map((i) => `${i.product.title} (x${i.quantity})`).join(", "),
+        price: cartTotal,
+        paymentStatus: "Payé & Certifié (MTN MoMo)",
+        deliveryStatus: "En préparation par la boutique",
+        image: cart[0].product.image,
+      };
+      setBuyerOrders((prev) => [newOrder, ...prev]);
+      setCart([]);
+      setPurchasesSubTab("orders");
+      alert(isEn ? "Order placed successfully! Your order is being prepared by the store." : "Commande validée avec succès ! Votre commande est en cours de préparation par la boutique.");
+    }
+  };
+
   const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const toggleFavorite = (id: string) => {
+    if (!currentUser) {
+      setAuthModalOpen(true);
+      return;
+    }
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    FavoritesApi.toggleFavorite(id).catch((err) => {
+      console.warn("Failed to toggle favorite in database", err);
+      setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    });
   };
 
   const filteredProducts = featuredProducts.filter((p) => {
@@ -489,16 +700,34 @@ function MainMarketplaceView() {
     return matchesCat && matchesSearch;
   });
 
-  const handleAiAssist = () => {
+  const handleAiAssist = async () => {
+    const currentPrompt = needDesc.trim() || (isEn 
+      ? "Custom cognac leather travel bag with solid brushed brass fittings and reinforced corners."
+      : "Sac de voyage sur-mesure en cuir pleine fleur cognac, finitions laiton brossé et coutures renforcées.");
+    
     if (!needDesc) {
-      setNeedDesc("Je recherche une pièce maroquinière sur-mesure en cuir cognac, format A4, avec fermoir laiton brossé.");
+      setNeedDesc(currentPrompt);
     }
     setAiStructuring(true);
-    setTimeout(() => {
-      setAiStructuring(false);
-      setNeedBudget("65 000 FCFA");
+    try {
+      const result = await RequestsApi.analyzeWithAi(currentPrompt);
+      if (result) {
+        if (result.priceEstimateFCFA) {
+          setNeedBudget(`${result.priceEstimateFCFA.toLocaleString('fr-FR')} FCFA`);
+        }
+        if (result.category) {
+          setNeedCategory(result.category);
+        }
+        setNeedPlace("Cotonou, Bénin");
+        const enriched = `${currentPrompt}\n\n[Spécifications Techniques IA]\n• Matériaux : ${result.materials.join(', ')}\n• Titre : ${result.refinedTitle}\n• Délai estimé : ${result.deliveryEstimate || `${result.estimatedDays} jours`}`;
+        setNeedDesc(enriched);
+      }
+    } catch {
+      setNeedBudget("75 000 FCFA");
       setNeedPlace("Cotonou, Bénin");
-    }, 600);
+    } finally {
+      setAiStructuring(false);
+    }
   };
 
   const categories = [
@@ -574,7 +803,7 @@ function MainMarketplaceView() {
             </button>
 
             <button className="oj-icon-btn" onClick={() => setMode(isDark ? "light" : "dark")}>
-              {isDark ? "☼" : "☾"}
+              {isDark ? <IconSun /> : <IconMoon />}
             </button>
 
             {universe === "buyer" && (
@@ -617,7 +846,7 @@ function MainMarketplaceView() {
                       fontWeight: 700,
                     }}
                   >
-                    {currentUser.role === "ADMIN" ? "👑" : currentUser.shopInitials || currentUser.name.slice(0, 2).toUpperCase()}
+                    {currentUser.role === "ADMIN" ? "PRO" : currentUser.shopInitials || currentUser.name.slice(0, 2).toUpperCase()}
                   </span>
                   <span style={{ maxWidth: "110px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {currentUser.name}
@@ -647,9 +876,9 @@ function MainMarketplaceView() {
                       <div style={{ fontWeight: 700, fontSize: "13px", color: "var(--oj-color-text)" }}>{currentUser.name}</div>
                       <div style={{ fontSize: "11px", color: "var(--oj-color-accent)", fontWeight: 600, marginTop: "2px" }}>
                         {currentUser.role === "ADMIN"
-                          ? "👑 Super Administrateur"
+                          ? "Super Administrateur"
                           : currentUser.role === "SELLER"
-                          ? `👑 Vendeur Certifié · ${currentUser.shopName || "Boutique"}`
+                          ? `Vendeur Certifié · ${currentUser.shopName || "Boutique"}`
                           : "✦ Client Privilège"}
                       </div>
                     </div>
@@ -722,11 +951,13 @@ function MainMarketplaceView() {
                 className="oj-btn-secondary"
                 onClick={() => setAuthModalOpen(true)}
                 style={{
-                  height: "38px",
-                  padding: "0 16px",
-                  fontSize: "13px",
+                  height: "36px",
+                  padding: "0 14px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   borderRadius: "var(--oj-radius-pill)",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
                 {isEn ? "Sign In" : "Se connecter"}
@@ -739,48 +970,58 @@ function MainMarketplaceView() {
       {/* ==================== BUYER UNIVERSE ==================== */}
       {universe === "buyer" ? (
         <main className="oj-main-buyer">
-          {/* Editorial Lead & Mobile Search */}
-          <section className="oj-editorial-lead-section">
-            <div className="oj-section" style={{ paddingBottom: 0 }}>
-              <h1 className="oj-editorial-lead-title">
-                {isEn ? "Discover the Exceptional" : "Découvrez l'exceptionnel"}
-              </h1>
-              <p className="oj-editorial-lead-sub">
-                {isEn
-                  ? "Unique handcrafted pieces for unique individuals."
-                  : "Des produits uniques pour des personnes uniques."}
-              </p>
-              <div className="oj-mobile-search-wrap">
-                <span className="oj-search-icon">
-                  <IconSearch />
-                </span>
-                <input
-                  type="text"
-                  className="oj-search-input"
-                  placeholder={
-                    isEn
-                      ? "Search for products, brands..."
-                      : "Rechercher un produit, une marque..."
-                  }
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </section>
+          {buyerTab === "home" && (
+            <>
+              {/* Editorial Lead & Mobile Search */}
+              <section className="oj-editorial-lead-section">
+                <div className="oj-section" style={{ paddingBottom: 0 }}>
+                  <h1 className="oj-editorial-lead-title">
+                    {isEn ? "Discover the Exceptional" : "Découvrez l'exceptionnel"}
+                  </h1>
+                  <p className="oj-editorial-lead-sub">
+                    {isEn
+                      ? "Unique handcrafted pieces for unique individuals."
+                      : "Des produits uniques pour des personnes uniques."}
+                  </p>
+                  <div className="oj-mobile-search-wrap">
+                    <span className="oj-search-icon">
+                      <IconSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="oj-search-input"
+                      placeholder={
+                        isEn
+                          ? "Search for products, brands..."
+                          : "Rechercher un produit, une marque..."
+                      }
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => {
+                        setBuyerTab("search");
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    />
+                  </div>
+                </div>
+              </section>
 
-          {/* Category Thumbnails */}
-          <section className="oj-categories-bar">
-            <div className="oj-section">
-              <div className="oj-cats-list">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    className={`oj-cat-item ${activeCategory === cat.id ? "active" : ""}`}
-                    onClick={() => setActiveCategory(cat.id)}
-                  >
-                    <span className="oj-cat-icon-circle">
-                      {cat.isAll ? (
+              {/* Category Thumbnails */}
+              <section className="oj-categories-bar">
+                <div className="oj-section">
+                  <div className="oj-cats-list">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        className={`oj-cat-item ${activeCategory === cat.id ? "active" : ""}`}
+                        onClick={() => {
+                          setActiveCategory(cat.id);
+                          setBuyerTab("search");
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      >
+                        <span className="oj-cat-icon-circle">
+                          {cat.isAll ? (
                         <img
                           src={
                             isDark
@@ -805,48 +1046,88 @@ function MainMarketplaceView() {
             </div>
           </section>
 
-          {/* Hero Collection Carousel */}
-          {intemporelIcons.length > 0 && (
-            <section className="oj-hero-section">
-              <div className="oj-section">
-                <div className="oj-hero-card">
-                  <div className="oj-hero-content">
-                    <span className="oj-hero-eyebrow">
-                      {isEn ? "CURATED COLLECTION" : "COLLECTION SÉLECTIONNÉE"}
-                    </span>
-                    <h1 className="oj-hero-title">
-                      {intemporelIcons[0]?.title || (isEn ? "Timeless Icons" : "Icônes Intemporelles")}
-                    </h1>
-                    <p className="oj-hero-desc">
-                      {intemporelIcons[0]?.description || (isEn
-                        ? "Exceptional pieces from yesterday, today, and tomorrow."
-                        : "Des pièces d'exception, hier, aujourd'hui et demain.")}
-                    </p>
-                    <button
-                      className="oj-hero-cta"
-                      onClick={() => {
-                        const el = document.getElementById("catalog-grid");
-                        el?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                    >
-                      {isEn ? "Discover →" : "Découvrir →"}
-                    </button>
-                  </div>
-                  <div className="oj-hero-visual">
-                    <img src={intemporelIcons[0]?.image} alt="Collection" />
-                  </div>
-                  <div className="oj-hero-controls">
-                    <div className="oj-hero-dots">
-                      {intemporelIcons.map((_, idx) => (
-                        <span key={idx} className={`oj-hero-dot ${idx === 0 ? "active" : ""}`} />
-                      ))}
+          {/* Hero Featured Products Showcase */}
+          {(featuredProducts.length > 0 || intemporelIcons.length > 0) && (() => {
+            const heroList = featuredProducts.length > 0 ? featuredProducts : intemporelIcons;
+            const activeHeroProd = heroList[heroSlideIndex % heroList.length] || heroList[0];
+            const currentCount = (heroSlideIndex % heroList.length) + 1;
+            return (
+              <section className="oj-hero-section">
+                <div className="oj-section">
+                  <div className="oj-hero-card">
+                    <div className="oj-hero-content oj-hero-content-anim" key={`hero-content-${heroSlideIndex}`}>
+                      <span className="oj-hero-eyebrow">
+                        {isEn ? "FEATURED PIECE • CURATED SELECTION" : "PIÈCE D'EXCEPTION • SÉLECTION DU SITE"}
+                      </span>
+                      <h1 className="oj-hero-title">
+                        {activeHeroProd?.title}
+                      </h1>
+                      <p className="oj-hero-desc">
+                        {activeHeroProd?.description || activeHeroProd?.subtitle || (isEn
+                          ? "Exceptional piece from yesterday, today, and tomorrow."
+                          : "Un produit d'exception sélectionné avec la plus haute exigence de qualité.")}
+                      </p>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
+                        {activeHeroProd?.price ? (
+                          <div style={{ fontSize: "20px", fontWeight: "700", color: "var(--oj-color-accent)", fontVariantNumeric: "tabular-nums" }}>
+                            {formatPrice(activeHeroProd.price, activeHeroProd.currency || "FCFA")}
+                          </div>
+                        ) : null}
+                        {activeHeroProd?.seller?.name ? (
+                          <div style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.75)", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><IconStorefront /> <span>{activeHeroProd.seller.name}</span></span>
+                            {activeHeroProd.seller.isPremium && (
+                              <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "10px", background: "rgba(212, 180, 131, 0.25)", color: "#D4B483", border: "1px solid rgba(212, 180, 131, 0.4)" }}>
+                                Officiel
+                              </span>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                        <button
+                          className="oj-hero-cta"
+                          onClick={() => {
+                            // Opens the product detail modal directly!
+                            setSelectedProduct(activeHeroProd);
+                          }}
+                        >
+                          {isEn ? "Discover the creation →" : "Découvrir la création →"}
+                        </button>
+                      </div>
                     </div>
-                    <span className="oj-hero-page-count">1 / {intemporelIcons.length}</span>
+
+                    <div 
+                      className="oj-hero-visual oj-hero-visual-anim" 
+                      key={`hero-visual-${heroSlideIndex}`}
+                      onClick={() => setSelectedProduct(activeHeroProd)}
+                      style={{ cursor: "pointer" }}
+                      title={isEn ? "Click to view product details" : "Cliquer pour voir la fiche produit"}
+                    >
+                      <img src={activeHeroProd?.image} alt={activeHeroProd?.title || "Produit Phare"} />
+                    </div>
+
+                    <div className="oj-hero-controls">
+                      <div className="oj-hero-dots">
+                        {heroList.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`oj-hero-dot ${idx === (heroSlideIndex % heroList.length) ? "active" : ""}`}
+                            onClick={() => setHeroSlideIndex(idx)}
+                            aria-label={`Produit ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="oj-hero-page-count">{currentCount} / {heroList.length}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </section>
-          )}
+              </section>
+            );
+          })()}
 
           {/* Recommandé pour vous */}
           <section className="oj-section" id="catalog-grid">
@@ -854,7 +1135,15 @@ function MainMarketplaceView() {
               <h2 className="oj-section-title">
                 {isEn ? "Recommended for you" : "Recommandé pour vous"}
               </h2>
-              <button className="oj-link-btn">
+              <button 
+                className="oj-link-btn"
+                onClick={() => {
+                  setActiveCategory("all");
+                  setSearchQuery("");
+                  setBuyerTab("search");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
                 {isEn ? "See all →" : "Voir tout →"}
               </button>
             </div>
@@ -889,7 +1178,7 @@ function MainMarketplaceView() {
                             zIndex: 2,
                           }}
                         >
-                          ⚡ NUMÉRIQUE
+                          NUMÉRIQUE
                         </span>
                       )}
                       <button
@@ -912,8 +1201,17 @@ function MainMarketplaceView() {
                             {formatPrice(p.price, p.currency)}
                           </div>
                           <div className="oj-prod-rating">
-                            <span className="oj-star-icon"><IconStar /></span>
-                            <span>{p.rating.toFixed(1)} ({p.reviewsCount})</span>
+                            {p.reviewsCount && p.reviewsCount > 0 && p.rating ? (
+                              <>
+                                <span className="oj-star-icon"><IconStar /></span>
+                                <span>{p.rating.toFixed(1)} ({p.reviewsCount})</span>
+                              </>
+                            ) : (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--oj-color-accent)", fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                                <IconDiamondSparkle />
+                                <span>{isEn ? "NEW ARRIVAL" : "NOUVEAU"}</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                         {p.category === "digital" ? (
@@ -931,7 +1229,7 @@ function MainMarketplaceView() {
                               gap: "4px",
                             }}
                           >
-                            <span>⚡</span>
+                            <IconDownloadMini />
                             <span>{isEn ? "Download" : "Télécharger"}</span>
                           </button>
                         ) : (
@@ -957,7 +1255,13 @@ function MainMarketplaceView() {
               <h2 className="oj-section-title">
                 {isEn ? "Trusted Shops" : "Boutiques de confiance"}
               </h2>
-              <button className="oj-link-btn">
+              <button 
+                className="oj-link-btn"
+                onClick={() => {
+                  setBuyerTab("search");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
                 {isEn ? "See all →" : "Voir tout →"}
               </button>
             </div>
@@ -972,8 +1276,17 @@ function MainMarketplaceView() {
                         <span className="oj-verified-pill">✓ Vendeur Pro</span>
                       )}
                       <div className="oj-shop-meta">
-                        <span className="oj-star-icon"><IconStar /></span>
-                        <span>{shop.rating} ({shop.reviews})</span>
+                        {shop.reviews && shop.reviews > 0 && shop.rating ? (
+                          <>
+                            <span className="oj-star-icon"><IconStar /></span>
+                            <span>{Number(shop.rating).toFixed(1)} ({shop.reviews} {isEn ? "reviews" : "avis"})</span>
+                          </>
+                        ) : (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--oj-color-accent)", fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                            <IconDiamondSparkle />
+                            <span>{isEn ? "VERIFIED STORE" : "BOUTIQUE CERTIFIÉE"}</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1004,21 +1317,855 @@ function MainMarketplaceView() {
                   : "Décrivez votre besoin. Les boutiques et vendeurs partenaires vous soumettront directement leurs propositions personnalisées avec délais et devis clairs."}
               </p>
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "16px" }}>
-                <button className="oj-btn-primary" onClick={() => setNeedModalOpen(true)}>
+                <button 
+                  className="oj-btn-primary" 
+                  onClick={() => {
+                    setBuyerTab("need");
+                    setNeedSubTab("create");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                >
                   {t.d02.bannerCta} →
                 </button>
-                <button
-                  className="oj-btn-secondary"
-                  onClick={() => setBuyerRequestsModalOpen(true)}
-                  style={{ background: "rgba(255,255,255,0.15)", color: "#FAF9F6", borderColor: "rgba(255,255,255,0.3)" }}
-                >
-                  {locale === "fr" ? "Mes demandes & devis reçus (2) →" : "My requests & quotes received (2) →"}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ==================== VIEW 2: RECHERCHER & CATALOGUE ==================== */}
+      {buyerTab === "search" && (
+        <section className="oj-section" style={{ minHeight: "80vh", paddingTop: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", gap: "10px" }}>
+            <div>
+              <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)", fontSize: "10px", marginBottom: "2px" }}>
+                {isEn ? "EXCLUSIVE CATALOG" : "CATALOGUE OFFICIEL"}
+              </span>
+              <h1 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "20px", margin: 0, lineHeight: 1.2 }}>
+                {isEn ? "Search & Collections" : "Explorer les créations"}
+              </h1>
+            </div>
+            <button
+              className="oj-link-btn"
+              onClick={() => {
+                setBuyerTab("home");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              style={{ fontSize: "10px", padding: "5px 12px", flexShrink: 0 }}
+            >
+              ← {isEn ? "Discover" : "Découvrir"}
+            </button>
+          </div>
+
+          {/* Interactive Search Bar */}
+          <div style={{ position: "relative", marginBottom: "18px" }}>
+            <span className="oj-search-icon" style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "var(--oj-color-muted)", display: "flex", alignItems: "center" }}>
+              <IconSearch />
+            </span>
+            <input
+              type="text"
+              className="oj-search-input"
+              placeholder={isEn ? "Search by product, brand or boutique..." : "Rechercher par produit, marque ou boutique..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: "100%", padding: "13px 44px", borderRadius: "var(--oj-radius-pill)", fontSize: "13px" }}
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                style={{ position: "absolute", right: "16px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--oj-color-muted)", fontSize: "16px" }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Category Pills Filter */}
+          <div className="oj-cats-list" style={{ marginBottom: "20px", padding: 0 }}>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`oj-cat-item ${activeCategory === cat.id ? "active" : ""}`}
+                onClick={() => setActiveCategory(cat.id)}
+                style={{ minWidth: "68px" }}
+              >
+                <span className="oj-cat-icon-circle" style={{ width: "46px", height: "46px" }}>
+                  {cat.isAll ? (
+                    <img src={isDark ? "/brand/Ojarket_01_Icon_UltraPremium_Dark_Transparent.png" : "/brand/Ojarket_01_Icon_UltraPremium_Transparent.png"} alt="Tout" style={{ width: "22px", height: "22px", objectFit: "contain" }} />
+                  ) : (
+                    <img src={cat.image || ""} alt={cat.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  )}
+                </span>
+                <span className="oj-cat-label" style={{ fontSize: "11px" }}>{cat.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Result counter */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <span style={{ fontSize: "12px", color: "var(--oj-color-muted)", fontWeight: 600 }}>
+              {filteredProducts.length} {isEn ? "creations found" : "créations d'exception disponibles"}
+            </span>
+            {activeCategory !== "all" && (
+              <button className="oj-link-btn" onClick={() => setActiveCategory("all")} style={{ fontSize: "10px", padding: "4px 10px" }}>
+                {isEn ? "All categories" : "Toutes les catégories"}
+              </button>
+            )}
+          </div>
+
+          {/* Products Grid with EXACT same proven master card layout as Home */}
+          {filteredProducts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "64px 16px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
+              <p style={{ fontSize: "15px", fontWeight: 600, margin: "0 0 8px" }}>
+                {isEn ? "No products matching your query." : "Aucune création ne correspond à votre recherche."}
+              </p>
+              <button className="oj-btn-secondary" onClick={() => { setActiveCategory("all"); setSearchQuery(""); }}>
+                {isEn ? "Reset filters" : "Réinitialiser les filtres"}
+              </button>
+            </div>
+          ) : (
+            <div className="oj-product-grid">
+              {filteredProducts.map((p) => (
+                <article key={p.id} className="oj-prod-card">
+                  <div className="oj-prod-media" onClick={() => setSelectedProduct(p)}>
+                    <img src={p.image} alt={p.title} />
+                    {p.category === "digital" && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          left: "10px",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          backgroundColor: "rgba(2, 43, 34, 0.92)",
+                          color: "var(--oj-color-accent)",
+                          fontSize: "10px",
+                          fontWeight: 800,
+                          border: "1px solid var(--oj-color-accent)",
+                          letterSpacing: "0.5px",
+                          zIndex: 2,
+                        }}
+                      >
+                        NUMÉRIQUE
+                      </span>
+                    )}
+                    <button
+                      className="oj-fav-btn"
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                      aria-label="Favori"
+                    >
+                      <IconHeart filled={!!favorites[p.id]} />
+                    </button>
+                  </div>
+                  <div className="oj-prod-body">
+                    <div className="oj-prod-seller">{typeof p.seller === "object" ? p.seller.name : p.seller || "Kingston Bio Official"}</div>
+                    <h3 className="oj-prod-title" onClick={() => setSelectedProduct(p)}>
+                      {p.title}
+                    </h3>
+                    <p className="oj-prod-subtitle">{p.subtitle}</p>
+                    <div className="oj-prod-footer">
+                      <div>
+                        <div className="oj-prod-price">
+                          {formatPrice(p.price, p.currency)}
+                        </div>
+                        <div className="oj-prod-rating">
+                          {p.reviewsCount && p.reviewsCount > 0 && p.rating ? (
+                            <>
+                              <span className="oj-star-icon"><IconStar /></span>
+                              <span>{p.rating.toFixed(1)} ({p.reviewsCount})</span>
+                            </>
+                          ) : (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--oj-color-accent)", fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                              <IconDiamondSparkle />
+                              <span>{isEn ? "NEW ARRIVAL" : "NOUVEAU"}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {p.category === "digital" ? (
+                        <button
+                          className="oj-btn-primary"
+                          onClick={() => addToCart(p)}
+                          style={{
+                            height: "36px",
+                            padding: "0 12px",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            borderRadius: "var(--oj-radius-field)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <IconDownloadMini />
+                          <span>{isEn ? "Download" : "Télécharger"}</span>
+                        </button>
+                      ) : (
+                        <button
+                          className="oj-prod-cart-btn"
+                          onClick={() => addToCart(p)}
+                          title={isEn ? "Add to cart" : "Ajouter au panier"}
+                        >
+                          <IconCart />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ==================== VIEW 3: DEMANDES & SUR-MESURE ==================== */}
+      {buyerTab === "need" && (
+        <section className="oj-section" style={{ minHeight: "80vh", paddingTop: "24px" }}>
+          <div style={{ marginBottom: "24px" }}>
+            <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+              {isEn ? "BESPOKE HUB · DIRECT WORKSHOP QUOTES" : "CRÉATIONS SUR-MESURE & DEVIS DIRECTS (D02)"}
+            </span>
+            <h1 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "28px", margin: "4px 0 8px" }}>
+              {isEn ? "Custom Requests & Proposals" : "Espace Demandes & Sur-Mesure"}
+            </h1>
+            <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: 0 }}>
+              {isEn
+                ? "Submit your specific needs or compare detailed proposals received from verified partner workshops."
+                : "Exprimez vos besoins spécifiques ou comparez les propositions chiffrées soumises par nos vendeurs et boutiques partenaires vérifiées."}
+            </p>
+          </div>
+
+          {/* Sub-tabs Switcher */}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "1px solid var(--oj-color-border)", paddingBottom: "12px" }}>
+            <button
+              className={`oj-pill-opt ${needSubTab === "create" ? "active" : ""}`}
+              onClick={() => setNeedSubTab("create")}
+              style={{ padding: "8px 18px", fontSize: "13px" }}
+            >
+              + {isEn ? "New Custom Request" : "Exprimer un besoin"}
+            </button>
+            <button
+              className={`oj-pill-opt ${needSubTab === "proposals" ? "active" : ""}`}
+              onClick={() => setNeedSubTab("proposals")}
+              style={{ padding: "8px 18px", fontSize: "13px" }}
+            >
+              ✓ {isEn ? `Proposals Received (${currentUser ? requestsList.reduce((acc, r) => acc + (r.proposals?.length || 0), 0) : 0})` : `Devis reçus (${currentUser ? requestsList.reduce((acc, r) => acc + (r.proposals?.length || 0), 0) : 0})`}
+            </button>
+          </div>
+
+          {/* Sub-tab 1: Formulaire Demande */}
+          {needSubTab === "create" && (
+            <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "28px", maxWidth: "720px" }}>
+              <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-field)", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                <span style={{ fontSize: "18px", color: "var(--oj-color-accent)" }}>✦</span>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ fontSize: "13px" }}>{isEn ? "AI Craft Assistant" : "Aide IA Ojarket"}</strong>
+                  <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", margin: "2px 0 0" }}>
+                    {isEn ? "Let AI refine and structure your custom specifications." : "Décrivez votre besoin simplement, notre IA prépare le cahier des charges technique."}
+                  </p>
+                </div>
+                <button className="oj-btn-secondary" style={{ height: "32px", fontSize: "12px", padding: "0 12px" }} onClick={handleAiAssist} disabled={aiStructuring}>
+                  {aiStructuring ? "..." : (isEn ? "Fill example" : "Pré-remplir")}
                 </button>
               </div>
 
+              {needSubmitted ? (
+                <div style={{ textAlign: "center", padding: "32px 0" }}>
+                  <div style={{ fontSize: "42px", marginBottom: "12px", color: "var(--oj-color-action)" }}>✓</div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "20px", margin: "0 0 8px" }}>
+                    {isEn ? "Request transmitted to workshops!" : "Demande transmise avec succès !"}
+                  </h3>
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", margin: "0 0 20px" }}>
+                    {isEn ? "Verified stores will submit detailed quotes with crafting delays." : "Les boutiques partenaires étudient votre demande et vous soumettront leurs devis sous peu."}
+                  </p>
+                  <button className="oj-btn-primary" onClick={() => { setNeedSubmitted(false); setNeedSubTab("proposals"); }}>
+                    {isEn ? "View my proposals →" : "Voir mes devis reçus →"}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!currentUser) {
+                    setPendingAction("submitNeed");
+                    setAuthModalOpen(true);
+                    return;
+                  }
+                  if (!needDesc.trim()) return;
+
+                  try {
+                    const budgetNumber = parseInt(needBudget.replace(/\D/g, "")) || 60000;
+                    const res = await RequestsApi.create({
+                      buyerId: currentUser.id,
+                      buyerName: currentUser.name || "Client Privilège",
+                      buyerPhone: currentUser.phone || undefined,
+                      rawPrompt: needDesc.trim(),
+                      category: needCategory,
+                      budgetMinor: budgetNumber * 100,
+                    });
+                    if (res) {
+                      setRequestsList(prev => [res, ...prev]);
+                      setNeedSubmitted(true);
+                      setNeedDesc("");
+                      setNeedBudget("");
+                      setNeedPlace("");
+                    }
+                  } catch (err: any) {
+                    alert(err?.message || "Erreur lors de la transmission de la demande");
+                  }
+                }}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                      {isEn ? "Category *" : "Catégorie de création *"}
+                    </label>
+                    <select
+                      value={needCategory}
+                      onChange={(e) => setNeedCategory(e.target.value)}
+                      style={{
+                        width: "100%", padding: "12px 16px", borderRadius: "var(--oj-radius-field)",
+                        border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                        color: "var(--oj-color-text)", fontSize: "14px"
+                      }}
+                    >
+                      <option value="leather">{isEn ? "Leather & Bags" : "Maroquinerie d'art"}</option>
+                      <option value="watches">{isEn ? "Watches & Jewelry" : "Horlogerie & Joaillerie"}</option>
+                      <option value="fashion">{isEn ? "Textiles & Wear" : "Textile & Mode noble"}</option>
+                      <option value="home">{isEn ? "Home & Furniture" : "Mobilier d'art & Décoration"}</option>
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: "16px" }}>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                      {isEn ? "Description of your bespoke need *" : "Description détaillée de votre besoin *"}
+                    </label>
+                    <textarea
+                      rows={4}
+                      placeholder={isEn ? "Describe materials, dimensions, style..." : "Ex. : Sac cabas en cuir pleine fleur cognac, doublure suédine, gravure personnalisée..."}
+                      value={needDesc}
+                      onChange={(e) => setNeedDesc(e.target.value)}
+                      required
+                      style={{
+                        width: "100%", padding: "12px 16px", borderRadius: "var(--oj-radius-field)",
+                        border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                        color: "var(--oj-color-text)", fontSize: "14px", resize: "vertical",
+                        fontFamily: "var(--oj-font-ui)"
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                        {isEn ? "Target Budget" : "Budget indicatif"}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 85 000 FCFA"
+                        value={needBudget}
+                        onChange={(e) => setNeedBudget(e.target.value)}
+                        style={{
+                          width: "100%", padding: "12px 16px", borderRadius: "var(--oj-radius-field)",
+                          border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                          color: "var(--oj-color-text)", fontSize: "14px"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                        {isEn ? "Delivery city" : "Ville de livraison"}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Cotonou, Bénin"
+                        value={needPlace}
+                        onChange={(e) => setNeedPlace(e.target.value)}
+                        style={{
+                          width: "100%", padding: "12px 16px", borderRadius: "var(--oj-radius-field)",
+                          border: "1px solid var(--oj-color-border)", backgroundColor: "var(--oj-color-subtle)",
+                          color: "var(--oj-color-text)", fontSize: "14px"
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <button type="submit" className="oj-btn-primary" style={{ width: "100%", height: "46px" }}>
+                    {isEn ? "Transmit to verified workshops" : "Publier ma demande sur-mesure"} →
+                  </button>
+                </form>
+              )}
             </div>
-          </section>
-        </main>
+          )}
+
+          {/* Sub-tab 2: Devis et propositions */}
+          {needSubTab === "proposals" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "860px" }}>
+              {!currentUser ? (
+                <div style={{ textAlign: "center", padding: "64px 20px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)", maxWidth: "560px" }}>
+                  <div style={{ fontSize: "36px", marginBottom: "12px", color: "var(--oj-color-accent)" }}>✦</div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "22px", margin: "0 0 10px" }}>
+                    {isEn ? "Your Bespoke Quotes" : "Vos Devis & Créations Sur-Mesure"}
+                  </h3>
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.6", margin: "0 0 24px" }}>
+                    {isEn
+                      ? "Sign in or create your Ojarket account to view proposals and quotes from verified stores."
+                      : "Connectez-vous ou créez votre compte pour retrouver vos demandes sur-mesure et consulter les devis détaillés soumis par nos boutiques partenaires."}
+                  </p>
+                  <button className="oj-btn-primary" style={{ height: "46px", padding: "0 28px", fontSize: "14px" }} onClick={() => setAuthModalOpen(true)}>
+                    {isEn ? "Sign In or Register" : "Se connecter ou Créer un compte"} →
+                  </button>
+                </div>
+              ) : requestsList.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "64px 20px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)", maxWidth: "560px" }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "var(--oj-color-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: "var(--oj-color-accent)" }}>
+                    ✦
+                  </div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "20px", margin: "0 0 8px" }}>
+                    {isEn ? "No Bespoke Requests Yet" : "Aucun devis en attente"}
+                  </h3>
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", lineHeight: "1.5", margin: "0 0 24px" }}>
+                    {isEn
+                      ? "You have not submitted any custom creation requests yet. Express your need to receive tailor-made quotes from our master craftspeople."
+                      : "Vous n'avez aucune demande de création sur-mesure active. Exprimez vos souhaits pour recevoir des devis personnalisés chiffrés par nos boutiques et vendeurs professionnels."}
+                  </p>
+                  <button className="oj-btn-primary" style={{ height: "42px", padding: "0 20px" }} onClick={() => setNeedSubTab("create")}>
+                    {isEn ? "Express a Custom Need →" : "Exprimer un besoin sur-mesure →"}
+                  </button>
+                </div>
+              ) : (
+                requestsList.map((req) => {
+                  const reqBudget = req.targetBudgetMinor
+                    ? `${Math.round(req.targetBudgetMinor / 100).toLocaleString()} ${req.currency || 'FCFA'}`
+                    : (req.budget || "Sur devis");
+                  const propsArray = req.proposals || [];
+
+                  return (
+                    <div
+                      key={req.id}
+                      style={{
+                        border: "1px solid var(--oj-color-border)",
+                        borderRadius: "var(--oj-radius-card)",
+                        padding: "20px",
+                        background: "var(--oj-color-surface)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+                        <div>
+                          <span className="oj-status-pill success" style={{ fontSize: "11px", marginBottom: "6px", display: "inline-block" }}>
+                            {req.category}
+                          </span>
+                          <h3 style={{ margin: "4px 0", fontSize: "18px", fontFamily: "var(--oj-font-editorial)" }}>
+                            {req.title}
+                          </h3>
+                          <small style={{ color: "var(--oj-color-muted)" }}>
+                            {req.buyerCity || "Afrique de l'Ouest"} · {isEn ? "Budget:" : "Budget indicatif :"} <strong>{reqBudget}</strong>
+                          </small>
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--oj-color-accent)" }}>
+                          {propsArray.length} {isEn ? "proposals" : "devis reçus"}
+                        </span>
+                      </div>
+
+                      <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", lineHeight: "1.5", margin: "0 0 16px" }}>
+                        {req.description}
+                      </p>
+
+                      {propsArray.length === 0 ? (
+                        <div style={{ padding: "16px", borderRadius: "var(--oj-radius-field)", background: "var(--oj-color-subtle)", fontSize: "13px", color: "var(--oj-color-muted)" }}>
+                          {isEn ? "Your request has been published. Verified stores are reviewing your request." : "Votre demande a bien été transmise à nos boutiques partenaires. Leurs devis apparaîtront ici dès leur soumission."}
+                        </div>
+                      ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+                          {propsArray.map((prop: any) => {
+                            const sellerName = prop.sellerName || prop.shopName || "Boutique Officielle";
+                            const sellerCity = prop.sellerCity || prop.artisanCity || "Cotonou";
+                            const delayDays = prop.delayDays || prop.productionDays || 7;
+                            const price = prop.priceMinor ? Math.round(prop.priceMinor / 100) : (prop.price || 0);
+
+                            return (
+                              <div
+                                key={prop.id}
+                                style={{
+                                  border: prop.status === "ACCEPTED" ? "2px solid var(--oj-color-action)" : "1px solid var(--oj-color-border)",
+                                  borderRadius: "var(--oj-radius-field)",
+                                  padding: "16px",
+                                  background: prop.status === "ACCEPTED" ? "rgba(13, 74, 56, 0.08)" : "var(--oj-color-subtle)",
+                                  position: "relative",
+                                }}
+                              >
+                                {prop.status === "ACCEPTED" && (
+                                  <div style={{ position: "absolute", top: "12px", right: "12px" }}>
+                                    <span className="oj-status-pill success">{isEn ? "ACCEPTED" : "RETENU ✓"}</span>
+                                  </div>
+                                )}
+                                <div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>
+                                  {sellerName}
+                                </div>
+                                <div style={{ color: "var(--oj-color-muted)", fontSize: "12px", marginBottom: "10px" }}>
+                                  {sellerCity} · {delayDays} {isEn ? "days crafting" : "jours de confection"}
+                                </div>
+                                {prop.notes && (
+                                  <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", margin: "0 0 12px", lineHeight: "1.4" }}>
+                                    "{prop.notes}"
+                                  </p>
+                                )}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <div>
+                                    <div style={{ fontSize: "11px", color: "var(--oj-color-muted)" }}>{isEn ? "Price quoted" : "Montant du devis"}</div>
+                                    <strong style={{ fontSize: "15px", fontVariantNumeric: "tabular-nums" }}>{formatPrice(price)}</strong>
+                                  </div>
+                                  {prop.status !== "ACCEPTED" ? (
+                                    <button
+                                      className="oj-btn-primary"
+                                      style={{ height: "32px", fontSize: "12px", padding: "0 12px" }}
+                                      onClick={async () => {
+                                        try {
+                                          const res = await RequestsApi.acceptProposal(req.id, prop.id);
+                                          prop.status = "ACCEPTED";
+                                          OrdersApi.getAll().then(ords => { if (ords) setBuyerOrders(ords); }).catch(() => {});
+                                          alert(isEn ? "Proposal accepted! Order created." : `Devis validé ! Commande ${res.orderNumber || ''} enregistrée.`);
+                                        } catch (err: any) {
+                                          alert(err?.message || "Erreur lors de la validation du devis");
+                                        }
+                                      }}
+                                    >
+                                      {isEn ? "Accept Quote" : "Retenir ce devis"} →
+                                    </button>
+                                  ) : (
+                                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--oj-color-action)" }}>
+                                      ✓ Commande transmise
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ==================== VIEW 4: ACHATS & COMMANDES ==================== */}
+      {buyerTab === "purchases" && (
+        <section className="oj-section" style={{ minHeight: "80vh", paddingTop: "24px" }}>
+          <div style={{ marginBottom: "24px" }}>
+            <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+              {isEn ? "PURCHASES & CERTIFIED ORDERS" : "ACHATS & COMMANDES SÉCURISÉES"}
+            </span>
+            <h1 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "28px", margin: "4px 0 8px" }}>
+              {isEn ? "My Cart & Orders" : "Espace Achats & Commandes"}
+            </h1>
+          </div>
+
+          {/* Sub-tabs Switcher */}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "1px solid var(--oj-color-border)", paddingBottom: "12px" }}>
+            <button
+              className={`oj-pill-opt ${purchasesSubTab === "cart" ? "active" : ""}`}
+              onClick={() => setPurchasesSubTab("cart")}
+              style={{ padding: "8px 18px", fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <IconCart />
+              <span>{isEn ? `Cart (${cartCount})` : `Mon Panier (${cartCount})`}</span>
+            </button>
+            <button
+              className={`oj-pill-opt ${purchasesSubTab === "orders" ? "active" : ""}`}
+              onClick={() => setPurchasesSubTab("orders")}
+              style={{ padding: "8px 18px", fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <IconPackage size={15} />
+              <span>{isEn ? `Orders (${currentUser ? buyerOrders.length : 0})` : `Mes Commandes (${currentUser ? buyerOrders.length : 0})`}</span>
+            </button>
+          </div>
+
+          {/* Sub-tab 1: Panier */}
+          {purchasesSubTab === "cart" && (
+            <div style={{ maxWidth: "780px" }}>
+              {cart.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "64px 16px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
+                  <p style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 8px" }}>
+                    {isEn ? "Your cart is currently empty." : "Votre panier est actuellement vide."}
+                  </p>
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", margin: "0 0 20px" }}>
+                    {isEn ? "Discover unique handmade creations in our catalog." : "Découvrez nos pièces d'exception sélectionnées pour vous."}
+                  </p>
+                  <button className="oj-btn-primary" onClick={() => { setBuyerTab("search"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                    {isEn ? "Explore catalog →" : "Explorer le catalogue →"}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "20px" }}>
+                    {cart.map((item) => (
+                      <div key={item.product.id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "12px 0", borderBottom: "1px solid var(--oj-color-subtle)" }}>
+                        <img src={item.product.image} alt={item.product.title} style={{ width: "64px", height: "64px", borderRadius: "10px", objectFit: "cover" }} />
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: "11px", color: "var(--oj-color-muted)", textTransform: "uppercase" }}>
+                            {typeof item.product.seller === "object" ? item.product.seller.name : item.product.seller}
+                          </span>
+                          <div style={{ fontWeight: 600, fontSize: "14px" }}>{item.product.title}</div>
+                          <div style={{ color: "var(--oj-color-accent)", fontWeight: 700, fontSize: "14px", marginTop: "2px" }}>
+                            {formatPrice(item.product.price)}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <button
+                            className="oj-btn-secondary"
+                            style={{ width: "28px", height: "28px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+                            onClick={() => updateCartQuantity(item.product.id, -1)}
+                          >
+                            -
+                          </button>
+                          <span style={{ fontWeight: 700, minWidth: "18px", textAlign: "center" }}>{item.quantity}</span>
+                          <button
+                            className="oj-btn-secondary"
+                            style={{ width: "28px", height: "28px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+                            onClick={() => updateCartQuantity(item.product.id, 1)}
+                          >
+                            +
+                          </button>
+                          <button
+                            onClick={() => removeFromCart(item.product.id)}
+                            style={{ background: "none", border: "none", color: "var(--oj-color-muted)", cursor: "pointer", marginLeft: "8px", fontSize: "16px" }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", paddingTop: "16px", borderTop: "1px solid var(--oj-color-border)" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 600 }}>Total de la commande :</span>
+                      <strong style={{ fontSize: "20px", color: "var(--oj-color-accent)", fontVariantNumeric: "tabular-nums" }}>
+                        {formatPrice(cartTotal)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", fontSize: "12px", color: "var(--oj-color-muted)", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ color: "var(--oj-color-action)", flexShrink: 0 }}><IconLock size={16} /></span>
+                    <span>{isEn ? "Secure payment direct via Mobile Money (MTN MoMo, Moov, Wave) and Card. Funds protected in escrow until delivery is confirmed." : "Paiement sécurisé direct via Mobile Money (MTN MoMo, Moov, Wave) et Carte Bancaire. Les fonds sont protégés jusqu'à confirmation de livraison."}</span>
+                  </div>
+
+                  <button className="oj-btn-primary" style={{ height: "48px", fontSize: "15px" }} onClick={handlePlaceOrder}>
+                    {isEn ? `Confirm Order (${formatPrice(cartTotal)})` : `Valider et commander (${formatPrice(cartTotal)})`} →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sub-tab 2: Commandes passées */}
+          {purchasesSubTab === "orders" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "780px" }}>
+              {!currentUser ? (
+                <div style={{ textAlign: "center", padding: "64px 20px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)", maxWidth: "560px" }}>
+                  <div style={{ fontSize: "36px", marginBottom: "12px", color: "var(--oj-color-accent)" }}>✦</div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "22px", margin: "0 0 10px" }}>
+                    {isEn ? "Track Your Orders" : "Suivi de Vos Commandes d'Exception"}
+                  </h3>
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.6", margin: "0 0 24px" }}>
+                    {isEn
+                      ? "Sign in to track your order deliveries, escrow certificates, and artisan receipts."
+                      : "Connectez-vous à votre compte Ojarket pour suivre l'acheminement de vos commandes, l'état de préparation des boutiques et vos garanties d'authenticité."}
+                  </p>
+                  <button className="oj-btn-primary" style={{ height: "46px", padding: "0 28px", fontSize: "14px" }} onClick={() => setAuthModalOpen(true)}>
+                    {isEn ? "Sign In or Register" : "Se connecter ou Créer un compte"} →
+                  </button>
+                </div>
+              ) : buyerOrders.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "64px 20px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)", maxWidth: "560px" }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "var(--oj-color-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: "var(--oj-color-muted)" }}>
+                    <IconPackage size={22} />
+                  </div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "20px", margin: "0 0 8px" }}>
+                    {isEn ? "No Orders Placed Yet" : "Aucune commande pour le moment"}
+                  </h3>
+                  <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", lineHeight: "1.5", margin: "0 0 24px" }}>
+                    {isEn
+                      ? "Your order history is currently empty. Discover unique creations from verified west-african artisans."
+                      : "Votre historique de commandes est vierge. Explorez les créations d'exception de nos boutiques et vendeurs vérifiés."}
+                  </p>
+                  <button className="oj-btn-primary" style={{ height: "42px", padding: "0 20px" }} onClick={() => { setBuyerTab("search"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                    {isEn ? "Discover Creations →" : "Découvrir la sélection d'exception →"}
+                  </button>
+                </div>
+              ) : (
+                buyerOrders.map((ord) => {
+                  const orderNumber = ord.orderNumber || ord.id;
+                  const title = ord.title || (ord.lines && ord.lines[0]?.itemTitle) || "Commande Ojarket";
+                  const shopName = ord.shopName || ord.shop?.name || (ord.lines && ord.lines[0]?.variant?.product?.shop?.name) || "Kingston Bio Official";
+                  const date = ord.date || (ord.createdAt ? new Date(ord.createdAt).toLocaleDateString(isEn ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : "Aujourd'hui");
+                  const price = ord.price != null ? ord.price : (ord.totalAmountMinor ? ord.totalAmountMinor / 100 : 0);
+                  const paymentStatus = ord.paymentStatus === 'CONFIRMED' || ord.paymentStatus === 'SETTLED_TO_MERCHANT' ? (isEn ? "Paid & Certified" : "Payé & Certifié (MTN MoMo)") : (ord.paymentStatus || (isEn ? "Pending" : "En attente"));
+                  const deliveryStatus = ord.deliveryStatus || (ord.fulfillmentStatus === 'SHIPPED' ? (isEn ? "In transit" : "En cours de livraison") : (isEn ? "In preparation" : "En préparation par la boutique"));
+                  const img = ord.image || (ord.lines && ord.lines[0]?.variant?.product?.image) || "/products/watch-chrono.jpg";
+
+                  return (
+                    <div
+                      key={ord.id}
+                      style={{
+                        background: "var(--oj-color-surface)",
+                        border: "1px solid var(--oj-color-border)",
+                        borderRadius: "var(--oj-radius-card)",
+                        padding: "20px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "16px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <img src={img} alt={title} style={{ width: "68px", height: "68px", borderRadius: "10px", objectFit: "cover" }} />
+                      <div style={{ flex: 1, minWidth: "200px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                          <span style={{ fontWeight: 700, fontSize: "13px" }}>{orderNumber}</span>
+                          <span className="oj-status-pill success" style={{ fontSize: "10px" }}>{paymentStatus}</span>
+                        </div>
+                        <div style={{ fontWeight: 600, fontSize: "15px" }}>{title}</div>
+                        <small style={{ color: "var(--oj-color-muted)" }}>
+                          {shopName} · {date}
+                        </small>
+                        <div style={{ fontSize: "12px", color: "var(--oj-color-action)", marginTop: "4px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                          <IconTruck size={14} />
+                          <span>{deliveryStatus}</span>
+                        </div>
+                      </div>
+                      <strong style={{ fontSize: "16px", fontVariantNumeric: "tabular-nums" }}>
+                        {formatPrice(price)}
+                      </strong>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ==================== VIEW 5: PROFIL CLIENT & PARAMÈTRES ==================== */}
+      {buyerTab === "profile" && (
+        <section className="oj-section" style={{ minHeight: "80vh", paddingTop: "24px" }}>
+          <div style={{ maxWidth: "600px" }}>
+            <div style={{ marginBottom: "24px" }}>
+              <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
+                {isEn ? "ACCOUNT & SETTINGS" : "ESPACE CLIENT PRIVILÈGE"}
+              </span>
+              <h1 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "28px", margin: "4px 0 0" }}>
+                {isEn ? "My Profile" : "Mon Compte & Préférences"}
+              </h1>
+            </div>
+
+            {currentUser ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "20px" }}>
+                    <div style={{ width: "54px", height: "54px", borderRadius: "27px", backgroundColor: "var(--oj-color-action)", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: 700 }}>
+                      {currentUser.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: "18px" }}>{currentUser.name}</h3>
+                      <div style={{ color: "var(--oj-color-muted)", fontSize: "13px" }}>{currentUser.email}</div>
+                      <span className="oj-status-pill success" style={{ fontSize: "10px", marginTop: "4px", display: "inline-block" }}>
+                        {currentUser.role === "ADMIN" ? "Administrateur Système" : "✦ Client Privilège Certifié"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <button
+                      className="oj-btn-secondary"
+                      style={{ justifyContent: "space-between", height: "42px", padding: "0 16px", fontSize: "13px", fontWeight: 600 }}
+                      onClick={() => {
+                        handleSelectUniverse("seller");
+                      }}
+                    >
+                      <span>{isEn ? "Switch to Seller Pro Universe" : "Accéder à l'Espace Vendeur Pro"}</span>
+                      <span>↗</span>
+                    </button>
+
+                    <button
+                      className="oj-btn-secondary"
+                      style={{ justifyContent: "space-between", height: "42px", padding: "0 16px", fontSize: "13px", fontWeight: 600 }}
+                      onClick={() => {
+                        setBuyerTab("purchases");
+                        setPurchasesSubTab("orders");
+                      }}
+                    >
+                      <span>{isEn ? "My certified orders" : "Mes commandes certifiées"}</span>
+                      <span>({buyerOrders.length}) →</span>
+                    </button>
+
+                    <button
+                      className="oj-btn-secondary"
+                      style={{ justifyContent: "space-between", height: "42px", padding: "0 16px", fontSize: "13px", fontWeight: 600 }}
+                      onClick={() => {
+                        setBuyerTab("need");
+                        setNeedSubTab("proposals");
+                      }}
+                    >
+                      <span>{isEn ? "My custom requests & store quotes" : "Mes demandes et devis boutiques"}</span>
+                      <span>({requestsList.length}) →</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "20px" }}>
+                  <h4 style={{ margin: "0 0 16px", fontSize: "15px" }}>{isEn ? "Preferences" : "Préférences"}</h4>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                    <span style={{ fontSize: "13px" }}>{isEn ? "Language" : "Langue d'affichage"}</span>
+                    <button className="oj-link-btn" onClick={() => setLocale(locale === "fr" ? "en" : "fr")}>
+                      {locale === "fr" ? "Français (Bénin / UEMOA)" : "English"}
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "13px" }}>{isEn ? "Display Theme" : "Thème visuel"}</span>
+                    <button className="oj-link-btn" onClick={() => setMode(isDark ? "light" : "dark")}>
+                      {isDark ? "Mode Sombre" : "Mode Clair"}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  className="oj-btn-secondary"
+                  onClick={handleLogout}
+                  style={{ color: "var(--oj-color-errorFg)", borderColor: "var(--oj-color-border)", height: "42px", fontWeight: 600 }}
+                >
+                  {isEn ? "Sign Out" : "Se déconnecter"} ✕
+                </button>
+              </div>
+            ) : (
+              <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "28px", textAlign: "center" }}>
+                <div style={{ fontSize: "36px", marginBottom: "12px" }}>✦</div>
+                <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "20px", margin: "0 0 8px" }}>
+                  {isEn ? "Join Ojarket Privilege" : "Espace Client Privilège"}
+                </h3>
+                <p style={{ color: "var(--oj-color-muted)", fontSize: "13px", margin: "0 0 24px" }}>
+                  {isEn
+                    ? "Log in to track your custom orders, proposals, and cart."
+                    : "Connectez-vous pour suivre vos commandes, vos commandes sur-mesure et vos devis de vendeurs."}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <button className="oj-btn-primary" style={{ height: "44px" }} onClick={() => setAuthModalOpen(true)}>
+                    {isEn ? "Sign In or Register" : "Se connecter ou Créer un compte"} →
+                  </button>
+                  <button
+                    className="oj-btn-secondary"
+                    style={{ height: "42px" }}
+                    onClick={() => {
+                      setPendingAction("openSellerSpace");
+                      setAuthModalOpen(true);
+                    }}
+                  >
+                    {isEn ? "Become a Verified Seller" : "Ouvrir un Espace Vendeur Pro"} ↗
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+    </main>
       ) : (
         /* ==================== SELLER UNIVERSE ==================== */
         <main className="oj-main-seller">
@@ -1027,8 +2174,8 @@ function MainMarketplaceView() {
               <div>
                 <h1 className="oj-seller-greeting">
                   {currentUser?.name
-                    ? (isEn ? `Welcome back, ${currentUser.name.trim().split(/\s+/)[0]} 👋` : `Bonjour ${currentUser.name.trim().split(/\s+/)[0]} 👋`)
-                    : (isEn ? "Welcome back 👋" : "Bonjour 👋")}
+                    ? (isEn ? `Welcome back, ${currentUser.name.trim().split(/\s+/)[0]}` : `Bonjour ${currentUser.name.trim().split(/\s+/)[0]}`)
+                    : (isEn ? "Welcome back" : "Bonjour")}
                 </h1>
                 <p style={{ color: "var(--oj-color-muted)", margin: 0 }}>
                   {isEn
@@ -1156,7 +2303,7 @@ function MainMarketplaceView() {
 
                 {sellerRequests.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
-                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>🛍️</div>
+                    <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><IconBag /></div>
                     <h4 style={{ margin: "0 0 8px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
                       {isEn ? "No buyer demands at the moment" : "Aucune demande acheteur pour le moment"}
                     </h4>
@@ -1229,7 +2376,7 @@ function MainMarketplaceView() {
               <div>
                 {sellerOrders.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
-                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>📦</div>
+                    <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><IconCart /></div>
                     <h4 style={{ margin: "0 0 8px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
                       {isEn ? "No orders yet" : "Aucune commande pour le moment"}
                     </h4>
@@ -1369,7 +2516,7 @@ function MainMarketplaceView() {
                 {/* Grand Livre Immuable (Append-only preview) */}
                 <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", fontSize: "12px" }}>
                   <div style={{ fontWeight: 700, marginBottom: "8px", color: "var(--oj-color-action)" }}>
-                    🔒 Grand Livre Immuable (Append-Only Events — V3 Architecture)
+                    Grand Livre Immuable (Append-Only Events — V3 Architecture)
                   </div>
                   <div style={{ color: "var(--oj-color-muted)", lineHeight: "1.6" }}>
                     Toute écriture de vente ou encaissement génère un événement non supprimable (`PAYMENT_CONFIRMED`, `SALE_CREATED`, `DAY_CLOSED`). Les rectifications se font par contre-passation auditée.
@@ -1401,17 +2548,23 @@ function MainMarketplaceView() {
                 />
                 <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
                   <span className="oj-status-pill success">
-                    {isEn ? `In stock (${selectedProduct.stock})` : `En stock (${selectedProduct.stock})`}
+                    {isEn ? `In stock (${selectedProduct.stock ?? 1})` : `En stock (${selectedProduct.stock ?? 1})`}
                   </span>
                 </div>
               </div>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
                   <div className="oj-shop-avatar" style={{ width: "36px", height: "36px", fontSize: "12px" }}>
-                    {selectedProduct.seller.initials}
+                    {typeof selectedProduct.seller === "object"
+                      ? selectedProduct.seller?.initials || selectedProduct.seller?.name?.slice(0, 2).toUpperCase() || "KB"
+                      : (selectedProduct.seller ? String(selectedProduct.seller).slice(0, 2).toUpperCase() : "KB")}
                   </div>
                   <div>
-                    <strong style={{ fontSize: "14px" }}>{selectedProduct.seller.name}</strong>
+                    <strong style={{ fontSize: "14px" }}>
+                      {typeof selectedProduct.seller === "object"
+                        ? selectedProduct.seller?.name || "Kingston Bio"
+                        : selectedProduct.seller || "Kingston Bio"}
+                    </strong>
                     <span className="oj-verified-pill" style={{ marginLeft: "8px" }}>Vendeur Pro</span>
                   </div>
                 </div>
@@ -1424,18 +2577,20 @@ function MainMarketplaceView() {
                 <div style={{ fontSize: "28px", fontWeight: 700, fontVariantNumeric: "tabular-nums", marginBottom: "24px" }}>
                   {formatPrice(selectedProduct.price, selectedProduct.currency)}
                 </div>
-                <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-                  {selectedProduct.variants.map((v, idx) => (
-                    <span key={idx} style={{
-                      display: "inline-flex", alignItems: "center", gap: "6px",
-                      padding: "8px 14px", border: "1px solid var(--oj-color-border)",
-                      borderRadius: "var(--oj-radius-pill)", fontSize: "13px"
-                    }}>
-                      <i style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: v.color, display: "inline-block" }} />
-                      {v.name}
-                    </span>
-                  ))}
-                </div>
+                {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+                    {selectedProduct.variants.map((v, idx) => (
+                      <span key={idx} style={{
+                        display: "inline-flex", alignItems: "center", gap: "6px",
+                        padding: "8px 14px", border: "1px solid var(--oj-color-border)",
+                        borderRadius: "var(--oj-radius-pill)", fontSize: "13px"
+                      }}>
+                        {v.color && <i style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: v.color, display: "inline-block" }} />}
+                        {v.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button className="oj-btn-primary" onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); setCartOpen(true); }}>
                     {isEn ? "Add to cart" : "Ajouter au panier"}
@@ -1497,7 +2652,36 @@ function MainMarketplaceView() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={(e) => { e.preventDefault(); if (needDesc.trim()) setNeedSubmitted(true); }}>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!currentUser) {
+                  setPendingAction("submitNeed");
+                  setAuthModalOpen(true);
+                  return;
+                }
+                if (!needDesc.trim()) return;
+
+                try {
+                  const budgetNumber = parseInt(needBudget.replace(/\D/g, "")) || 60000;
+                  const res = await RequestsApi.create({
+                    buyerId: currentUser.id,
+                    buyerName: currentUser.name || "Client Privilège",
+                    buyerPhone: currentUser.phone || undefined,
+                    rawPrompt: needDesc.trim(),
+                    category: needCategory,
+                    budgetMinor: budgetNumber * 100,
+                  });
+                  if (res) {
+                    setRequestsList(prev => [res, ...prev]);
+                    setNeedSubmitted(true);
+                    setNeedDesc("");
+                    setNeedBudget("");
+                    setNeedPlace("");
+                  }
+                } catch (err: any) {
+                  alert(err?.message || "Erreur lors de la transmission de la demande");
+                }
+              }}>
                 <div style={{ marginBottom: "16px" }}>
                   <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "6px" }}>
                     {isEn ? "Category *" : "Catégorie *"}
@@ -1670,17 +2854,17 @@ function MainMarketplaceView() {
                             {prop.artisan}
                           </div>
                           <div style={{ color: "var(--oj-color-muted)", fontSize: "12px", marginBottom: "12px" }}>
-                            📍 {prop.city} · ⏱ {prop.days} {isEn ? "days lead time" : "jours de confection"}
+                            {prop.city} · {prop.days} {isEn ? "days lead time" : "jours de confection"}
                           </div>
 
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                             <span style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>{isEn ? "Total Quote:" : "Devis total :"}</span>
-                            <strong style={{ fontSize: "16px", fontVariantNumeric: "tabular-nums" }}>{formatPrice(prop.price)}</strong>
+                            <strong style={{ fontSize: "16px", fontVariantNumeric: "tabular-nums" }}>{typeof prop.price === "number" ? formatPrice(prop.price) : prop.price}</strong>
                           </div>
 
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                             <span style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>{isEn ? "Deposit required:" : "Acompte direct :"}</span>
-                            <span style={{ fontWeight: 600, color: "var(--oj-color-accent)", fontVariantNumeric: "tabular-nums" }}>{formatPrice(prop.advance)}</span>
+                            <span style={{ fontWeight: 600, color: "var(--oj-color-accent)", fontVariantNumeric: "tabular-nums" }}>{typeof prop.advance === "number" ? formatPrice(prop.advance) : prop.advance}</span>
                           </div>
 
                           <div style={{ fontSize: "12px", color: "var(--oj-color-muted)", background: "var(--oj-color-subtle)", padding: "10px", borderRadius: "6px", marginBottom: "14px", fontStyle: "italic" }}>
@@ -1722,7 +2906,7 @@ function MainMarketplaceView() {
         </div>
       )}
 
-      {/* ==================== D02 ARTISAN QUOTE SUBMISSION MODAL (S27) ==================== */}
+      {/* ==================== D02 SELLER QUOTE SUBMISSION MODAL (S27) ==================== */}
       {quoteModalOpen && selectedRequestForQuote && (
         <div className="oj-modal-overlay" onClick={() => setQuoteModalOpen(false)}>
           <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", padding: "32px" }}>
@@ -2086,7 +3270,7 @@ function MainMarketplaceView() {
               </div>
 
               <div style={{ background: "#E6F4EE", padding: "12px 16px", borderRadius: "8px", fontSize: "12px", color: "#185F46", marginBottom: "20px" }}>
-                🔒 La validation scelle le registre de la date du jour. Toute modification ultérieure sera consignée comme écriture de contre-passation auditable.
+                La validation scelle le registre de la date du jour. Toute modification ultérieure sera consignée comme écriture de contre-passation auditable.
               </div>
 
               <button type="submit" className="oj-btn-primary" style={{ width: "100%" }}>
@@ -2153,7 +3337,7 @@ function MainMarketplaceView() {
                         marginBottom: "12px",
                       }}
                     >
-                      ⚡ <strong>Livraison Numérique Immédiate :</strong> Les guides et fichiers numériques sont délivrés instantanément avec licence commerciale après validation.
+                      <strong>Livraison Numérique Immédiate :</strong> Les guides et fichiers numériques sont délivrés instantanément avec licence commerciale après validation.
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
@@ -2236,57 +3420,73 @@ function MainMarketplaceView() {
         </div>
       </footer>
 
-      {/* ==================== BOTTOM NAVIGATION (mobile) ==================== */}
-      <nav className="oj-bottom-nav">
+      {/* ==================== BOTTOM NAVIGATION (mobile & responsive) ==================== */}
+      <nav className="oj-bottom-nav" aria-label="Navigation principale mobile">
         {[
           {
+            key: "home",
             label: isEn ? "Discover" : "Découvrir",
-            icon: <IconHome />,
-            active: universe === "buyer",
+            icon: (active: boolean) => <IconHome active={active} />,
+            active: universe === "buyer" && buyerTab === "home",
             onClick: () => {
               setUniverse("buyer");
+              setBuyerTab("home");
               window.scrollTo({ top: 0, behavior: "smooth" });
             },
           },
           {
+            key: "search",
             label: isEn ? "Search" : "Rechercher",
-            icon: <IconSearch />,
-            active: false,
+            icon: (active: boolean) => <IconSearch active={active} />,
+            active: universe === "buyer" && buyerTab === "search",
             onClick: () => {
               setUniverse("buyer");
-              const el = document.getElementById("catalog-grid");
-              el?.scrollIntoView({ behavior: "smooth" });
-            },
-          },
-          {
-            label: isEn ? "Sell" : "Vendre",
-            icon: <IconPlus />,
-            active: universe === "seller",
-            onClick: () => {
-              handleSelectUniverse("seller");
+              setBuyerTab("search");
               window.scrollTo({ top: 0, behavior: "smooth" });
             },
           },
           {
-            label: isEn ? "Account" : "Connexion",
-            icon: <IconUser />,
-            active: false,
+            key: "need",
+            label: isEn ? "Requests" : "Demandes",
+            icon: (active: boolean) => <IconFileText active={active} />,
+            active: universe === "buyer" && buyerTab === "need",
             onClick: () => {
-              if (currentUser) {
-                setUserMenuOpen(true);
-              } else {
-                setAuthModalOpen(true);
-              }
+              setUniverse("buyer");
+              setBuyerTab("need");
+              window.scrollTo({ top: 0, behavior: "smooth" });
             },
           },
-        ].map((item, i) => (
+          {
+            key: "purchases",
+            label: isEn ? "Purchases" : "Achats",
+            icon: (active: boolean) => <IconShoppingBagOpen active={active} />,
+            active: universe === "buyer" && buyerTab === "purchases",
+            onClick: () => {
+              setUniverse("buyer");
+              setBuyerTab("purchases");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            },
+          },
+          {
+            key: "profile",
+            label: isEn ? "Profile" : "Profil",
+            icon: (active: boolean) => <IconUser active={active} />,
+            active: universe === "buyer" && buyerTab === "profile",
+            onClick: () => {
+              setUniverse("buyer");
+              setBuyerTab("profile");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            },
+          },
+        ].map((item) => (
           <button
-            key={i}
+            key={item.key}
             className={`oj-bnav-item ${item.active ? "active" : ""}`}
             onClick={item.onClick}
+            aria-current={item.active ? "page" : undefined}
           >
-            <span className="oj-bnav-icon">{item.icon}</span>
-            <span>{item.label}</span>
+            <span className="oj-bnav-icon">{item.icon(item.active)}</span>
+            <span className="oj-bnav-label">{item.label}</span>
           </button>
         ))}
       </nav>

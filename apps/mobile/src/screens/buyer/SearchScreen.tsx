@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import Icon from "../../design-system/Icon";
-import { CatalogApi, ProductItem } from "../../services/api";
+import { CatalogApi, FavoritesApi, ProductItem, API_BASE_URL } from "../../services/api";
 
 interface SearchScreenProps {
   onSelectProduct: (prod: any) => void;
@@ -29,7 +29,7 @@ export interface Product {
   seller: string;
   price: number;
   currency: string;
-  rating: number;
+  rating: number | null;
   reviews: number;
   image: any;
   category: string;
@@ -40,6 +40,14 @@ export interface Product {
 function formatXOF(price: number, currency = "FCFA") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
+
+
+const resolveImageUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const base = API_BASE_URL.replace(':3001/api', ':3000');
+  return `${base}${url.startsWith('/') ? url : '/' + url}`;
+};
 
 function mapApiProduct(prod: ProductItem): Product {
   const cat = (prod.category || "").toLowerCase();
@@ -68,9 +76,9 @@ function mapApiProduct(prod: ProductItem): Product {
     seller: cleanSeller,
     price: Math.round(prod.priceMinor / 100),
     currency: prod.currency || "XOF",
-    rating: 4.8,
-    reviews: 12,
-    image: prod.image ? { uri: prod.image } : undefined,
+    rating: (prod as any).rating !== undefined ? (prod as any).rating : null,
+    reviews: (prod as any).reviewsCount !== undefined ? (prod as any).reviewsCount : 0,
+    image: prod.image ? { uri: resolveImageUrl(prod.image) } : undefined,
     category: prod.category || "other",
     isDigital: !!isDigital,
     format: isDigital ? "PDF Vectoriel (14.5 Mo)" : undefined,
@@ -88,10 +96,24 @@ export default function SearchScreen({
   const isEn = locale === "en";
   const isDark = mode === "dark";
 
+  
+
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("all");
   const [activePrice, setActivePrice] = useState("all");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  // Sync persistent favorites from database
+  useEffect(() => {
+    FavoritesApi.getMyIds()
+      .then((ids) => {
+        if (Array.isArray(ids)) {
+          const map: Record<string, boolean> = {};
+          ids.forEach((id) => { map[id] = true; });
+          setFavorites(map);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -129,6 +151,10 @@ export default function SearchScreen({
 
   const toggleFav = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    FavoritesApi.toggleFavorite(id).catch((err) => {
+      console.warn("Failed to toggle favorite in database", err);
+      setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    });
   };
 
   const categories = [
@@ -176,7 +202,7 @@ export default function SearchScreen({
           }}
         >
           <Text style={{ fontSize: 16, color: colors.muted, marginRight: 8 }}>
-            🔍
+            
           </Text>
           <TextInput
             placeholder={
@@ -414,7 +440,7 @@ export default function SearchScreen({
             }}
           >
             {/* Column 1 (even index) */}
-            <View style={{ flex: 1, gap: 12 }}>
+            <View style={{ width: "48.5%", gap: 12 }}>
               {filtered
                 .filter((_, i) => i % 2 === 0)
                 .map((prod) => (
@@ -437,8 +463,8 @@ export default function SearchScreen({
                       }}
                     >
                       <Image
-                        source={prod.image}
-                        style={{
+                          source={prod.image}
+                          style={{
                           width: "100%",
                           height: "100%",
                           resizeMode: "cover",
@@ -460,7 +486,7 @@ export default function SearchScreen({
                           }}
                         >
                           <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
-                            ⚡ NUMÉRIQUE
+                            NUMÉRIQUE
                           </Text>
                         </View>
                       ) : null}
@@ -479,14 +505,7 @@ export default function SearchScreen({
                           justifyContent: "center",
                         }}
                       >
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            color: favorites[prod.id] ? "#EF4444" : "#5B6661",
-                          }}
-                        >
-                          {favorites[prod.id] ? "♥" : "♡"}
-                        </Text>
+                        <Icon name="heart" size={15} color={favorites[prod.id] ? "#EF4444" : "#6B7280"} weight={favorites[prod.id] ? "fill" : "regular"} />
                       </Pressable>
                     </View>
 
@@ -538,15 +557,18 @@ export default function SearchScreen({
                           >
                             {formatXOF(prod.price, "FCFA")}
                           </Text>
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              color: colors.muted,
-                              marginTop: 1,
-                            }}
-                          >
-                            ★ {prod.rating.toFixed(1)}
-                          </Text>
+                          {prod.reviews && prod.reviews > 0 && prod.rating ? (
+                            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
+                              ★ {prod.rating.toFixed(1)} ({prod.reviews})
+                            </Text>
+                          ) : (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 }}>
+                              <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                              <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                                {isEn ? "NEW ARRIVAL" : "NOUVEAU"}
+                              </Text>
+                            </View>
+                          )}
                         </View>
                         <Pressable
                           onPress={() => (prod.isDigital || prod.category === "digital" ? onSelectProduct(prod) : onOpenCart())}
@@ -574,7 +596,7 @@ export default function SearchScreen({
             </View>
 
             {/* Column 2 (odd index) */}
-            <View style={{ flex: 1, gap: 12 }}>
+            <View style={{ width: "48.5%", gap: 12 }}>
               {filtered
                 .filter((_, i) => i % 2 !== 0)
                 .map((prod) => (
@@ -597,8 +619,8 @@ export default function SearchScreen({
                       }}
                     >
                       <Image
-                        source={prod.image}
-                        style={{
+                          source={prod.image}
+                          style={{
                           width: "100%",
                           height: "100%",
                           resizeMode: "cover",
@@ -620,7 +642,7 @@ export default function SearchScreen({
                           }}
                         >
                           <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
-                            ⚡ NUMÉRIQUE
+                            NUMÉRIQUE
                           </Text>
                         </View>
                       ) : null}
@@ -639,14 +661,7 @@ export default function SearchScreen({
                           justifyContent: "center",
                         }}
                       >
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            color: favorites[prod.id] ? "#EF4444" : "#5B6661",
-                          }}
-                        >
-                          {favorites[prod.id] ? "♥" : "♡"}
-                        </Text>
+                        <Icon name="heart" size={15} color={favorites[prod.id] ? "#EF4444" : "#6B7280"} weight={favorites[prod.id] ? "fill" : "regular"} />
                       </Pressable>
                     </View>
 
@@ -698,15 +713,18 @@ export default function SearchScreen({
                           >
                             {formatXOF(prod.price, "FCFA")}
                           </Text>
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              color: colors.muted,
-                              marginTop: 1,
-                            }}
-                          >
-                            ★ {prod.rating.toFixed(1)}
-                          </Text>
+                          {prod.reviews && prod.reviews > 0 && prod.rating ? (
+                            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
+                              ★ {prod.rating.toFixed(1)} ({prod.reviews})
+                            </Text>
+                          ) : (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 }}>
+                              <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                              <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                                {isEn ? "NEW ARRIVAL" : "NOUVEAU"}
+                              </Text>
+                            </View>
+                          )}
                         </View>
                         <Pressable
                           onPress={() => (prod.isDigital || prod.category === "digital" ? onSelectProduct(prod) : onOpenCart())}

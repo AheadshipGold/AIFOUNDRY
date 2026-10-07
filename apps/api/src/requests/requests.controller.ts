@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { RequestsService, PurchaseRequestItem, SellerProposalItem } from './requests.service';
 
 @Controller('v1/requests')
@@ -6,8 +6,8 @@ export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 
   @Get()
-  async getAll(): Promise<PurchaseRequestItem[]> {
-    return this.requestsService.findAll();
+  async getAll(@Query('buyerId') buyerId?: string): Promise<PurchaseRequestItem[]> {
+    return this.requestsService.findAll(buyerId);
   }
 
   @Get(':id')
@@ -15,10 +15,16 @@ export class RequestsController {
     return this.requestsService.findById(id);
   }
 
+  @Post('ai-analyze')
+  async aiAnalyze(@Body() body: { prompt: string }) {
+    return this.requestsService.aiAnalyze(body.prompt || '');
+  }
+
   @Post()
   async create(
     @Body()
     body: {
+      buyerId?: string;
       buyerName: string;
       buyerPhone?: string;
       rawPrompt: string;

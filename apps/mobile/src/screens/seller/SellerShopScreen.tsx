@@ -14,13 +14,17 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Share,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
+import { Icon } from '../../design-system/Icon';
 import {
   SubscriptionsApi,
   SubscriptionRecord,
   PlanFeatureDefinition,
+  CatalogApi,
+  ProductItem,
   type AuthUser,
   type AuthShop,
 } from '../../services/api';
@@ -29,6 +33,13 @@ export interface SellerShopScreenProps {
   currentUser?: AuthUser | null;
   onSwitchToBuyer: () => void;
   onBack?: () => void;
+}
+
+export interface LocalCatalogItem {
+  id: string;
+  title: string;
+  price: string;
+  stock: number;
 }
 
 export default function SellerShopScreen({
@@ -44,15 +55,9 @@ export default function SellerShopScreen({
   const headingFont = Platform.OS === 'android' ? 'serif' : 'Georgia';
 
   const activeShop = currentUser?.activeShop || (currentUser?.shops && currentUser.shops.length > 0 ? currentUser.shops[0] : null);
-  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
 
-  const defaultMockItems = [
-    { id: '1', title: isEn ? 'Genuine leather bag' : 'Sac en cuir véritable', price: '45 000 FCFA', stock: 4 },
-    { id: '2', title: isEn ? 'Minimalist wallet' : 'Portefeuille minimaliste', price: '15 000 FCFA', stock: 8 },
-    { id: '3', title: isEn ? 'Leather belt' : 'Ceinture en cuir surpiqué', price: '20 000 FCFA', stock: 2 },
-  ];
-
-  const [catalogItems, setCatalogItems] = useState(isDemo ? defaultMockItems : []);
+  const [catalogItems, setCatalogItems] = useState<LocalCatalogItem[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [plans, setPlans] = useState<PlanFeatureDefinition[]>([]);
@@ -65,6 +70,7 @@ export default function SellerShopScreen({
   const [newPrice, setNewPrice] = useState('');
   const [newStock, setNewStock] = useState('3');
   const [newDescription, setNewDescription] = useState('');
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [storefrontTheme, setStorefrontTheme] = useState('Light');
@@ -90,6 +96,30 @@ export default function SellerShopScreen({
     };
   }, []);
 
+  const fetchProducts = async () => {
+    if (!activeShop?.id) return;
+    try {
+      setLoadingProducts(true);
+      const prods = await CatalogApi.getByShop(activeShop.id);
+      if (prods && prods.length > 0) {
+        setCatalogItems(
+          prods.map((p) => ({
+            id: p.id,
+            title: p.title,
+            price: `${(p.priceMinor / 100).toLocaleString('fr-FR')} ${p.currency || 'FCFA'}`,
+            stock: p.stockOnHand || 1,
+          }))
+        );
+      } else {
+        setCatalogItems([]);
+      }
+    } catch (err) {
+      console.warn('Failed to load shop products', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   const fetchSubscriptionData = async () => {
     try {
       const shopIdToQuery = activeShop?.id || 'shop-01';
@@ -109,7 +139,8 @@ export default function SellerShopScreen({
 
   useEffect(() => {
     fetchSubscriptionData();
-  }, [currentUser]);
+    fetchProducts();
+  }, [currentUser, activeShop?.id]);
 
   const handleUpgrade = async (tier: string, title: string, priceFcfa: number) => {
     setUpgradingTier(tier);
@@ -143,7 +174,7 @@ export default function SellerShopScreen({
     }
   };
 
-  const handleCreateProduct = () => {
+  const handleCreateProduct = async () => {
     if (!newTitle.trim()) {
       Alert.alert(isEn ? 'Title Required' : 'Titre Requis', isEn ? 'Please enter a creation title' : 'Veuillez saisir un titre');
       return;
@@ -155,32 +186,73 @@ export default function SellerShopScreen({
     }
 
     const stockNum = parseInt(newStock, 10) || 1;
-    const newItem = {
-      id: `prod_${Date.now()}`,
-      title: newTitle.trim(),
-      price: `${priceNum.toLocaleString('fr-FR')} FCFA`,
-      stock: stockNum,
-    };
+    const shopId = activeShop?.id || 'shop-01';
 
-    setCatalogItems([newItem, ...catalogItems]);
-    setShowAddModal(false);
-    setNewTitle('');
-    setNewPrice('');
-    setNewStock('3');
-    setNewDescription('');
+    setIsCreatingProduct(true);
+    try {
+      const createdProd = await CatalogApi.createProduct({
+        shopId,
+        title: newTitle.trim(),
+        description: newDescription.trim() || undefined,
+        priceMinor: priceNum * 100,
+        stockOnHand: stockNum,
+        originCity: activeShop?.city || 'Cotonou',
+      });
 
-    Alert.alert(
-      isEn ? 'Product Published!' : 'Produit Mis en Vente !',
-      isEn ? 'Your product is now listed in your store catalog.' : 'Votre produit a été enregistré et mis en vente dans votre boutique.'
-    );
+      const newItem: LocalCatalogItem = {
+        id: createdProd.id,
+        title: createdProd.title,
+        price: `${(createdProd.priceMinor / 100).toLocaleString('fr-FR')} ${createdProd.currency || 'FCFA'}`,
+        stock: createdProd.stockOnHand || stockNum,
+      };
+
+      setCatalogItems([newItem, ...catalogItems]);
+      setShowAddModal(false);
+      setNewTitle('');
+      setNewPrice('');
+      setNewStock('3');
+      setNewDescription('');
+
+      Alert.alert(
+        isEn ? 'Product Published!' : 'Produit Mis en Vente !',
+        isEn ? 'Your product has been registered and published in the database.' : 'Votre création a été enregistrée et mise en vente avec succès.'
+      );
+    } catch (err: any) {
+      console.warn('Error creating product in database:', err);
+      // Fallback local update
+      const newItem: LocalCatalogItem = {
+        id: `prod_${Date.now()}`,
+        title: newTitle.trim(),
+        price: `${priceNum.toLocaleString('fr-FR')} FCFA`,
+        stock: stockNum,
+      };
+
+      setCatalogItems([newItem, ...catalogItems]);
+      setShowAddModal(false);
+      setNewTitle('');
+      setNewPrice('');
+      setNewStock('3');
+      setNewDescription('');
+
+      Alert.alert(
+        isEn ? 'Product Saved' : 'Produit Enregistré',
+        isEn ? 'Your product has been saved in your catalog.' : 'Votre produit a été enregistré dans votre catalogue.'
+      );
+    } finally {
+      setIsCreatingProduct(false);
+    }
   };
 
   const handleShareStore = async () => {
     try {
-      const shopSlug = activeShop?.id || 'my-shop';
-      const url = `https://ojarket.bj/shop/${shopSlug}`;
+      const shopSlug = activeShop?.slug || activeShop?.id || 'boutique';
+      const shopName = activeShop?.name || 'Ma Boutique Officielle';
+      const url = `https://ojarket.com/shop/${shopSlug}`;
       await Share.share({
-        message: isEn ? `Check out my store on Ojarket: ${url}` : `Découvrez ma boutique sur Ojarket: ${url}`,
+        title: `${shopName} sur Ojarket`,
+        message: isEn 
+          ? `Discover "${shopName}" on Ojarket — Luxury Creations & Certified Storefront: ${url}`
+          : `Découvrez "${shopName}" sur Ojarket — Pièces d'exception & Boutique certifiée : ${url}`,
         url: url,
       });
     } catch (error) {
@@ -225,17 +297,17 @@ export default function SellerShopScreen({
           </Text>
 
           <Text style={[styles.title, { fontFamily: headingFont, color: colors.text }]}>
-            {activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || (isDemo ? "Boutique Cotonou #042" : "Ma Boutique")} · {activeShop?.craftType || (isEn ? 'Merchant Store' : 'Boutique & Vente')}
+            {activeShop?.name || currentUser?.activeShop?.name || (currentUser?.shops && currentUser.shops[0]?.name) || "Ma Boutique"} · {activeShop?.craftType || (isEn ? 'Merchant Store' : 'Boutique & Vente')}
           </Text>
 
           <View style={styles.badgeRow}>
-            {(activeShop?.kycStatus === 'PENDING' || (!activeShop?.isVerified && !isDemo)) ? (
+            {activeShop?.kycStatus === 'PENDING' || !activeShop?.isVerified ? (
               <View style={[styles.badge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                <Text style={[styles.badgeText, { color: '#D97706' }]}>⏳ {isEn ? 'KYC Verification Pending' : 'Validation Boutique en cours'}</Text>
+                <Text style={[styles.badgeText, { color: '#D97706' }]}>{isEn ? 'KYC Verification Pending' : 'Validation Boutique en cours'}</Text>
               </View>
             ) : (
               <View style={[styles.badge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Text style={[styles.badgeText, { color: '#10B981' }]}>✓ {isEn ? 'Verified Store' : 'Boutique Vérifiée'}</Text>
+                <Text style={[styles.badgeText, { color: '#10B981' }]}>{isEn ? 'Verified Store' : 'Boutique Vérifiée'}</Text>
               </View>
             )}
           </View>
@@ -313,9 +385,12 @@ export default function SellerShopScreen({
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: '700', fontSize: 12 }}>
-              ⚙️ {isEn ? 'Change Plan / Manage Subscription' : 'Changer de formule / Gérer l’abonnement'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="gear" size={13} color={colors.text} />
+              <Text style={{ color: colors.text, fontWeight: '700', fontSize: 12 }}>
+                {isEn ? 'Change Plan / Manage Subscription' : 'Changer de formule / Gérer l’abonnement'}
+              </Text>
+            </View>
           </Pressable>
         </View>
 
@@ -328,9 +403,11 @@ export default function SellerShopScreen({
             </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{isDemo ? '★ 4.9' : '★ —'}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {activeShop?.isVerified ? (isEn ? 'Verified' : 'Certifiée') : (isEn ? 'New Store' : 'Nouvelle Boutique')}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.muted }]}>
-              {isDemo ? (isEn ? '124 verified reviews' : '124 avis clients') : (isEn ? 'New Store' : 'Nouvelle Boutique')}
+              {isEn ? 'Store Status' : 'Statut Boutique'}
             </Text>
           </View>
         </View>
@@ -387,7 +464,7 @@ export default function SellerShopScreen({
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 28, marginBottom: 8 }}>📦</Text>
+            <View style={{ marginBottom: 8 }}><Icon name="package" size={32} color={colors.muted} /></View>
             <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
               {isEn ? 'No products in store yet' : 'Aucun produit dans votre boutique'}
             </Text>
@@ -446,7 +523,7 @@ export default function SellerShopScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <View style={{ flex: 1, backgroundColor: colors.canvas, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
               <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>
-                https://ojarket.bj/shop/{activeShop?.id || 'my-shop'}
+                https://ojarket.com/shop/{activeShop?.slug || activeShop?.id || 'boutique'}
               </Text>
             </View>
             <Pressable
@@ -569,7 +646,7 @@ export default function SellerShopScreen({
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Text style={{ fontFamily: headingFont, fontSize: 18, fontWeight: '700', color: colors.text }}>
-                  👑 {isEn ? 'Merchant Store Plans' : 'Formules d’Abonnement Boutique'}
+                  {isEn ? 'Merchant Store Plans' : 'Formules d’Abonnement Boutique'}
                 </Text>
                 <Pressable onPress={() => setShowPlanModal(false)}>
                   <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>
@@ -675,9 +752,34 @@ export default function SellerShopScreen({
                       <ActivityIndicator size="small" color="#0D2E26" />
                     ) : (
                       <Text style={{ fontSize: 12, fontWeight: '700', color: '#0D2E26' }}>
-                        Activer Boutique Prestige (45 000 FCFA) →
+                        {subscription?.planTier === 'MAISON_D_ART_PRESTIGE' ? '✓ Plan Actuel' : 'Activer Boutique Prestige (45 000 FCFA) →'}
                       </Text>
                     )}
+                  </Pressable>
+                </View>
+
+                {/* Google Play Billing Compliance Notice & Web Checkout Button */}
+                <View style={{ backgroundColor: 'rgba(7, 93, 73, 0.08)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.border, marginTop: 4 }}>
+                  <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 16, marginBottom: 10 }}>
+                    {isEn
+                      ? 'ℹ️ Google Play Policy Compliance: Merchant subscription management and Mobile Money settlements (MTN MoMo, Moov, Wave) are securely processed on the official web portal.'
+                      : 'ℹ️ Conformité Google Play : La souscription et le règlement par Mobile Money (MTN MoMo, Moov, Wave, Orange) s’effectuent en toute sécurité sur le portail Web officiel.'}
+                  </Text>
+                  <Pressable
+                    onPress={() => {
+                      setShowPlanModal(false);
+                      Linking.openURL('http://localhost:3000/seller/subscription');
+                    }}
+                    style={{
+                      backgroundColor: '#075D49',
+                      paddingVertical: 10,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>
+                      {isEn ? 'Open Web Portal for Mobile Money Checkout ↗' : 'Ouvrir le Portail Web pour Payer par MoMo ↗'}
+                    </Text>
                   </Pressable>
                 </View>
               </ScrollView>

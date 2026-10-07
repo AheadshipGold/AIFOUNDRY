@@ -413,7 +413,11 @@ export default function StandaloneOfferPage() {
             <div className="modal-body">
               {orderSuccess ? (
                 <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>✨</div>
+                  <div style={{ marginBottom: "16px", display: "flex", justifyContent: "center" }}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="#075D49">
+                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                    </svg>
+                  </div>
                   <h3 style={{ fontSize: "20px", color: "#075D49", margin: "0 0 8px" }}>
                     Commande {orderSuccess.orderNumber} Enregistrée !
                   </h3>

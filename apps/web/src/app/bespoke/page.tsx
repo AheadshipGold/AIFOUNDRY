@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import "../landing.css";
+import { AudioDictationButton } from "@/components/AudioDictationButton";
 
 interface ProposalItem {
   id: string;
@@ -193,7 +194,11 @@ export default function StandaloneBespokePage() {
 
             {submitSuccess ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
-                <div style={{ fontSize: "44px", marginBottom: "12px" }}>🕊️</div>
+                <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#075D49" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                </div>
                 <h4 style={{ fontSize: "18px", color: "#075D49", margin: "0 0 8px" }}>
                   Votre demande a été transmise aux boutiques !
                 </h4>
@@ -217,9 +222,15 @@ export default function StandaloneBespokePage() {
             ) : (
               <form onSubmit={handleSubmitRequest}>
                 <div style={{ marginBottom: "16px" }}>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>
-                    DÉCRIVEZ VOTRE SOUHAIT EN TEXTE LIBRE
-                  </label>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 600 }}>
+                      DÉCRIVEZ VOTRE SOUHAIT EN TEXTE LIBRE
+                    </label>
+                    <AudioDictationButton
+                      language="fr"
+                      onTranscript={(text) => setPromptInput((prev) => (prev ? prev + ' ' + text : text))}
+                    />
+                  </div>
                   <textarea
                     rows={4}
                     required
@@ -254,7 +265,12 @@ export default function StandaloneBespokePage() {
                       gap: "6px",
                     }}
                   >
-                    ✨ {isAiStructuring ? "Analyse technique en cours..." : "Structurer avec l'Assistant IA Ojarket"}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+                      </svg>
+                      {isAiStructuring ? "Analyse technique en cours..." : "Structurer avec l'Assistant IA Ojarket"}
+                    </span>
                   </button>
                 </div>
 

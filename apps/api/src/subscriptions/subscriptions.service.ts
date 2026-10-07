@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanTier, SubscriptionStatus, BillingSource, BillingInterval } from '@prisma/client';
+import { MonerooAdapter, monerooAdapter } from './moneroo.adapter';
 
 export interface PlanFeatureDefinition {
   tier: PlanTier;
@@ -133,6 +134,65 @@ export class SubscriptionsService {
     }
   }
 
+  async initializeMonerooCheckout(dto: {
+    shopId: string;
+    planTier: PlanTier;
+    billingInterval?: BillingInterval;
+    customerEmail: string;
+    customerName?: string;
+    customerPhone?: string;
+    returnUrl?: string;
+  }) {
+    const planConfig = PLAN_TIERS[dto.planTier];
+    if (!planConfig) {
+      throw new BadRequestException(`Plan ${dto.planTier} invalide`);
+    }
+
+    const interval = dto.billingInterval || BillingInterval.MONTHLY;
+    const priceMinor = interval === BillingInterval.ANNUAL ? planConfig.priceAnnualMinor : planConfig.priceMonthlyMinor;
+    const referenceId = `SUB-${dto.shopId.slice(0, 8)}-${Date.now()}`;
+
+    const session = await monerooAdapter.createSession({
+      shopId: dto.shopId,
+      planTier: dto.planTier,
+      amountMinor: priceMinor,
+      currency: 'XOF',
+      description: `Ojarket ${planConfig.title} (${interval === BillingInterval.ANNUAL ? 'Annuel' : 'Mensuel'})`,
+      customerEmail: dto.customerEmail,
+      customerName: dto.customerName,
+      customerPhone: dto.customerPhone,
+      returnUrl: dto.returnUrl,
+      referenceId,
+      billingInterval: interval,
+    });
+
+    return session;
+  }
+
+  async processMonerooWebhook(headers: Record<string, any>, rawBody: string, payload: Record<string, any>) {
+    const parsed = monerooAdapter.parseWebhookPayload(payload, rawBody, headers);
+
+    if (!parsed.signatureMatches) {
+      console.warn('[SubscriptionsService] Webhook signature mismatch');
+      throw new BadRequestException('Signature cryptographique Moneroo invalide');
+    }
+
+    if (parsed.status === 'SUCCESS' && parsed.shopId) {
+      const planTier = (parsed.planTier as PlanTier) || PlanTier.ATELIER_PRO;
+      const interval = (parsed.billingInterval as BillingInterval) || BillingInterval.MONTHLY;
+      
+      return await this.upgradePlan({
+        shopId: parsed.shopId,
+        planTier,
+        billingInterval: interval,
+        billingSource: BillingSource.MONEROO,
+        paymentReference: parsed.externalTransactionId || parsed.referenceId,
+      });
+    }
+
+    return { received: true, status: parsed.status };
+  }
+
   async upgradePlan(dto: {
     shopId: string;
     planTier: PlanTier;
@@ -153,7 +213,7 @@ export class SubscriptionsService {
           shopId: dto.shopId,
           planTier: dto.planTier,
           status: SubscriptionStatus.ACTIVE,
-          billingSource: dto.billingSource || BillingSource.MTN_MOMO,
+          billingSource: dto.billingSource || BillingSource.MONEROO,
           billingInterval: interval,
           priceMinor,
           currency: 'XOF',
@@ -163,7 +223,7 @@ export class SubscriptionsService {
           hasVipConcierge: planConfig.hasVipConcierge,
           currentPeriodStart: now,
           currentPeriodEnd: periodEnd,
-          externalPaymentRef: dto.paymentReference || `MOMO-SUB-${Date.now()}`,
+          externalPaymentRef: dto.paymentReference || `MONEROO-${Date.now()}`,
         },
         include: { shop: true },
       });
@@ -176,7 +236,7 @@ export class SubscriptionsService {
         shopName: 'Boutique Certifiée',
         planTier: dto.planTier,
         status: SubscriptionStatus.ACTIVE,
-        billingSource: dto.billingSource || BillingSource.MTN_MOMO,
+        billingSource: dto.billingSource || BillingSource.MONEROO,
         billingInterval: interval,
         priceMinor,
         currency: 'XOF',
@@ -237,10 +297,10 @@ export class SubscriptionsService {
     return {
       id: 'sub-mock-01',
       shopId,
-      shopName: "Boutique d'Excellence Cotonou",
+      shopName: "Boutique d'Excellence Kingston Bio",
       planTier: PlanTier.ATELIER_PRO,
       status: SubscriptionStatus.ACTIVE,
-      billingSource: BillingSource.MTN_MOMO,
+      billingSource: BillingSource.MONEROO,
       billingInterval: BillingInterval.MONTHLY,
       priceMinor: 1500000,
       currency: 'XOF',
@@ -251,7 +311,7 @@ export class SubscriptionsService {
       currentPeriodStart: now.toISOString(),
       currentPeriodEnd: periodEnd.toISOString(),
       cancelAtPeriodEnd: false,
-      externalPaymentRef: 'MTN-SUB-894379',
+      externalPaymentRef: 'MONEROO-SUB-894379',
     };
   }
 }

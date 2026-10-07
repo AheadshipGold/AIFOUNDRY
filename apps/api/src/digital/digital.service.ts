@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as crypto from 'crypto';
 
 export interface DigitalAssetItem {
   id: string;
@@ -27,169 +28,224 @@ export interface DigitalGrantItem {
   downloadUrl: string;
   license: string;
   createdAt: string;
+  expiresAt?: string;
+}
+
+export interface DownloadResponse {
+  title: string;
+  mimeType: string;
+  downloadUrl: string;
+  remainingDownloads: number;
+  downloadCount: number;
+  expiresInSeconds: number;
+  isPresigned: boolean;
 }
 
 @Injectable()
 export class DigitalService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly secretKey: string;
+  private readonly r2Bucket?: string;
+  private readonly r2Endpoint?: string;
+  private readonly r2AccessKeyId?: string;
+  private readonly r2SecretAccessKey?: string;
+
+  constructor(private readonly prisma: PrismaService) {
+    this.secretKey = process.env.JWT_SECRET || 'ojarket_secure_digital_secret_2026';
+    this.r2Bucket = process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME;
+    this.r2Endpoint = process.env.R2_ENDPOINT || process.env.S3_ENDPOINT;
+    this.r2AccessKeyId = process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    this.r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  }
 
   async listCatalogDigitalAssets(): Promise<DigitalAssetItem[]> {
-    try {
-      const assets = await this.prisma.digitalAsset.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
+    const assets = await this.prisma.digitalAsset.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
 
-      if (assets.length === 0) {
-        return this.getMockCatalogAssets();
-      }
-
-      return assets.map((a) => ({
-        id: a.id,
-        title: a.title,
-        fileUrl: a.fileUrl,
-        fileSize: a.fileSize,
-        mimeType: a.mimeType,
-        checksum: a.checksum,
-        version: a.version,
-        isPublicPreview: a.isPublicPreview,
-        licenseType: 'Licence Commerciale Marchande Standard · Usage Personnel & Professionnel',
-        format: a.mimeType.includes('pdf') ? 'PDF Haute Définition' : 'Fichier Numérique',
-      }));
-    } catch {
-      return this.getMockCatalogAssets();
-    }
+    return assets.map((a) => ({
+      id: a.id,
+      title: a.title,
+      fileUrl: a.fileUrl,
+      fileSize: a.fileSize,
+      mimeType: a.mimeType,
+      checksum: a.checksum,
+      version: a.version,
+      isPublicPreview: a.isPublicPreview,
+      licenseType: 'Licence Commerciale Marchande Standard · Usage Personnel & Professionnel',
+      format: a.mimeType.includes('pdf') ? 'PDF Haute Définition' : 'Fichier Numérique',
+    }));
   }
 
   async getBuyerGrants(userId?: string): Promise<DigitalGrantItem[]> {
-    try {
-      const entitlements = await this.prisma.digitalEntitlement.findMany({
-        where: userId ? { userId } : {},
-        include: {
-          asset: true,
-          order: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (entitlements.length === 0) {
-        return this.getMockGrants();
-      }
-
-      return entitlements.map((e) => ({
-        id: e.id,
-        orderId: e.orderId,
-        orderNumber: e.order?.orderNumber || 'CMD-DIGITAL',
-        assetTitle: e.asset.title,
-        version: e.asset.version,
-        mimeType: e.asset.mimeType,
-        downloadCount: e.downloadCount,
-        maxDownloads: e.maxDownloads,
-        remainingDownloads: Math.max(0, e.maxDownloads - e.downloadCount),
-        downloadUrl: `/v1/digital/download/${e.id}`,
-        license: 'Licence Commerciale Marchande · Droit d’exploitation',
-        createdAt: e.createdAt.toISOString(),
-      }));
-    } catch {
-      return this.getMockGrants();
+    if (!userId) {
+      return [];
     }
+
+    const entitlements = await this.prisma.digitalEntitlement.findMany({
+      where: { userId },
+      include: {
+        asset: true,
+        order: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return entitlements.map((e) => ({
+      id: e.id,
+      orderId: e.orderId,
+      orderNumber: e.order?.orderNumber || 'CMD-DIGITAL',
+      assetTitle: e.asset.title,
+      version: e.asset.version,
+      mimeType: e.asset.mimeType,
+      downloadCount: e.downloadCount,
+      maxDownloads: e.maxDownloads,
+      remainingDownloads: Math.max(0, e.maxDownloads - e.downloadCount),
+      downloadUrl: `/v1/digital/download/${e.id}`,
+      license: 'Licence Commerciale Marchande · Droit d’exploitation',
+      createdAt: e.createdAt.toISOString(),
+      expiresAt: e.expiresAt?.toISOString(),
+    }));
   }
 
-  async verifyAndDownload(entitlementId: string): Promise<{
-    title: string;
-    mimeType: string;
-    fileUrl: string;
-    remainingDownloads: number;
-    downloadCount: number;
-  }> {
-    try {
-      const entitlement = await this.prisma.digitalEntitlement.findUnique({
-        where: { id: entitlementId },
-        include: { asset: true },
-      });
+  /**
+   * Génère une URL de téléchargement signée et temporaire (valable 15 minutes)
+   * avec vérification stricte du quota de téléchargement restant et mise à jour atomique.
+   */
+  async verifyAndGenerateSignedDownloadUrl(entitlementId: string): Promise<DownloadResponse> {
+    const entitlement = await this.prisma.digitalEntitlement.findUnique({
+      where: { id: entitlementId },
+      include: { asset: true },
+    });
 
-      if (!entitlement) {
-        throw new NotFoundException(`Droit numérique introuvable.`);
-      }
+    if (!entitlement) {
+      throw new NotFoundException(`Droit numérique introuvable.`);
+    }
 
-      if (entitlement.downloadCount >= entitlement.maxDownloads) {
-        throw new BadRequestException(
-          `Quota de téléchargement atteint (${entitlement.maxDownloads}/${entitlement.maxDownloads}). Contactez la conciergerie Ojarket pour réinitialiser le jeton.`
+    if (entitlement.expiresAt && new Date() > entitlement.expiresAt) {
+      throw new BadRequestException(`Ce droit de téléchargement a expiré.`);
+    }
+
+    if (entitlement.downloadCount >= entitlement.maxDownloads) {
+      throw new BadRequestException(
+        `Quota de téléchargement atteint (${entitlement.maxDownloads}/${entitlement.maxDownloads}). Contactez la conciergerie Ojarket pour réinitialiser le jeton.`
+      );
+    }
+
+    // Incrémente le compteur de téléchargement
+    const updated = await this.prisma.digitalEntitlement.update({
+      where: { id: entitlementId },
+      data: { downloadCount: { increment: 1 } },
+      include: { asset: true },
+    });
+
+    const expiresInSeconds = 900; // 15 minutes
+    const expiresTimestamp = Date.now() + expiresInSeconds * 1000;
+
+    // 1. Si AWS S3 / Cloudflare R2 est configuré, générer une URL pré-signée S3
+    if (this.r2Bucket && this.r2AccessKeyId && this.r2SecretAccessKey) {
+      try {
+        const presignedUrl = await this.generateS3PresignedUrl(
+          updated.asset.fileUrl,
+          expiresInSeconds
         );
+        return {
+          title: updated.asset.title,
+          mimeType: updated.asset.mimeType,
+          downloadUrl: presignedUrl,
+          remainingDownloads: updated.maxDownloads - updated.downloadCount,
+          downloadCount: updated.downloadCount,
+          expiresInSeconds,
+          isPresigned: true,
+        };
+      } catch (error) {
+        console.warn('[DigitalService] Fallback sur signature HMAC interne :', error);
       }
-
-      const updated = await this.prisma.digitalEntitlement.update({
-        where: { id: entitlementId },
-        data: { downloadCount: { increment: 1 } },
-        include: { asset: true },
-      });
-
-      return {
-        title: updated.asset.title,
-        mimeType: updated.asset.mimeType,
-        fileUrl: updated.asset.fileUrl,
-        remainingDownloads: updated.maxDownloads - updated.downloadCount,
-        downloadCount: updated.downloadCount,
-      };
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) {
-        throw err;
-      }
-      // Fallback demo grant
-      return {
-        title: 'Guide & Fichier Numérique Téléchargeable',
-        mimeType: 'application/pdf',
-        fileUrl: 'https://ojarket.bj/downloads/guide-numerique-v1.pdf',
-        remainingDownloads: 9,
-        downloadCount: 1,
-      };
     }
+
+    // 2. Fallback cryptographique HMAC-SHA256 avec jeton temporaire sécurisé
+    const token = this.generateDownloadToken(entitlementId, updated.asset.id, expiresTimestamp);
+    const downloadUrl = `/v1/digital/file/${entitlementId}?token=${token}&expires=${expiresTimestamp}`;
+
+    return {
+      title: updated.asset.title,
+      mimeType: updated.asset.mimeType,
+      downloadUrl,
+      remainingDownloads: updated.maxDownloads - updated.downloadCount,
+      downloadCount: updated.downloadCount,
+      expiresInSeconds,
+      isPresigned: false,
+    };
   }
 
-  private getMockCatalogAssets(): DigitalAssetItem[] {
-    return [
-      {
-        id: 'asset-01',
-        title: 'Guide Professionnel & Fichiers Techniques - Maroquinerie',
-        fileUrl: 'https://ojarket.bj/downloads/guide-maroquinerie.pdf',
-        fileSize: 14500000,
-        mimeType: 'application/pdf',
-        checksum: 'sha256-a8f89e24',
-        version: '2.1.0',
-        isPublicPreview: true,
-        licenseType: 'Licence Commerciale Marchande',
-        format: 'PDF Vectoriel A0/A4',
-      },
-      {
-        id: 'asset-02',
-        title: 'Guide Technique de Fonte à la Cire Perdue & Symboles Dahoméens',
-        fileUrl: 'https://ojarket.bj/downloads/guide-fonte-bronze.pdf',
-        fileSize: 28400000,
-        mimeType: 'application/pdf',
-        checksum: 'sha256-c39f0911',
-        version: '1.4.0',
-        isPublicPreview: false,
-        licenseType: 'Licence Maître Fondeur',
-        format: 'PDF Illustré Haute Résolution',
-      },
-    ];
+  /**
+   * Vérifie le jeton de téléchargement cryptographique et résout le fichier cible.
+   */
+  async resolveSecureFileDownload(
+    entitlementId: string,
+    token: string,
+    expires: number
+  ): Promise<{ fileUrl: string; title: string; mimeType: string }> {
+    if (Date.now() > Number(expires)) {
+      throw new UnauthorizedException(`Le lien de téléchargement a expiré. Veuillez générer un nouveau lien.`);
+    }
+
+    const entitlement = await this.prisma.digitalEntitlement.findUnique({
+      where: { id: entitlementId },
+      include: { asset: true },
+    });
+
+    if (!entitlement) {
+      throw new NotFoundException(`Droit numérique introuvable.`);
+    }
+
+    const expectedToken = this.generateDownloadToken(
+      entitlementId,
+      entitlement.asset.id,
+      Number(expires)
+    );
+
+    const tokenBuf = Buffer.from(token);
+    const expectedBuf = Buffer.from(expectedToken);
+
+    if (
+      tokenBuf.length !== expectedBuf.length ||
+      !crypto.timingSafeEqual(tokenBuf, expectedBuf)
+    ) {
+      throw new UnauthorizedException(`Signature de téléchargement invalide ou altérée.`);
+    }
+
+    return {
+      fileUrl: entitlement.asset.fileUrl,
+      title: entitlement.asset.title,
+      mimeType: entitlement.asset.mimeType,
+    };
   }
 
-  private getMockGrants(): DigitalGrantItem[] {
-    return [
-      {
-        id: 'grant-01',
-        orderId: 'cmd-dig-01',
-        orderNumber: 'CMD-8842',
-        assetTitle: 'Traité de Modélisme & Patrons Échelle 1:1 - Sac Cabas Royal',
-        version: '2.1.0',
-        mimeType: 'application/pdf',
-        downloadCount: 1,
-        maxDownloads: 10,
-        remainingDownloads: 9,
-        downloadUrl: '/v1/digital/download/grant-01',
-        license: 'Licence Commerciale Marchande Standard',
-        createdAt: new Date().toISOString(),
+  private generateDownloadToken(entitlementId: string, assetId: string, expires: number): string {
+    return crypto
+      .createHmac('sha256', this.secretKey)
+      .update(`${entitlementId}:${assetId}:${expires}`)
+      .digest('hex');
+  }
+
+  private async generateS3PresignedUrl(fileKey: string, expiresIn: number): Promise<string> {
+    const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
+    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+
+    const s3Client = new S3Client({
+      region: process.env.R2_REGION || process.env.AWS_REGION || 'auto',
+      endpoint: this.r2Endpoint,
+      credentials: {
+        accessKeyId: this.r2AccessKeyId,
+        secretAccessKey: this.r2SecretAccessKey,
       },
-    ];
+    });
+
+    const command = new GetObjectCommand({
+      Bucket: this.r2Bucket,
+      Key: fileKey,
+    });
+
+    return getSignedUrl(s3Client, command, { expiresIn });
   }
 }

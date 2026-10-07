@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
+import { Icon } from "../../design-system/Icon";
 import {
   Button,
   Card,
@@ -39,9 +40,7 @@ export default function SellerCashbookScreen({
   const [loading, setLoading] = useState(true);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
-
-  useEffect(() => {
+    useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
@@ -103,13 +102,13 @@ export default function SellerCashbookScreen({
 
   const totalVendu = cashbook?.summary?.totalVenduMinor !== undefined
     ? Math.round(cashbook.summary.totalVenduMinor / 100)
-    : (isDemo ? 1280000 : 0);
+    : 0;
   const totalEncaisse = cashbook?.summary?.totalEncaisseMinor !== undefined
     ? Math.round(cashbook.summary.totalEncaisseMinor / 100)
-    : (isDemo ? 850000 : 0);
+    : 0;
   const totalRestant = cashbook?.summary?.totalRestantMinor !== undefined
     ? Math.round(cashbook.summary.totalRestantMinor / 100)
-    : (isDemo ? 430000 : 0);
+    : 0;
 
   const defaultEntries = [
     {
@@ -139,7 +138,7 @@ export default function SellerCashbookScreen({
         amount: `${entry.amountMinor >= 0 ? "+" : ""}${Math.round(entry.amountMinor / 100)} FCFA`,
         tag: entry.channel + (entry.source === 'SELLER_MANUAL' ? ' · Manuel' : ' · Vérifié'),
       }))
-    : (isDemo ? defaultEntries : []);
+    : [];
 
 
   const [showCollectModal, setShowCollectModal] = useState(false);
@@ -419,7 +418,7 @@ export default function SellerCashbookScreen({
                 marginBottom: 28,
               }}
             >
-              <Text style={{ fontSize: 28, marginBottom: 8 }}>📒</Text>
+              <View style={{ marginBottom: 8 }}><Icon name="wallet" size={28} color={colors.muted} /></View>
               <Text style={{ fontSize: 14, fontWeight: "700", color: colors.text, textAlign: "center" }}>
                 {isEn ? "No cashbook entries today" : "Aucune écriture de caisse aujourd'hui"}
               </Text>

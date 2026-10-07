@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
+import { Icon } from '../../design-system/Icon';
 import {
   OrdersApi,
   OrderRecord,
@@ -21,6 +22,7 @@ import {
   DigitalApi,
   DigitalGrantItem,
   IncidentsApi,
+  ReviewsApi,
 } from '../../services/api';
 
 interface PurchasesScreenProps {
@@ -45,6 +47,52 @@ export default function PurchasesScreen({
   const [loading, setLoading] = useState(true);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Review modal state (Verified Purchase)
+  const [reviewOrder, setReviewOrder] = useState<OrderRecord | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewTitle, setReviewTitle] = useState<string>('');
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+
+  const handleOpenReview = (order: OrderRecord) => {
+    setReviewOrder(order);
+    setReviewRating(5);
+    setReviewTitle('');
+    setReviewComment('');
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewOrder) return;
+    const prodId = reviewOrder.lines && reviewOrder.lines.length > 0 ? reviewOrder.lines[0].productId : null;
+    if (!prodId) {
+      Alert.alert(isEn ? 'Error' : 'Erreur', isEn ? 'Product identifier not found on order line.' : 'Identifiant produit introuvable sur cette commande.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      await ReviewsApi.createReview({
+        productId: prodId,
+        rating: reviewRating,
+        title: reviewTitle.trim() || undefined,
+        comment: reviewComment.trim() || undefined,
+      });
+
+      Alert.alert(
+        isEn ? 'Review Published!' : 'Avis Vérifié Publié !',
+        isEn ? 'Thank you. Your verified review has been recorded with prestige standards.' : 'Merci. Votre avis d\'achat vérifié est désormais visible sur la fiche de l\'artisan.'
+      );
+      setReviewOrder(null);
+    } catch (err: any) {
+      Alert.alert(
+        isEn ? 'Review Submission' : 'Dépôt d\'avis',
+        err.message || (isEn ? 'Could not post review' : 'Impossible de déposer l\'avis pour le moment.')
+      );
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Incident reporting modal state
   const [reportingOrder, setReportingOrder] = useState<OrderRecord | null>(null);
@@ -236,7 +284,7 @@ export default function PurchasesScreen({
         {/* 3 Progress Tracks (UX Specification Rule) */}
         <View style={{ backgroundColor: colors.canvas, borderRadius: 10, padding: 12, gap: 10, marginBottom: 14 }}>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 14 }}>📜</Text>
+            <Icon name="invoice" size={14} color={colors.accent} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{isEn ? '1. Agreement' : '1. Accord'}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }}>{isEn ? `Validated on ${dateStr}` : `Validé le ${dateStr}`}</Text>
@@ -244,7 +292,7 @@ export default function PurchasesScreen({
           </View>
 
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 14 }}>💳</Text>
+            <Icon name="card" size={14} color={colors.accent} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{isEn ? '2. Direct Payment' : '2. Paiement Direct'}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }}>
@@ -262,7 +310,7 @@ export default function PurchasesScreen({
           </View>
 
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 14 }}>📦</Text>
+            <Icon name="package" size={14} color={colors.accent} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{isEn ? '3. Preparation & Delivery' : '3. Préparation & Livraison'}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }}>
@@ -321,6 +369,24 @@ export default function PurchasesScreen({
               {isEn ? 'Contact' : "Contacter la boutique"}
             </Text>
           </Pressable>
+          {order.fulfillmentStatus === 'DELIVERED' && order.lines && order.lines.length > 0 && order.lines[0].productId && (
+            <Pressable
+              onPress={() => handleOpenReview(order)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderRadius: 8,
+                backgroundColor: 'rgba(173, 132, 85, 0.12)',
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: '#AD8455',
+              }}
+            >
+              <Text style={{ color: '#AD8455', fontWeight: '700', fontSize: 11 }}>
+                {isEn ? '★ Review' : '★ Avis vérifié'}
+              </Text>
+            </Pressable>
+          )}
           <Pressable
             onPress={() => {
               setReportingOrder(order);
@@ -337,7 +403,7 @@ export default function PurchasesScreen({
             }}
           >
             <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 11 }}>
-              ⚠️ {isEn ? 'Dispute' : 'Litige'}
+              {isEn ? 'Dispute' : 'Litige'}
             </Text>
           </Pressable>
         </View>
@@ -398,9 +464,12 @@ export default function PurchasesScreen({
             {downloadingId === grant.id ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
-                📥 {isEn ? 'Download Blueprint (PDF)' : 'Télécharger le patron (PDF)'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="download" size={14} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
+                  {isEn ? 'Download Blueprint (PDF)' : 'Télécharger le patron (PDF)'}
+                </Text>
+              </View>
             )}
           </Pressable>
           <Pressable
@@ -524,13 +593,13 @@ export default function PurchasesScreen({
 
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 8 }}>
                   <Text style={{ fontSize: 12, color: colors.muted }}>
-                    ⏱️ {prop.productionDays} {isEn ? 'days' : 'jours'}
+                    {prop.productionDays} {isEn ? 'days' : 'jours'}
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.muted }}>
-                    📍 {prop.artisanCity || 'Cotonou'}
+                    {prop.artisanCity || 'Cotonou'}
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.action, fontWeight: '600' }}>
-                    💰 {isEn ? 'Advance:' : 'Acompte:'} {advanceFcfa.toLocaleString()} FCFA
+                    {isEn ? 'Advance:' : 'Acompte:'} {advanceFcfa.toLocaleString()} FCFA
                   </Text>
                 </View>
 
@@ -653,7 +722,7 @@ export default function PurchasesScreen({
             }]}
           >
             <Text style={{ color: activeTab === 'orders' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-              {isEn ? `Orders (${orders ? orders.length : 2})` : `Commandes (${orders ? orders.length : 2})`}
+              {isEn ? `Orders (${orders?.length || 0})` : `Commandes (${orders?.length || 0})`}
             </Text>
           </Pressable>
 
@@ -672,7 +741,7 @@ export default function PurchasesScreen({
             }]}
           >
             <Text style={{ color: activeTab === 'digital' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-              ✨ {isEn ? `Digital (${digitalGrants ? digitalGrants.length : 1})` : `Numérique (${digitalGrants ? digitalGrants.length : 1})`}
+              {isEn ? `Digital (${digitalGrants?.length || 0})` : `Numérique (${digitalGrants?.length || 0})`}
             </Text>
           </Pressable>
 
@@ -691,7 +760,7 @@ export default function PurchasesScreen({
             }]}
           >
             <Text style={{ color: activeTab === 'requests' ? '#FFFFFF' : colors.text, fontWeight: '700', fontSize: 12 }}>
-              {isEn ? `Quotes (${requests ? requests.length : 2})` : `Devis (${requests ? requests.length : 2})`}
+              {isEn ? `Quotes (${requests?.length || 0})` : `Devis (${requests?.length || 0})`}
             </Text>
           </Pressable>
 
@@ -736,7 +805,7 @@ export default function PurchasesScreen({
               digitalGrants.map(renderDigitalGrant)
             ) : (
               <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>📐</Text>
+                <View style={{ marginBottom: 8 }}><Icon name="download" size={32} color={colors.muted} /></View>
                 <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
                   {isEn ? 'No Digital Blueprints' : 'Aucun patron ou guide numérique'}
                 </Text>
@@ -750,11 +819,49 @@ export default function PurchasesScreen({
           </>
         ) : activeTab === 'requests' ? (
           <>
-            {requests && requests.length > 0 ? requests.map(renderRequest) : null}
+            {requests && requests.length > 0 ? (
+              requests.map(renderRequest)
+            ) : (
+              <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
+                <View style={{ marginBottom: 8 }}><Icon name="file" size={32} color={colors.muted} /></View>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
+                  {isEn ? 'No Bespoke Requests' : 'Aucun devis en attente'}
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18, marginBottom: onOpenNeed ? 14 : 0 }}>
+                  {isEn
+                    ? 'Submit a custom request to receive tailored proposals from master artisans.'
+                    : 'Exprimez vos souhaits de création pour recevoir des devis personnalisés chiffrés par nos maîtres artisans.'}
+                </Text>
+                {onOpenNeed && (
+                  <Pressable
+                    onPress={onOpenNeed}
+                    style={{ backgroundColor: colors.action, paddingVertical: 9, paddingHorizontal: 16, borderRadius: 8 }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
+                      {isEn ? 'Express a Need →' : 'Exprimer un besoin →'}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
           </>
         ) : (
           <>
-            {orders && orders.length > 0 ? orders.map(renderOrder) : null}
+            {orders && orders.length > 0 ? (
+              orders.map(renderOrder)
+            ) : (
+              <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
+                <View style={{ marginBottom: 8 }}><Icon name="orders" size={32} color={colors.muted} /></View>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
+                  {isEn ? 'No Orders Yet' : 'Aucune commande enregistrée'}
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 }}>
+                  {isEn
+                    ? 'Your certified purchase history is empty. Explore our catalog to place your first order.'
+                    : 'Votre historique de commandes est vierge. Explorez les créations d\'exception pour passer votre première commande.'}
+                </Text>
+              </View>
+            )}
           </>
         )}
 
@@ -798,7 +905,7 @@ export default function PurchasesScreen({
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Text style={{ fontFamily: headerFont, fontSize: 18, fontWeight: '700', color: colors.text }}>
-                  ⚠️ {isEn ? 'Report an Order Issue' : 'Signaler un Litige / Incident'}
+                  {isEn ? 'Report an Order Issue' : 'Signaler un Litige / Incident'}
                 </Text>
                 <Pressable onPress={() => setReportingOrder(null)}>
                   <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>

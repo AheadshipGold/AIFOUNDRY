@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import Icon from "../../design-system/Icon";
-import { CatalogApi, ProductItem } from "../../services/api";
+import { CatalogApi, CmsApi, FavoritesApi, ReviewsApi, ProductItem, API_BASE_URL } from "../../services/api";
 
 interface BuyerHomeScreenProps {
   onSelectProduct: (prod: any) => void;
@@ -35,7 +35,7 @@ export interface Product {
   seller: string;
   price: number;
   currency: string;
-  rating: number;
+  rating: number | null;
   reviews: number;
   image: any;
   category: string;
@@ -56,8 +56,8 @@ function mapApiProduct(prod: ProductItem): Product {
     seller: prod.artisanShop?.name || "Boutique Partenaire",
     price: Math.round(prod.priceMinor / 100),
     currency: "FCFA",
-    rating: 4.9,
-    reviews: 24,
+    rating: (prod as any).rating !== undefined ? (prod as any).rating : null,
+    reviews: (prod as any).reviewsCount !== undefined ? (prod as any).reviewsCount : 0,
     image: prod.image ? { uri: prod.image } : null,
     category: prod.category || "other",
     isDigital: !!isDigital,
@@ -79,8 +79,46 @@ export default function BuyerHomeScreen({
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  // Sync persistent favorites from database
+  useEffect(() => {
+    FavoritesApi.getMyIds()
+      .then((ids) => {
+        if (Array.isArray(ids)) {
+          const map: Record<string, boolean> = {};
+          ids.forEach((id) => { map[id] = true; });
+          setFavorites(map);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [products, setProducts] = useState<Product[]>([]);
+  const [cms, setCms] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const heroScrollRef = useRef<ScrollView>(null);
+  const heroIndexRef = useRef(0);
+  const isInteractingHeroRef = useRef(false);
+
+  const heroProducts = cms?.featuredProducts || cms?.intemporelIcons || [];
+
+  useEffect(() => {
+    if (!heroProducts || heroProducts.length <= 1) return;
+    const interval = setInterval(() => {
+      if (isInteractingHeroRef.current) return;
+      heroIndexRef.current = (heroIndexRef.current + 1) % heroProducts.length;
+      heroScrollRef.current?.scrollTo({
+        x: heroIndexRef.current * 172,
+        animated: true,
+      });
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [heroProducts]);
+  const resolveImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    // Next.js serves images on port 3000
+    const base = API_BASE_URL.replace(':3001/api', ':3000');
+    return `${base}${url.startsWith('/') ? url : '/' + url}`;
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -88,7 +126,11 @@ export default function BuyerHomeScreen({
       try {
         const query = search.trim() ? search : undefined;
         const category = activeCat !== "all" ? activeCat : undefined;
-        const apiProds = await CatalogApi.getProducts(query, category);
+        const [apiProds, cmsRes] = await Promise.all([
+        CatalogApi.getProducts(query, category).catch(() => []),
+        CmsApi.getLandingConfig().catch(() => null)
+      ]);
+      if (cmsRes?.data) setCms(cmsRes.data);
         const mappedApi = (apiProds || []).map(mapApiProduct);
         setProducts(mappedApi);
       } catch (err) {
@@ -108,19 +150,27 @@ export default function BuyerHomeScreen({
 
   const toggleFav = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    FavoritesApi.toggleFavorite(id).catch((err) => {
+      console.warn("Failed to toggle favorite in database", err);
+      setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    });
   };
 
   const categories = [
-    { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true, icon: "🏷" },
-    { id: "watches", label: isEn ? "Watches" : "Montres", image: null, isAll: false, icon: "⌚" },
-    { id: "leather", label: isEn ? "Leather" : "Maroquinerie", image: null, isAll: false, icon: "👜" },
-    { id: "fashion", label: isEn ? "Jewelry & Fashion" : "Bijoux & Mode", image: null, isAll: false, icon: "💍" },
-    { id: "home", label: isEn ? "Home & Decor" : "Maison & Mobilier", image: null, isAll: false, icon: "🛋" },
-    { id: "art", label: isEn ? "Art & Sculptures" : "Art & Décoration", image: null, isAll: false, icon: "🏺" },
-    { id: "digital", label: isEn ? "Digital" : "Numérique", image: null, isAll: false, icon: "💻" },
+    { id: "all", label: isEn ? "All" : "Tout", image: null, isAll: true, icon: "sparkle" },
+    { id: "watches", label: isEn ? "Watches" : "Montres", image: require("../../../assets/products/watch-chrono.jpg"), isAll: false, icon: "watch" },
+    { id: "leather", label: isEn ? "Leather" : "Maroquinerie", image: require("../../../assets/products/leather-tote.jpg"), isAll: false, icon: "tote" },
+    { id: "fashion", label: isEn ? "Jewelry & Fashion" : "Bijoux & Mode", image: require("../../../assets/products/jewelry-gold.jpg"), isAll: false, icon: "diamond" },
+    { id: "home", label: isEn ? "Home & Decor" : "Maison & Mobilier", image: require("../../../assets/products/armchair.jpg"), isAll: false, icon: "armchair" },
+    { id: "art", label: isEn ? "Art & Sculptures" : "Art & Décoration", image: require("../../../assets/products/art-bronze.jpg"), isAll: false, icon: "palette" },
+    { id: "digital", label: isEn ? "Digital" : "Numérique", image: require("../../../assets/products/digital-patterns.jpg"), isAll: false, icon: "download" },
   ];
 
-  const filtered = products;
+  const filtered = (cms?.featuredProducts || []).filter((p: any) => {
+    const matchesCat = activeCat === "all" || p.category === activeCat;
+    const matchesSearch = search.trim() === "" || (p.title || "").toLowerCase().includes(search.toLowerCase()) || (p.seller?.name || p.seller || "").toLowerCase().includes(search.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -182,9 +232,7 @@ export default function BuyerHomeScreen({
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 14, color: colors.text }}>
-              {isDark ? "☼" : "☾"}
-            </Text>
+            <Icon name={isDark ? "sun" : "moon"} size={16} color={colors.text} weight="bold" />
           </Pressable>
 
           {/* Notification Bell with Red Indicator */}
@@ -204,7 +252,7 @@ export default function BuyerHomeScreen({
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 14 }}>🔔</Text>
+            <Icon name="bell" size={17} color={colors.text} weight="duotone" />
             <View
               style={{
                 position: "absolute",
@@ -234,7 +282,7 @@ export default function BuyerHomeScreen({
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 16, color: "#FFFFFF" }}>🛍</Text>
+            <Icon name="cart" size={17} color="#FFFFFF" weight="duotone" />
           </Pressable>
         </View>
       </View>
@@ -287,7 +335,7 @@ export default function BuyerHomeScreen({
               elevation: 1,
             }}
           >
-            <Text style={{ fontSize: 15, color: colors.muted, marginRight: 10 }}>🔍</Text>
+            <View style={{ marginRight: 8 }}><Icon name="search" size={16} color={colors.muted} weight="bold" /></View>
             <TextInput
               placeholder={
                 isEn
@@ -317,7 +365,7 @@ export default function BuyerHomeScreen({
                   backgroundColor: colors.subtle,
                 }}
               >
-                <Text style={{ fontSize: 11, color: colors.muted }}>⚲ SCAN</Text>
+                <Text style={{ fontSize: 11, color: colors.muted }}>SCAN</Text>
               </View>
             )}
           </View>
@@ -362,27 +410,27 @@ export default function BuyerHomeScreen({
                     padding: isActive ? 2 : 0,
                   }}
                 >
-                  {c.isAll ? (
-                    <View
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: 27,
-                        backgroundColor: isActive ? colors.action : colors.surface,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Image
-                        source={isDark ? iconBrandDark : iconBrandLight}
-                        style={{ width: 28, height: 28, resizeMode: "contain" }}
-                      />
-                    </View>
-                  ) : (
-                    <View style={{width: "100%", height: "100%", borderRadius: 27, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center"}}>
-                      <Text style={{fontSize: 22}}>{(c as any).icon}</Text>
-                    </View>
-                  )}
+                  {(c as any).isAll ? (
+                      <View
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: 27,
+                          backgroundColor: isActive ? colors.action : colors.surface,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Image
+                          source={isDark ? iconBrandDark : iconBrandLight}
+                          style={{ width: 28, height: 28, resizeMode: "contain" }}
+                        />
+                      </View>
+                    ) : (
+                      <View style={{width: "100%", height: "100%", borderRadius: 27, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", overflow: "hidden"}}>
+                        <Image source={(c as any).image} style={{ width: "100%", height: "100%", resizeMode: "cover" }} />
+                      </View>
+                    )}
                 </View>
                 <Text
                   style={{
@@ -400,135 +448,109 @@ export default function BuyerHomeScreen({
           })}
         </ScrollView>
 
-        {/* ==================== HERO SPOTLIGHT BANNER ==================== */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <View
-            style={{
-              backgroundColor: "#022B22",
-              borderRadius: 22,
-              overflow: "hidden",
-              borderWidth: 1,
-              borderColor: "rgba(212, 180, 131, 0.4)",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.25,
-              shadowRadius: 14,
-              elevation: 5,
-            }}
-          >
-            {/* Banner Text Content */}
-            <View style={{ padding: 20, paddingBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "800",
-                  letterSpacing: 1.4,
-                  color: colors.accent,
-                  textTransform: "uppercase",
-                  marginBottom: 6,
-                }}
-              >
-                {isEn ? "CURATED COLLECTION" : "COLLECTION SÉLECTIONNÉE"}
-              </Text>
-
-              <Text
-                style={{
-                  fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                  fontSize: 24,
-                  lineHeight: 28,
-                  color: "#FFFFFF",
-                  fontWeight: "700",
-                  marginBottom: 6,
-                }}
-              >
-                {isEn ? "Timeless Icons" : "Icônes Intemporelles"}
-              </Text>
-
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255, 255, 255, 0.82)",
-                  lineHeight: 17,
-                  marginBottom: 16,
-                }}
-              >
-                {isEn
-                  ? "Exceptional pieces from yesterday, today, and tomorrow."
-                  : "Des pièces d'exception, hier, aujourd'hui et demain."}
-              </Text>
-
-              <Pressable
-                onPress={onOpenNeed}
-                style={({ pressed }) => [{
-                  alignSelf: "flex-start",
-                  backgroundColor: "#0D4A38",
-                  borderWidth: 1,
-                  borderColor: "rgba(212, 180, 131, 0.6)",
-                  paddingHorizontal: 18,
-                  paddingVertical: 9,
-                  borderRadius: 22,
-                  opacity: pressed ? 0.85 : 1,
-                  transform: [{ scale: pressed ? 0.96 : 1 }],
-                }]}
-              >
-                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
-                  {isEn ? "Discover Collection →" : "Découvrir la sélection →"}
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Visual Header / Showcase Banner */}
+        {/* ==================== FEATURED PRODUCTS (PRODUITS PHARES CMS) ==================== */}
+        {heroProducts.length > 0 && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 32 }}>
             <View
               style={{
-                height: 160,
-                backgroundColor: "rgba(13, 74, 56, 0.5)",
-                borderTopWidth: 1,
-                borderColor: "rgba(212, 180, 131, 0.2)",
+                backgroundColor: "#022B22",
+                borderRadius: 24,
                 overflow: "hidden",
-                position: "relative",
+                borderWidth: 1,
+                borderColor: "rgba(212, 180, 131, 0.3)",
               }}
             >
-              <View style={{ width: "100%", height: "100%", backgroundColor: "rgba(212, 180, 131, 0.1)" }} />
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  backgroundColor: "rgba(2, 43, 34, 0.8)",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>
-                  Chronographe Héritage · Or & Acier
-                </Text>
-                {/* Pagination Dots */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 5,
-                    backgroundColor: "rgba(0,0,0,0.5)",
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                    borderRadius: 12,
-                  }}
-                >
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#FFFFFF" }} />
-                  <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
-                  <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: "rgba(255,255,255,0.4)" }} />
-                  <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "700", marginLeft: 3 }}>
-                    1 / 4
+              <View style={{ padding: 22, paddingBottom: 16 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: colors.accent, textTransform: "uppercase" }}>
+                    {isEn ? "FEATURED SELECTION • CMS" : "PRODUITS PHARES • SÉLECTION DU SITE"}
                   </Text>
+                  <View style={{ backgroundColor: "rgba(212, 180, 131, 0.2)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.4)" }}>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: colors.accent }}>
+                      {heroProducts.length} {isEn ? "pieces" : "pièces"}
+                    </Text>
+                  </View>
                 </View>
+
+                <Text style={{ fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontSize: 24, color: "#FFFFFF", fontWeight: "700", marginBottom: 4 }}>
+                  {isEn ? "Curated Flagships" : "Pièces d'Exception"}
+                </Text>
+                <Text style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.8)", lineHeight: 17 }}>
+                  {isEn ? "Exclusive creations highlighted by the platform administrator." : "Sélection exclusive mise en avant par l'administrateur de la plateforme."}
+                </Text>
               </View>
+
+              <ScrollView
+                ref={heroScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 22, gap: 12 }}
+                onTouchStart={() => { isInteractingHeroRef.current = true; }}
+                onTouchEnd={() => { setTimeout(() => { isInteractingHeroRef.current = false; }, 4000); }}
+                onScrollBeginDrag={() => { isInteractingHeroRef.current = true; }}
+                onScrollEndDrag={() => { setTimeout(() => { isInteractingHeroRef.current = false; }, 4000); }}
+              >
+                {heroProducts.map((prod: any, i: number) => {
+                  return (
+                    <Pressable
+                      key={prod.id || String(i)}
+                      onPress={() => onSelectProduct(prod)}
+                      style={({ pressed }) => [{
+                        width: 160,
+                        backgroundColor: "#03362A",
+                        borderRadius: 18,
+                        borderWidth: 1,
+                        borderColor: pressed ? colors.accent : "rgba(212, 180, 131, 0.28)",
+                        padding: 10,
+                        overflow: "hidden",
+                        opacity: pressed ? 0.88 : 1,
+                        transform: [{ scale: pressed ? 0.96 : 1 }],
+                      }]}
+                    >
+                      <View style={{ width: "100%", height: 135, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 10 }}>
+                        {prod.image ? (
+                          <Image
+                            source={{ uri: resolveImageUrl(prod.image) }}
+                            style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+                          />
+                        ) : null}
+                        <View style={{ position: "absolute", top: 6, right: 6, backgroundColor: "rgba(2,43,34,0.85)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: "rgba(212,180,131,0.4)" }}>
+                          {prod.reviewsCount && prod.reviewsCount > 0 && prod.rating ? (
+                          <Text style={{ fontSize: 9, fontWeight: "800", color: colors.accent }}>★ {prod.rating.toFixed(1)}</Text>
+                        ) : (
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                            <Icon name="sparkle" size={8} color={colors.accent} weight="fill" />
+                            <Text style={{ fontSize: 8, fontWeight: "800", color: colors.accent, letterSpacing: 0.6 }}>{isEn ? "NEW" : "NOUVEAU"}</Text>
+                          </View>
+                        )}
+                        </View>
+                      </View>
+
+                      <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700", marginBottom: 3 }} numberOfLines={1}>
+                        {prod.title}
+                      </Text>
+
+                      {prod.seller?.name ? (
+                        <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginBottom: 6 }} numberOfLines={1}>
+                          • {prod.seller.name}
+                        </Text>
+                      ) : null}
+
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 4, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+                        <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>
+                          {prod.price ? formatXOF(prod.price, prod.currency || "FCFA") : "Voir détails"}
+                        </Text>
+                        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.action, alignItems: "center", justifyContent: "center" }}>
+                          <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>→</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
           </View>
-        </View>
+        )}
 
         {/* ==================== 2-COLUMN PRODUCT GRID ==================== */}
         <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
@@ -561,7 +583,7 @@ export default function BuyerHomeScreen({
           {/* 2-Column Grid of Creations */}
           {filtered.length === 0 && !loading ? (
             <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 60, paddingHorizontal: 20 }}>
-              <Text style={{ fontSize: 48, marginBottom: 16 }}>🍃</Text>
+              <View style={{ marginBottom: 16 }}><Icon name="search" size={42} color={colors.accent} weight="duotone" /></View>
               <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text, marginBottom: 8, fontFamily: Platform.OS === "android" ? "serif" : "Georgia" }}>
                 {isEn ? "No creations found" : "Aucune création trouvée"}
               </Text>
@@ -580,10 +602,10 @@ export default function BuyerHomeScreen({
               {/* Column 1 */}
               <View style={{ flex: 1, gap: 14 }}>
                 {filtered
-                  .filter((_, i) => i % 2 === 0)
-                  .map((prod) => (
+                  .filter((_: any, i: number) => i % 2 === 0)
+                  .map((prod: any, idx: number) => (
                     <Pressable
-                      key={prod.id}
+                      key={prod.id || String(idx)}
                       onPress={() => onSelectProduct(prod)}
                       style={({ pressed }) => [{
                         backgroundColor: colors.surface,
@@ -610,7 +632,7 @@ export default function BuyerHomeScreen({
                         }}
                       >
                         <Image
-                          source={prod.image || (isDark ? iconBrandDark : iconBrandLight)}
+                          source={typeof prod.image === 'string' ? { uri: resolveImageUrl(prod.image) } : (prod.image || (isDark ? iconBrandDark : iconBrandLight))}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -633,9 +655,10 @@ export default function BuyerHomeScreen({
                               borderColor: colors.accent,
                             }}
                           >
-                            <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
-                              ⚡ NUMÉRIQUE
-                            </Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                              <Icon name="download" size={10} color={colors.accent} weight="bold" />
+                              <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.6 }}>NUMÉRIQUE</Text>
+                            </View>
                           </View>
                         ) : null}
 
@@ -660,14 +683,7 @@ export default function BuyerHomeScreen({
                             transform: [{ scale: pressed ? 0.9 : 1 }],
                           }]}
                         >
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              color: favorites[prod.id] ? "#EF4444" : "#4B5563",
-                            }}
-                          >
-                            {favorites[prod.id] ? "♥" : "♡"}
-                          </Text>
+                          <Icon name="heart" size={16} color={favorites[prod.id] ? "#EF4444" : "#6B7280"} weight={favorites[prod.id] ? "fill" : "regular"} />
                         </Pressable>
                       </View>
 
@@ -683,7 +699,7 @@ export default function BuyerHomeScreen({
                             marginBottom: 2,
                           }}
                         >
-                          {prod.seller}
+                          {prod.seller?.name || prod.seller}
                         </Text>
                         <Text
                           style={{
@@ -720,9 +736,18 @@ export default function BuyerHomeScreen({
                             >
                               {formatXOF(prod.price)}
                             </Text>
-                            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
-                              ★ {prod.rating.toFixed(1)} ({prod.reviews})
-                            </Text>
+                            {prod.reviews && prod.reviews > 0 && prod.rating ? (
+                              <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
+                                ★ {prod.rating.toFixed(1)} ({prod.reviews})
+                              </Text>
+                            ) : (
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}>
+                                <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                                <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                                  {isEn ? "NEW ARRIVAL" : "NOUVEAU"}
+                                </Text>
+                              </View>
+                            )}
                           </View>
 
                           <Pressable
@@ -753,10 +778,10 @@ export default function BuyerHomeScreen({
               {/* Column 2 */}
               <View style={{ flex: 1, gap: 14 }}>
                 {filtered
-                  .filter((_, i) => i % 2 !== 0)
-                  .map((prod) => (
+                  .filter((_: any, i: number) => i % 2 !== 0)
+                  .map((prod: any, idx: number) => (
                     <Pressable
-                      key={prod.id}
+                      key={prod.id || String(idx)}
                       onPress={() => onSelectProduct(prod)}
                       style={({ pressed }) => [{
                         backgroundColor: colors.surface,
@@ -783,7 +808,7 @@ export default function BuyerHomeScreen({
                         }}
                       >
                         <Image
-                          source={prod.image || (isDark ? iconBrandDark : iconBrandLight)}
+                          source={typeof prod.image === 'string' ? { uri: resolveImageUrl(prod.image) } : (prod.image || (isDark ? iconBrandDark : iconBrandLight))}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -806,9 +831,10 @@ export default function BuyerHomeScreen({
                               borderColor: colors.accent,
                             }}
                           >
-                            <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
-                              ⚡ NUMÉRIQUE
-                            </Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                              <Icon name="download" size={10} color={colors.accent} weight="bold" />
+                              <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.6 }}>NUMÉRIQUE</Text>
+                            </View>
                           </View>
                         ) : null}
 
@@ -833,14 +859,7 @@ export default function BuyerHomeScreen({
                             transform: [{ scale: pressed ? 0.9 : 1 }],
                           }]}
                         >
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              color: favorites[prod.id] ? "#EF4444" : "#4B5563",
-                            }}
-                          >
-                            {favorites[prod.id] ? "♥" : "♡"}
-                          </Text>
+                          <Icon name="heart" size={16} color={favorites[prod.id] ? "#EF4444" : "#6B7280"} weight={favorites[prod.id] ? "fill" : "regular"} />
                         </Pressable>
                       </View>
 
@@ -856,7 +875,7 @@ export default function BuyerHomeScreen({
                             marginBottom: 2,
                           }}
                         >
-                          {prod.seller}
+                          {prod.seller?.name || prod.seller}
                         </Text>
                         <Text
                           style={{
@@ -893,9 +912,18 @@ export default function BuyerHomeScreen({
                             >
                               {formatXOF(prod.price)}
                             </Text>
-                            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
-                              ★ {prod.rating.toFixed(1)} ({prod.reviews})
-                            </Text>
+                            {prod.reviews && prod.reviews > 0 && prod.rating ? (
+                              <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
+                                ★ {prod.rating.toFixed(1)} ({prod.reviews})
+                              </Text>
+                            ) : (
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}>
+                                <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                                <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                                  {isEn ? "NEW ARRIVAL" : "NOUVEAU"}
+                                </Text>
+                              </View>
+                            )}
                           </View>
 
                           <Pressable
@@ -960,35 +988,7 @@ export default function BuyerHomeScreen({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
           >
-            {[
-              {
-                name: "Maison Laurent",
-                initials: "ML",
-                specialty: "Maroquinerie & Bagagerie",
-                rating: 4.9,
-                reviews: 320,
-                img1: iconBrandLight,
-                img2: iconBrandLight,
-              },
-              {
-                name: "Horlogerie Prestige",
-                initials: "HP",
-                specialty: "Horlogerie & Montres",
-                rating: 5.0,
-                reviews: 186,
-                img1: iconBrandLight,
-                img2: iconBrandLight,
-              },
-              {
-                name: "Studio Djoliba",
-                initials: "SD",
-                specialty: "Maison, Déco & Mobilier",
-                rating: 4.8,
-                reviews: 340,
-                img1: iconBrandLight,
-                img2: iconBrandLight,
-              },
-            ].map((shop, i) => (
+            {(cms?.trustedShops || []).map((shop: any, i: number) => (
               <View
                 key={i}
                 style={{
@@ -1056,23 +1056,39 @@ export default function BuyerHomeScreen({
                         marginTop: 2,
                       }}
                     >
-                      <Text style={{ fontSize: 9 }}>👑</Text>
+                      <Icon name="crown" size={11} color={colors.accent} weight="fill" />
                       <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "800" }}>
                         Boutique Vérifiée
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
-                      ★ {shop.rating} ({shop.reviews})
-                    </Text>
+                    {shop.reviews && shop.reviews > 0 && shop.rating ? (
+                      <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
+                        ★ {Number(shop.rating).toFixed(1)} ({shop.reviews} {isEn ? "reviews" : "avis"})
+                      </Text>
+                    ) : (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 3 }}>
+                        <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                        <Text style={{ fontSize: 9, color: colors.accent, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" }}>
+                          {isEn ? "VERIFIED STORE" : "BOUTIQUE CERTIFIÉE"}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 
-                {/* Right: Actions */}
-                <View style={{ flexDirection: "row", gap: 6 }}>
-                  <Pressable style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.subtle }}>
-                    <Text style={{ fontSize: 11, fontWeight: "600", color: colors.text }}>Visiter</Text>
-                  </Pressable>
-                </View>
+                {/* Right: Thumbnails & Actions */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={{ flexDirection: "row", gap: 4 }}>
+                      {(shop.products || []).slice(0, 2).map((img: string, j: number) => (
+                        <View key={j} style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: colors.canvas, overflow: "hidden" }}>
+                          <Image source={{ uri: resolveImageUrl(img) }} style={{ width: "100%", height: "100%", resizeMode: "cover" }} />
+                        </View>
+                      ))}
+                    </View>
+                    <Pressable style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.subtle }}>
+                      <Text style={{ fontSize: 11, fontWeight: "600", color: colors.text }}>Visiter</Text>
+                    </Pressable>
+                  </View>
               </View>
             ))}
           </ScrollView>

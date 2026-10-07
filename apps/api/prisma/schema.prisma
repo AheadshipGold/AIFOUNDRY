@@ -49,6 +49,8 @@ model User {
   memberships ShopMembership[]
   requests    PurchaseRequest[]
   orders      Order[]
+  reviews     Review[]
+  favorites   Favorite[]
 
   @@map("users")
 }
@@ -135,6 +137,7 @@ model Shop {
   dayClosures        DayClosure[]
   paymentConnections ShopPaymentConnection[]
   subscriptions      Subscription[]
+  reviews            Review[]
 
   @@map("shops")
 }
@@ -177,6 +180,8 @@ model Product {
   updatedAt   DateTime       @updatedAt
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  reviews     Review[]
+  favorites   Favorite[]
 
   @@map("products")
 }
@@ -715,4 +720,42 @@ model PlatformConfig {
   updatedAt DateTime @updatedAt
 
   @@map("platform_config")
+}
+
+// ==============================================================================
+// REVIEWS & FAVORITES (WISHLIST)
+// ==============================================================================
+
+model Review {
+  id         String   @id @default(uuid())
+  orderId    String?
+  buyerId    String
+  productId  String?
+  shopId     String
+  rating     Int      // 1 to 5 stars
+  title      String?
+  comment    String?
+  isVerified Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  buyer   User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop    Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([buyerId, productId])
+  @@map("reviews")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
 }

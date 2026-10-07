@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 
 @Controller('v1/admin')
@@ -51,6 +51,20 @@ export class AdminController {
     return this.adminService.getAuditLogs();
   }
 
+  @Get('audit/verify-chain')
+  async verifyChain() {
+    return this.adminService.verifyAuditChainIntegrity();
+  }
+
+  @Post('audit/reports/generate')
+  async generateReport(@Body('period') period?: string) {
+    return this.adminService.generateAuditReport(period || 'Hebdomadaire');
+  }
+
+  @Get('audit/reports')
+  async getAuditReports() {
+    return this.adminService.getAuditReports();
+  }
 
   @Get('users')
   async getAdmins() {
@@ -58,8 +72,7 @@ export class AdminController {
   }
 
   @Patch('users/create')
-  async createAdmin(@Body() body) {
+  async createAdmin(@Body() body: { email: string; name?: string }) {
     return this.adminService.createAdmin(body.email, body.name);
   }
-
 }

@@ -88,8 +88,12 @@ export class OrdersController {
 
   @Post()
   async create(
+    @Req() req: Request,
+    @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-user-id') explicitUserId: string | undefined,
     @Body()
     body: {
+      buyerId?: string;
       buyerName: string;
       buyerPhone: string;
       deliveryAddress: string;
@@ -97,7 +101,11 @@ export class OrdersController {
       items: Array<{ variantId: string; quantity: number }>;
     },
   ): Promise<OrderRecord> {
-    return this.ordersService.createOrder(body);
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
+    return this.ordersService.createOrder({
+      ...body,
+      buyerId: body.buyerId || userId || undefined,
+    });
   }
 
   @Patch(':id/status')

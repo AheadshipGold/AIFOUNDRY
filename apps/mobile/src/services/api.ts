@@ -6,13 +6,11 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Dynamic API resolution: on physical device via Expo Dev Client, Metro's hostUri provides the machine LAN IP.
-// Default to the computer's LAN IP 10.76.226.162 for physical devices on same Wi-Fi.
+// Default to the computer's LAN IP 10.33.188.162 for physical devices on same Wi-Fi.
 const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost || (Constants as any)?.manifest?.debuggerHost;
-const host = debuggerHost ? debuggerHost.split(':')[0] : '10.76.226.162';
+const host = debuggerHost ? debuggerHost.split(':')[0] : '10.33.188.162';
 
-const DEFAULT_API_BASE_URL = `http://${host}:3001/api`;
-
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
+export const API_BASE_URL = debuggerHost ? `http://${host}:3001/api` : 'http://10.33.188.162:3001/api';
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -29,10 +27,24 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     }
   }
 
+  let explicitUserId = customHeaders['x-user-id'];
+  if (!explicitUserId) {
+    try {
+      const raw = await AsyncStorage.getItem('ojarket.auth.session');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.user?.id) {
+          explicitUserId = parsed.user.id;
+        }
+      }
+    } catch {}
+  }
+
   const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...customHeaders,
     ...(authHeader ? { Authorization: authHeader } : {}),
+    ...(explicitUserId ? { 'x-user-id': explicitUserId } : {}),
   };
 
   try {
@@ -100,10 +112,11 @@ export interface ProductItem {
 }
 
 export const CatalogApi = {
-  async getProducts(query?: string, category?: string): Promise<ProductItem[]> {
+  async getProducts(query?: string, category?: string, shopId?: string): Promise<ProductItem[]> {
     const params = new URLSearchParams();
     if (query) params.append('q', query);
     if (category && category !== 'all') params.append('category', category);
+    if (shopId) params.append('shopId', shopId);
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return request<ProductItem[]>(`/v1/products${queryString}`);
   },
@@ -111,11 +124,43 @@ export const CatalogApi = {
   async getProduct(id: string): Promise<ProductItem> {
     return request<ProductItem>(`/v1/products/${id}`);
   },
+
+  async getByShop(shopId: string): Promise<ProductItem[]> {
+    return request<ProductItem[]>(`/v1/products?shopId=${encodeURIComponent(shopId)}`);
+  },
+
+  async createProduct(data: {
+    shopId: string;
+    title: string;
+    description?: string;
+    category?: string;
+    priceMinor: number;
+    stockOnHand?: number;
+    originCity?: string;
+    images?: string[];
+  }): Promise<ProductItem> {
+    return request<ProductItem>('/v1/products', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: authHeaders(),
+    });
+  },
 };
 
 // ---------------------------------------------------------
 // 2. DEMANDES SUR-MESURE & DEVIS (D02)
 // ---------------------------------------------------------
+
+export interface StructuredAiExtraction {
+  refinedTitle: string;
+  category: string;
+  materials: string[];
+  estimatedDays: number;
+  priceEstimateFCFA: number;
+  deliveryEstimate?: string;
+  targetBoutiques: string[];
+  technicalSummary?: string;
+}
 
 export interface SellerProposalItem {
   id: string;
@@ -142,6 +187,7 @@ export interface PurchaseRequestItem {
   targetBudgetMinor?: number;
   currency: string;
   status: 'OPEN' | 'MATCHED' | 'FULFILLED' | 'CLOSED';
+  aiAnalysis?: StructuredAiExtraction;
   proposals: SellerProposalItem[];
   createdAt: string;
 }
@@ -155,7 +201,15 @@ export const RequestsApi = {
     return request<PurchaseRequestItem>(`/v1/requests/${id}`);
   },
 
+  async analyzeWithAi(prompt: string): Promise<StructuredAiExtraction> {
+    return request<StructuredAiExtraction>('/v1/requests/ai-analyze', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    });
+  },
+
   async create(data: {
+    buyerId?: string;
     buyerName: string;
     buyerPhone?: string;
     rawPrompt: string;
@@ -203,6 +257,7 @@ export const RequestsApi = {
 
 export interface OrderItemLine {
   variantId: string;
+  productId?: string;
   itemTitle: string;
   sku: string;
   quantity: number;
@@ -345,6 +400,18 @@ export const SellerApi = {
     return request<DayClosureRecord>('/v1/seller/cashbook/close', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async exportFec(): Promise<{ filename: string; content: string; mimeType: string }> {
+    return request<{ filename: string; content: string; mimeType: string }>('/v1/seller/cashbook/export-fec', {
+      headers: authHeaders(),
+    });
+  },
+
+  async exportCsv(): Promise<{ filename: string; content: string; mimeType: string }> {
+    return request<{ filename: string; content: string; mimeType: string }>('/v1/seller/cashbook/export-csv', {
+      headers: authHeaders(),
     });
   },
 };
@@ -597,6 +664,10 @@ export const IncidentsApi = {
     return request<IncidentRecord[]>(`/v1/incidents/order/${orderId}`);
   },
 
+  async getByShop(shopId: string): Promise<IncidentRecord[]> {
+    return request<IncidentRecord[]>(`/v1/incidents/shop/${shopId}`);
+  },
+
   async create(data: {
     orderId: string;
     reporterName: string;
@@ -612,9 +683,23 @@ export const IncidentsApi = {
     });
   },
 
+  async addEvidence(id: string, evidenceUrls: string[]): Promise<IncidentRecord> {
+    return request<IncidentRecord>(`/v1/incidents/${id}/evidence`, {
+      method: 'POST',
+      body: JSON.stringify({ evidenceUrls }),
+    });
+  },
+
+  async propose(id: string, proposedOutcome: string): Promise<IncidentRecord> {
+    return request<IncidentRecord>(`/v1/incidents/${id}/propose`, {
+      method: 'PUT',
+      body: JSON.stringify({ proposedOutcome }),
+    });
+  },
+
   async resolve(id: string, resolution: string, proposedOutcome?: string): Promise<IncidentRecord> {
     return request<IncidentRecord>(`/v1/incidents/${id}/resolve`, {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify({ resolution, proposedOutcome }),
     });
   },
@@ -675,6 +760,122 @@ export const SubscriptionsApi = {
     return request<SubscriptionRecord>('/v1/subscriptions/upgrade', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+};
+
+
+export const CmsApi = {
+  async getLandingConfig(): Promise<{ data: any }> {
+    return request<{ data: any }>('/v1/cms/landing');
+  }
+};
+
+export const FavoritesApi = {
+  async toggleFavorite(productId: string): Promise<{ isFavorite: boolean; productId: string; totalFavorites: number }> {
+    return request(`/v1/favorites/${productId}/toggle`, {
+      method: 'POST',
+    });
+  },
+
+  async getMyIds(): Promise<string[]> {
+    try {
+      return await request<string[]>('/v1/favorites/my-ids');
+    } catch {
+      return [];
+    }
+  },
+
+  async getMyFavorites(): Promise<any[]> {
+    return request<any[]>('/v1/favorites');
+  },
+};
+
+export const ReviewsApi = {
+  async getProductReviews(productId: string): Promise<{
+    averageRating: number | null;
+    reviewsCount: number;
+    reviews: any[];
+  }> {
+    return request(`/v1/reviews/product/${productId}`);
+  },
+
+  async getShopReviews(shopId: string): Promise<{
+    shopRating: number | null;
+    reviewsCount: number;
+    reviews: any[];
+  }> {
+    return request(`/v1/reviews/shop/${shopId}`);
+  },
+
+  async canReview(productId: string): Promise<{
+    canReview: boolean;
+    hasPurchased: boolean;
+    existingReview: any | null;
+  }> {
+    try {
+      return await request(`/v1/reviews/can-review/${productId}`);
+    } catch {
+      return { canReview: false, hasPurchased: false, existingReview: null };
+    }
+  },
+
+  async createReview(data: {
+    productId: string;
+    rating: number;
+    title?: string;
+    comment?: string;
+  }): Promise<any> {
+    return request('/v1/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+export interface AppNotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  link?: string;
+  createdAt: string;
+}
+
+export const NotificationsApi = {
+  async getAll(): Promise<AppNotificationItem[]> {
+    try {
+      return await request<AppNotificationItem[]>('/v1/notifications', {
+        headers: authHeaders(),
+      });
+    } catch {
+      return [];
+    }
+  },
+
+  async getUnreadCount(): Promise<number> {
+    try {
+      const res = await request<{ count: number }>('/v1/notifications/unread-count', {
+        headers: authHeaders(),
+      });
+      return res.count;
+    } catch {
+      return 0;
+    }
+  },
+
+  async markAsRead(id: string): Promise<void> {
+    await request(`/v1/notifications/${id}/read`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+    });
+  },
+
+  async markAllAsRead(): Promise<void> {
+    await request('/v1/notifications/mark-all-read', {
+      method: 'POST',
+      headers: authHeaders(),
     });
   },
 };

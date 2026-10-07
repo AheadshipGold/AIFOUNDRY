@@ -7,7 +7,9 @@ export interface StructuredAiExtraction {
   materials: string[];
   estimatedDays: number;
   priceEstimateFCFA: number;
+  deliveryEstimate?: string;
   targetBoutiques: string[];
+  technicalSummary?: string;
 }
 
 export interface SellerProposalItem {
@@ -79,8 +81,14 @@ export class RequestsService {
     };
   }
 
-  async findAll(): Promise<PurchaseRequestItem[]> {
+  async findAll(buyerId?: string): Promise<PurchaseRequestItem[]> {
+    const whereClause: any = {};
+    if (buyerId) {
+      whereClause.buyerId = buyerId;
+    }
+
     const requests = await this.prisma.purchaseRequest.findMany({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         buyer: true,
         proposals: {
@@ -115,16 +123,114 @@ export class RequestsService {
     return this.mapRequestToItem(req);
   }
 
+  aiAnalyze(rawPrompt: string): StructuredAiExtraction {
+    const prompt = (rawPrompt || '').trim();
+    const promptLower = prompt.toLowerCase();
+
+    // Detect category
+    let category = 'maroquinerie';
+    if (/bijou|collier|bague|bronze|or\b|argent|bracelet|parure|pendentif/i.test(promptLower)) {
+      category = 'jewelry';
+    } else if (/montre|horlog|chrono|cadran|mouvement|automatique|rolex/i.test(promptLower)) {
+      category = 'watches';
+    } else if (/table|meuble|console|bois|iroko|fauteuil|chaise|mobilier|ébénist/i.test(promptLower)) {
+      category = 'home';
+    } else if (/sac|tote|cuir|portefeuille|ceinture|maroquin|valise|besace/i.test(promptLower)) {
+      category = 'leather';
+    } else if (/soie|tissu|lin|robe|vêtement|habit|textile|couture/i.test(promptLower)) {
+      category = 'fashion';
+    } else if (/sculpture|statue|art|peinture|tableau|toile/i.test(promptLower)) {
+      category = 'art';
+    }
+
+    // Material detection
+    const materials: string[] = [];
+    if (/cuir|veau|tannage/i.test(promptLower)) materials.push('Cuir pleine fleur tannage végétal');
+    if (/laiton|bouclerie/i.test(promptLower)) materials.push('Bouclerie en laiton massif brossé');
+    if (/or\b/i.test(promptLower)) materials.push('Or 18 carats certifié');
+    if (/argent/i.test(promptLower)) materials.push('Argent 925 sterling');
+    if (/bronze/i.test(promptLower)) materials.push('Bronze noble à la cire perdue');
+    if (/iroko|bois|ébène/i.test(promptLower)) materials.push("Bois d'Iroko noble massif séché");
+    if (/soie/i.test(promptLower)) materials.push('Soie naturelle tissée main');
+    if (/verre|saphir/i.test(promptLower)) materials.push('Verre saphir inrayable');
+    if (materials.length === 0) {
+      if (category === 'leather' || category === 'maroquinerie') materials.push('Cuir sélectionné premium', 'Finitions sellier');
+      else if (category === 'jewelry') materials.push('Métaux précieux et alliages nobles');
+      else if (category === 'watches') materials.push('Acier 316L et verre saphir');
+      else if (category === 'home') materials.push('Bois massifs et finitions satinées');
+      else materials.push('Matériaux nobles sélectionnés par nos maîtres artisans');
+    }
+
+    // Price extraction from prompt if present (e.g. 50000, 150 000, 80k)
+    let priceEstimateFCFA = 65000;
+    const priceMatch = prompt.match(/(\d+[\s\d]*)\s*(?:fcfa|f cfa|cfa|xof|k|€|\$)?/i);
+    if (priceMatch) {
+      const parsedNum = parseInt(priceMatch[1].replace(/\s+/g, ''), 10);
+      if (parsedNum >= 5000 && parsedNum <= 100000000) {
+        priceEstimateFCFA = parsedNum;
+      }
+    } else {
+      if (category === 'watches') priceEstimateFCFA = 180000;
+      else if (category === 'jewelry') priceEstimateFCFA = 120000;
+      else if (category === 'home') priceEstimateFCFA = 350000;
+      else if (category === 'leather' || category === 'maroquinerie') priceEstimateFCFA = 75000;
+      else if (category === 'art') priceEstimateFCFA = 220000;
+      else priceEstimateFCFA = 50000;
+    }
+
+    // Refined noble title
+    let refinedTitle = prompt.length > 50 ? `${prompt.slice(0, 47)}...` : prompt;
+    if (prompt.length > 5) {
+      const words = prompt.split(/\s+/).slice(0, 6).join(' ');
+      refinedTitle = words.charAt(0).toUpperCase() + words.slice(1);
+    } else {
+      refinedTitle = `Création Sur-Mesure (${category.toUpperCase()})`;
+    }
+
+    // Target ateliers
+    const targetBoutiques = [
+      'Maison Ganvié & Fils (Atelier Cotonou)',
+      "Fonderie Royale d'Abomey",
+      'Maison Laurent – Maroquinerie d’Exception',
+    ];
+
+    const estimatedDays = category === 'home' ? 15 : category === 'jewelry' ? 10 : 7;
+
+    return {
+      refinedTitle,
+      category,
+      materials,
+      estimatedDays,
+      priceEstimateFCFA,
+      deliveryEstimate: `${estimatedDays} à ${estimatedDays + 4} jours ouvrés`,
+      targetBoutiques,
+      technicalSummary: `Spécification technique structurée pour atelier : finitions haut de gamme, matériaux certifiés, contrôle qualité avant livraison.`,
+    };
+  }
+
   async create(dto: {
+    buyerId?: string;
     buyerName: string;
     buyerPhone?: string;
     rawPrompt: string;
     category?: string;
     budgetMinor?: number;
   }): Promise<PurchaseRequestItem> {
-    let user = await this.prisma.user.findFirst({
-      where: { phone: dto.buyerPhone || '+229 97 00 00 00' },
-    });
+    let user = dto.buyerId
+      ? await this.prisma.user.findUnique({ where: { id: dto.buyerId } })
+      : null;
+
+    if (!user && dto.buyerPhone) {
+      user = await this.prisma.user.findFirst({
+        where: { phone: dto.buyerPhone },
+      });
+    }
+
+    if (!user) {
+      user = await this.prisma.user.findFirst({
+        where: { phone: '+229 97 00 00 00' },
+      });
+    }
 
     if (!user) {
       user = await this.prisma.user.create({
@@ -138,30 +244,20 @@ export class RequestsService {
       });
     }
 
-    const isJewelry = /bijou|collier|bague|bronze|or/i.test(dto.rawPrompt);
-    const isFurniture = /table|meuble|console|bois|iroko/i.test(dto.rawPrompt);
-    const cat = dto.category || (isJewelry ? 'joaillerie' : isFurniture ? 'mobilier' : 'maroquinerie');
-    const budget = dto.budgetMinor || (isJewelry ? 30000000 : isFurniture ? 50000000 : 18000000);
-
-    const aiAnalysis = {
-      refinedTitle: `Création Sur-Mesure : ${cat.toUpperCase()}`,
-      category: cat,
-      materials: cat === 'maroquinerie' ? ['Cuir pleine fleur', 'Bouclerie laiton'] : ['Matière noble sélectionnée'],
-      estimatedDays: 10,
-      priceEstimateFCFA: Math.round(budget / 100),
-      targetBoutiques: ['Maison Ganvié & Fils', "Fonderie Royale d'Abomey"],
-    };
+    const aiAnalysis = this.aiAnalyze(dto.rawPrompt);
+    const cat = dto.category || aiAnalysis.category;
+    const budget = dto.budgetMinor || (aiAnalysis.priceEstimateFCFA * 100);
 
     const newReq = await this.prisma.purchaseRequest.create({
       data: {
         buyerId: user.id,
-        title: dto.rawPrompt.length > 50 ? `${dto.rawPrompt.slice(0, 47)}...` : dto.rawPrompt,
+        title: aiAnalysis.refinedTitle || (dto.rawPrompt.length > 50 ? `${dto.rawPrompt.slice(0, 47)}...` : dto.rawPrompt),
         description: dto.rawPrompt,
         category: cat,
         targetBudgetMinor: budget,
         currency: 'XOF',
         status: 'OPEN',
-        aiStructuredData: aiAnalysis,
+        aiStructuredData: aiAnalysis as any,
       },
       include: {
         buyer: true,

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put } from '@nestjs/common';
 import { IncidentsService, IncidentRecord } from './incidents.service';
 import { IncidentCategory } from '@prisma/client';
 
@@ -7,19 +7,24 @@ export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
   @Get()
-  async getAll(): Promise<IncidentRecord[]> {
+  async findAll(): Promise<IncidentRecord[]> {
     return this.incidentsService.findAll();
   }
 
   @Get('order/:orderId')
-  async getByOrder(@Param('orderId') orderId: string): Promise<IncidentRecord[]> {
+  async findByOrder(@Param('orderId') orderId: string): Promise<IncidentRecord[]> {
     return this.incidentsService.findByOrder(orderId);
+  }
+
+  @Get('shop/:shopId')
+  async findByShop(@Param('shopId') shopId: string): Promise<IncidentRecord[]> {
+    return this.incidentsService.findByShop(shopId);
   }
 
   @Post()
   async create(
     @Body()
-    body: {
+    dto: {
       orderId: string;
       reporterName: string;
       reporterPhone?: string;
@@ -29,18 +34,34 @@ export class IncidentsController {
       evidenceUrls?: string[];
     }
   ): Promise<IncidentRecord> {
-    return this.incidentsService.create(body);
+    return this.incidentsService.create(dto);
   }
 
-  @Post(':id/resolve')
+  @Post(':id/evidence')
+  async addEvidence(
+    @Param('id') id: string,
+    @Body('evidenceUrls') evidenceUrls: string[]
+  ): Promise<IncidentRecord> {
+    return this.incidentsService.addEvidence(id, evidenceUrls || []);
+  }
+
+  @Put(':id/propose')
+  async proposeResolution(
+    @Param('id') id: string,
+    @Body('proposedOutcome') proposedOutcome: string
+  ): Promise<IncidentRecord> {
+    return this.incidentsService.proposeResolution(id, proposedOutcome);
+  }
+
+  @Put(':id/resolve')
   async resolve(
     @Param('id') id: string,
     @Body()
-    body: {
+    dto: {
       resolution: string;
       proposedOutcome?: string;
     }
   ): Promise<IncidentRecord> {
-    return this.incidentsService.resolve(id, body.resolution, body.proposedOutcome);
+    return this.incidentsService.resolve(id, dto.resolution, dto.proposedOutcome);
   }
 }

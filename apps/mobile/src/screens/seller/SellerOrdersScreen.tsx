@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
+import { Icon } from "../../design-system/Icon";
 import { OrdersApi, OrderRecord, type AuthUser } from "../../services/api";
 
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
@@ -67,36 +68,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
     }
   };
 
-  const defaultOrders = [
-    {
-      id: "mock1",
-      orderNumber: "CMD-2847",
-      buyerName: "Marcelle Houngbo",
-      deliveryAddress: "Porto-Novo, Avakpa",
-      items: [{ itemTitle: "Sac de voyage weekend en cuir tanné végétal" }],
-      totalAmountMinor: 19000000,
-      currency: "XOF",
-      paymentChannel: "MTN_MOMO",
-      paymentStatus: "SETTLED_TO_MERCHANT",
-      fulfillmentStatus: "PREPARING",
-      image: imgLeatherTote,
-    },
-    {
-      id: "mock2",
-      orderNumber: "CMD-2846",
-      buyerName: "Didier Agossa",
-      deliveryAddress: "Cotonou, Haie Vive",
-      items: [{ itemTitle: "Chronographe Héritage Automatique Or & Acier" }],
-      totalAmountMinor: 28500000,
-      currency: "XOF",
-      paymentChannel: "CARD",
-      paymentStatus: "PENDING",
-      fulfillmentStatus: "PENDING",
-      image: imgWatchChrono,
-    },
-  ] as any as OrderRecord[];
-
-  const displayOrders = orders.length > 0 ? orders : (isDemo ? defaultOrders : []);
+  const displayOrders = orders;
 
   const filters = [
     { id: "all", labelFr: `Toutes (${displayOrders.length})`, labelEn: `All (${displayOrders.length})` },
@@ -238,7 +210,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
               marginTop: 20,
             }}
           >
-            <Text style={{ fontSize: 36, marginBottom: 12 }}>📦</Text>
+            <View style={{ marginBottom: 12 }}><Icon name="package" size={36} color={colors.muted} /></View>
             <Text
               style={{
                 fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
@@ -375,7 +347,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                   >
                     <View>
                       <Text style={{ fontSize: 10, color: colors.muted }}>
-                        {order.paymentChannel === "MTN_MOMO" ? "🟡 MTN MoMo" : (order.paymentChannel === "MOOV_MONEY" ? "🔵 Moov Money" : "💵 Espèces")}
+                        {order.paymentChannel === "MTN_MOMO" ? "MTN MoMo" : (order.paymentChannel === "MOOV_MONEY" ? "Moov Money" : "Espèces")}
                       </Text>
                       <Text style={{ fontSize: 10, fontWeight: "700", color: order.paymentStatus === "SETTLED_TO_MERCHANT" ? colors.action : "#D97706" }}>
                         {order.paymentStatus === "SETTLED_TO_MERCHANT" ? (isEn ? "✓ Paid" : "✓ Encaissé") : (isEn ? "Pending" : "En attente")}

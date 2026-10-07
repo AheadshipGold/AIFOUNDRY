@@ -4,6 +4,7 @@ import { PaymentStatus, FulfillmentStatus, PaymentChannel, EntryType, FinancialE
 
 export interface OrderItemLine {
   variantId: string;
+  productId?: string;
   itemTitle: string;
   sku: string;
   quantity: number;
@@ -42,19 +43,9 @@ export class OrdersService {
     if (shopId) {
       whereClause.shopId = shopId;
     } else if (userId) {
-      const userShop = await this.prisma.shop.findFirst({
-        where: {
-          OR: [
-            { ownerId: userId },
-            { memberships: { some: { userId } } }
-          ]
-        }
-      });
-      if (userShop) {
-        whereClause.shopId = userShop.id;
-      } else {
-        return [];
-      }
+      whereClause.buyerId = userId;
+    } else {
+      return [];
     }
 
     const orders = await this.prisma.order.findMany({
@@ -98,6 +89,7 @@ export class OrdersService {
   }
 
   async createOrder(dto: {
+    buyerId?: string;
     buyerName: string;
     buyerPhone: string;
     deliveryAddress: string;
@@ -155,7 +147,10 @@ export class OrdersService {
         throw new BadRequestException('Could not determine shop for the order');
       }
 
-      let buyer = await tx.user.findFirst({ where: { phone: dto.buyerPhone } });
+      let buyer = dto.buyerId ? await tx.user.findUnique({ where: { id: dto.buyerId } }) : null;
+      if (!buyer && dto.buyerPhone) {
+        buyer = await tx.user.findFirst({ where: { phone: dto.buyerPhone } });
+      }
       if (!buyer) {
         buyer = await tx.user.findFirst({ where: { role: 'BUYER' } });
       }
@@ -318,6 +313,7 @@ export class OrdersService {
       paymentInstructions,
       lines: o.lines ? o.lines.map((l: any) => ({
         variantId: l.variantId,
+        productId: l.variant?.productId || undefined,
         itemTitle: l.itemTitle,
         sku: l.variant?.sku || '',
         quantity: l.quantity,

@@ -38,6 +38,32 @@ export class SellerController {
     return this.sellerService.getCashbook(targetShopId, userId || undefined);
   }
 
+  @Get('cashbook/export-fec')
+  async exportFec(
+    @Req() req: Request,
+    @Query('shopId') shopId?: string,
+    @Headers('authorization') authHeader?: string,
+    @Headers('x-user-id') explicitUserId?: string,
+    @Headers('x-shop-id') explicitShopId?: string,
+  ) {
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
+    const targetShopId = explicitShopId || shopId;
+    return this.sellerService.exportFec(targetShopId, userId || undefined);
+  }
+
+  @Get('cashbook/export-csv')
+  async exportCsv(
+    @Req() req: Request,
+    @Query('shopId') shopId?: string,
+    @Headers('authorization') authHeader?: string,
+    @Headers('x-user-id') explicitUserId?: string,
+    @Headers('x-shop-id') explicitShopId?: string,
+  ) {
+    const userId = await this.extractUserId(req, authHeader, explicitUserId);
+    const targetShopId = explicitShopId || shopId;
+    return this.sellerService.exportCsv(targetShopId, userId || undefined);
+  }
+
   @Post('cashbook/collect')
   async recordCollection(
     @Req() req: Request,

@@ -101,8 +101,11 @@ export default function StandaloneSellerDashboard() {
             </div>
           </Link>
           <div className="landing-header-actions">
+            <Link href="/seller/subscription" className="btn-portal-secondary" style={{ padding: "8px 14px", fontSize: "13px", color: "#AD8455", borderColor: "#AD8455" }}>
+              ★ Mon Abonnement SaaS (FR-37)
+            </Link>
             <Link href="/seller/cashbook" className="btn-portal-primary" style={{ padding: "8px 16px", fontSize: "13px" }}>
-              📊 Ouvrir le Livre de Caisse (S43)
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Ouvrir le Livre de Caisse (S43)</span>
             </Link>
             <Link href="/" className="btn-portal-secondary">
               ← Voir la Boutique Publique
@@ -173,19 +176,19 @@ export default function StandaloneSellerDashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "8px", backgroundColor: "rgba(220, 38, 38, 0.05)", borderLeft: "4px solid #DC2626" }}>
               <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--oj-text-primary)" }}>
-                📦 Expédier le Cabas Cuir Ébène (OJK-2026-0891) vers Haie Vive avant 17h
+                Expédier le Cabas Cuir Ébène (OJK-2026-0891) vers Haie Vive avant 17h
               </span>
               <span style={{ fontSize: "12px", fontWeight: 700, color: "#DC2626" }}>URGENT</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "8px", backgroundColor: "rgba(212, 180, 131, 0.08)", borderLeft: "4px solid #D4B483" }}>
               <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--oj-text-primary)" }}>
-                💬 Répondre à la demande sur-mesure D02 pour la parure en bronze (Abomey)
+                Répondre à la demande sur-mesure D02 pour la parure en bronze (Abomey)
               </span>
               <span style={{ fontSize: "12px", fontWeight: 700, color: "#AD8455" }}>SOUS 4H</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderRadius: "8px", backgroundColor: "rgba(7, 93, 73, 0.05)", borderLeft: "4px solid #075D49" }}>
               <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--oj-text-primary)" }}>
-                🔒 Effectuer la clôture de caisse journalière (S44)
+                Effectuer la clôture de caisse journalière (S44)
               </span>
               <Link href="/seller/cashbook" style={{ fontSize: "12px", fontWeight: 700, color: "#075D49", textDecoration: "underline" }}>
                 Accéder au livre de caisse →

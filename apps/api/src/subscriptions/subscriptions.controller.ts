@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Headers, Req } from '@nestjs/common';
 import { SubscriptionsService, PlanFeatureDefinition, SubscriptionRecord } from './subscriptions.service';
 import { PlanTier, BillingInterval, BillingSource } from '@prisma/client';
 
@@ -12,14 +12,14 @@ export class SubscriptionsController {
   }
 
   @Get('shop/:shopId')
-  async getShopSubscription(@Param('shopId') shopId: string): Promise<SubscriptionRecord> {
+  async getShopSub(@Param('shopId') shopId: string): Promise<SubscriptionRecord> {
     return this.subscriptionsService.getShopSubscription(shopId);
   }
 
   @Post('upgrade')
   async upgradePlan(
     @Body()
-    body: {
+    dto: {
       shopId: string;
       planTier: PlanTier;
       billingInterval?: BillingInterval;
@@ -27,7 +27,39 @@ export class SubscriptionsController {
       paymentReference?: string;
     }
   ): Promise<SubscriptionRecord> {
-    return this.subscriptionsService.upgradePlan(body);
+    return this.subscriptionsService.upgradePlan(dto);
+  }
+
+  @Post('moneroo/initialize')
+  async initializeMoneroo(
+    @Body()
+    dto: {
+      shopId: string;
+      planTier: PlanTier;
+      billingInterval?: BillingInterval;
+      customerEmail: string;
+      customerName?: string;
+      customerPhone?: string;
+      returnUrl?: string;
+    }
+  ) {
+    return this.subscriptionsService.initializeMonerooCheckout(dto);
+  }
+
+  @Post('moneroo/webhook')
+  async handleMonerooWebhook(
+    @Headers() headers: Record<string, string>,
+    @Body() payload: Record<string, any>,
+    @Req() req: any
+  ) {
+    const rawBody = typeof req.rawBody === 'string' ? req.rawBody : JSON.stringify(payload);
+    return this.subscriptionsService.processMonerooWebhook(headers, rawBody, payload);
+  }
+
+  @Get('moneroo/verify/:paymentId')
+  async verifyPayment(@Param('paymentId') paymentId: string) {
+    const { monerooAdapter } = await import('./moneroo.adapter');
+    return monerooAdapter.verifyPaymentWithProvider(paymentId);
   }
 
   @Get('all')

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Platform, BackHandler, ToastAndroid } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Platform, BackHandler, ToastAndroid, Linking } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { DesignProvider, useDesign } from "./src/design-system/provider";
+import { Icon } from "./src/design-system/Icon";
 
 import BuyerHomeScreen from "./src/screens/buyer/BuyerHomeScreen";
 import SearchScreen from "./src/screens/buyer/SearchScreen";
@@ -20,7 +21,7 @@ import AuthModal, { restoreSession, clearSession } from "./src/components/auth/A
 import SellerOnboardingModal from "./src/components/seller/SellerOnboardingModal";
 import ProductDetailModal from "./src/components/product/ProductDetailModal";
 import { startPeriodicSync, stopPeriodicSync } from "./src/services/offlineSync";
-import { type AuthUser, getAuthToken } from "./src/services/api";
+import { type AuthUser, getAuthToken, CatalogApi } from "./src/services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Universe = "buyer" | "seller";
@@ -44,33 +45,45 @@ const BottomNav = ({
   const isEn = locale === "en";
   const isDark = mode === "dark";
 
+  // Tab definitions using pure official Phosphor Icons (Style 2 Slim Architectural Line)
   const buyerTabs = [
-    { key: "home", label: isEn ? "Discover" : "Découvrir", icon: "❖" },
-    { key: "search", label: isEn ? "Search" : "Rechercher", icon: "🔍" },
-    { key: "need", label: isEn ? "Requests" : "Demandes", icon: "✦" },
-    { key: "purchases", label: isEn ? "Purchases" : "Achats", icon: "🛍" },
-    { key: "profile", label: isEn ? "Profile" : "Profil", icon: "👤" },
+    { key: "home", label: isEn ? "Discover" : "Découvrir", iconName: "home" },
+    { key: "search", label: isEn ? "Search" : "Rechercher", iconName: "search" },
+    { key: "need", label: isEn ? "Requests" : "Demandes", iconName: "file" },
+    { key: "purchases", label: isEn ? "Purchases" : "Achats", iconName: "purchases" },
+    { key: "profile", label: isEn ? "Profile" : "Profil", iconName: "profile" },
   ];
 
   const sellerTabs = [
-    { key: "dashboard", label: isEn ? "Today" : "Aujourd'hui", icon: "◈" },
-    { key: "orders", label: isEn ? "Orders" : "Commandes", icon: "☵" },
-    { key: "cashbook", label: isEn ? "Cashbook" : "Caisse", icon: "⚿" },
-    { key: "opportunities", label: isEn ? "Requests" : "Demandes", icon: "✦" },
-    { key: "shop", label: isEn ? "Shop" : "Boutique", icon: "🏪" },
+    { key: "dashboard", label: isEn ? "Today" : "Aujourd'hui", iconName: "dashboard" },
+    { key: "orders", label: isEn ? "Orders" : "Commandes", iconName: "orders" },
+    { key: "cashbook", label: isEn ? "Cashbook" : "Caisse", iconName: "cashbook" },
+    { key: "opportunities", label: isEn ? "Requests" : "Demandes", iconName: "file" },
+    { key: "shop", label: isEn ? "Shop" : "Boutique", iconName: "storefront" },
   ];
 
   const tabs = universe === "buyer" ? buyerTabs : sellerTabs;
+
+  // High-contrast luxury chromatic tokens for unmistakable active visibility
+  const activeColor = isDark 
+    ? "#D4B483" // Gold champagne joaillerie in dark mode for supreme luminescence
+    : (universe === "seller" ? "#9E7134" : "#075D49"); // Imperial Emerald or Artisan Bronze in light mode
+
+  const inactiveColor = isDark ? "#6B7A75" : "#80776D"; // Sophisticated muted slate
+
+  // Controlled bottom inset calculation to eliminate excessive vertical padding
+  const bottomPadding = Platform.OS === "ios" 
+    ? Math.max(insets.bottom, 14) 
+    : Math.max(insets.bottom ? insets.bottom - 4 : 4, 4);
 
   return (
     <View 
       style={[
         styles.navContainer, 
         { 
-          backgroundColor: colors.surface, 
-          borderTopColor: colors.border,
-          shadowColor: isDark ? "#000" : "#151E1C",
-          paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 18 : 10),
+          backgroundColor: isDark ? "#0A1311" : "#F8F6F0", 
+          borderTopColor: isDark ? "rgba(212, 180, 131, 0.22)" : "rgba(13, 74, 56, 0.12)",
+          paddingBottom: bottomPadding,
         }
       ]}
     >
@@ -79,48 +92,50 @@ const BottomNav = ({
         return (
           <TouchableOpacity 
             key={tab.key} 
-            activeOpacity={0.7}
+            activeOpacity={0.75}
             style={[
               styles.navItem,
               isActive && {
-                backgroundColor: isDark ? "rgba(212, 180, 131, 0.16)" : "rgba(13, 74, 56, 0.08)",
-                borderRadius: 16,
+                backgroundColor: isDark ? "rgba(212, 180, 131, 0.14)" : "rgba(7, 93, 73, 0.08)",
+                borderColor: isDark ? "rgba(212, 180, 131, 0.35)" : "rgba(7, 93, 73, 0.22)",
+                borderWidth: 1,
               }
             ]} 
             onPress={() => onSelectTab(tab.key)}
           >
-            <Text 
-              style={{ 
-                fontSize: 18, 
-                color: isActive ? (universe === 'seller' ? colors.accent : colors.action) : colors.muted,
-                fontWeight: "800",
-                transform: [{ scale: isActive ? 1.1 : 1 }],
-              }}
-            >
-              {tab.icon}
-            </Text>
-            <Text 
-              style={{ 
-                fontSize: 10, 
-                marginTop: 3, 
-                color: isActive ? (universe === 'seller' ? colors.accent : colors.action) : colors.muted,
-                fontWeight: isActive ? "800" : "600",
-                letterSpacing: 0.3,
-              }}
-            >
-              {tab.label}
-            </Text>
+            {/* Top Indicator Bar for Active Tab */}
             {isActive && (
               <View 
                 style={{
-                  width: 4,
-                  height: 4,
+                  position: "absolute",
+                  top: -6,
+                  width: 20,
+                  height: 2.5,
                   borderRadius: 2,
-                  backgroundColor: universe === 'seller' ? colors.accent : colors.action,
-                  marginTop: 2,
+                  backgroundColor: activeColor,
                 }} 
               />
             )}
+
+            <Icon 
+              name={tab.iconName} 
+              size={isActive ? 21 : 20} 
+              color={isActive ? activeColor : inactiveColor} 
+              weight={isActive ? "fill" : "regular"} 
+            />
+
+            <Text 
+              style={{ 
+                fontSize: 10, 
+                marginTop: 2, 
+                color: isActive ? activeColor : inactiveColor,
+                fontWeight: isActive ? "800" : "600",
+                letterSpacing: isActive ? 0.4 : 0.2,
+              }}
+              numberOfLines={1}
+            >
+              {tab.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -147,17 +162,6 @@ const MainNavigator = () => {
 
   const lastBackPressTime = useRef<number>(0);
 
-  // Restore session on startup
-  useEffect(() => {
-    restoreSession().then((session) => {
-      if (session) {
-        setCurrentUser(session.user);
-        startPeriodicSync();
-      }
-    });
-    return () => stopPeriodicSync();
-  }, []);
-
   // Central Navigation Dispatcher
   const navigateTo = useCallback((targetUniverse: Universe, targetScreen: string) => {
     setUniverse(targetUniverse);
@@ -170,6 +174,63 @@ const MainNavigator = () => {
       return [...prev, { universe: targetUniverse, screen: targetScreen }];
     });
   }, []);
+
+  // Restore session on startup
+  useEffect(() => {
+    restoreSession().then((session) => {
+      if (session) {
+        setCurrentUser(session.user);
+        startPeriodicSync();
+      }
+    });
+    return () => stopPeriodicSync();
+  }, []);
+
+  // Deep Linking Handler (ojarket://product/:id, ojarket://shop/:slug, https://ojarket.com/...)
+  useEffect(() => {
+    const handleDeepLink = async (url: string | null) => {
+      if (!url) return;
+      try {
+        // Formats: ojarket://product/prod-01, ojarket://p/prod-01, https://ojarket.com/p/prod-01
+        if (url.includes('product/') || url.includes('/p/')) {
+          const parts = url.split(url.includes('product/') ? 'product/' : '/p/');
+          const productId = parts[1]?.split('?')[0]?.replace(/\//g, '');
+          if (productId) {
+            try {
+              const prod = await CatalogApi.getProduct(productId);
+              if (prod) {
+                setSelectedProduct(prod);
+              }
+            } catch {
+              // Fallback placeholder modal
+              setSelectedProduct({
+                id: productId,
+                title: 'Création Certifiée Ojarket',
+                priceMinor: 0,
+                currency: 'XOF',
+              });
+            }
+          }
+        } else if (url.includes('shop/') || url.includes('/shop/')) {
+          navigateTo("buyer", "search");
+        }
+      } catch (err) {
+        console.warn("[DeepLink] Error handling URL:", url, err);
+      }
+    };
+
+    // 1. Handle app launch from cold start with initial URL
+    Linking.getInitialURL().then(handleDeepLink);
+
+    // 2. Handle background resume with incoming URL event
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => subscription.remove();
+  }, [navigateTo]);
+
+
 
   // Hardware Back Handler & App-wide back navigation
   const goBack = useCallback((): boolean => {
@@ -379,6 +440,7 @@ const MainNavigator = () => {
           />;
         case "need":
           return <RequestNeedScreen 
+            currentUser={currentUser}
             onBack={goBack} 
             onSubmitted={() => navigateTo("buyer", "purchases")} 
           />;
@@ -528,20 +590,22 @@ const styles = StyleSheet.create({
   },
   navContainer: {
     flexDirection: "row",
-    paddingTop: 8,
+    paddingTop: 6,
     borderTopWidth: 1,
     justifyContent: "space-around",
     alignItems: "center",
-    elevation: 8,
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    elevation: 4,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   navItem: {
+    position: "relative",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 54,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
+    minWidth: 56,
   },
 });

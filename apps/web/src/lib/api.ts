@@ -107,12 +107,14 @@ export function clearSession() {
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const token = getStoredToken();
+  const user = getStoredUser();
 
   const customHeaders = (options?.headers as Record<string, string>) || {};
   const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...customHeaders,
     ...(token && !customHeaders['Authorization'] ? { Authorization: `Bearer ${token}` } : {}),
+    ...(user?.id && !customHeaders['x-user-id'] ? { 'x-user-id': user.id } : {}),
   };
 
   const res = await fetch(url, {
@@ -337,13 +339,143 @@ export const OrdersApi = {
     const q = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
     return request<OrderRecord[]>(`/v1/orders${q}`);
   },
+  async create(data: {
+    buyerId?: string;
+    buyerName: string;
+    buyerPhone: string;
+    deliveryAddress: string;
+    paymentChannel: 'MTN_MOMO' | 'MOOV_MONEY' | 'CELTIIS_CASH' | 'CARD' | 'CASH_ON_DELIVERY';
+    items: Array<{ variantId: string; quantity: number }>;
+  }): Promise<OrderRecord> {
+    return request<OrderRecord>('/v1/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
-export const RequestsApi = {
-  async getAll(): Promise<PurchaseRequestItem[]> {
-    return request<PurchaseRequestItem[]>('/v1/requests');
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  name: string;
+  priceMinor: number;
+  stockOnHand: number;
+  stockReserved: number;
+}
+
+export interface ProductItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  artisanShop: {
+    id: string;
+    name: string;
+    city: string;
+    country: string;
+    verified: boolean;
+  };
+  priceMinor: number;
+  currency: string;
+  stockOnHand: number;
+  image: string;
+  tags: string[];
+  materials: string[];
+  variants: ProductVariant[];
+  rating: number | null;
+  reviewsCount: number;
+}
+
+export const CatalogApi = {
+  async getProducts(query?: string, category?: string, shopId?: string): Promise<ProductItem[]> {
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (category && category !== 'all') params.append('category', category);
+    if (shopId) params.append('shopId', shopId);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return request<ProductItem[]>(`/v1/products${q}`);
   },
-  async submitProposal(requestId: string, data: any): Promise<any> {
+
+  async getProduct(id: string): Promise<ProductItem> {
+    return request<ProductItem>(`/v1/products/${id}`);
+  },
+
+  async createProduct(data: {
+    shopId: string;
+    title: string;
+    description?: string;
+    category?: string;
+    priceMinor: number;
+    stockOnHand?: number;
+    originCity?: string;
+    images?: string[];
+  }): Promise<ProductItem> {
+    return request<ProductItem>('/v1/products', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+export interface StructuredAiExtraction {
+  refinedTitle: string;
+  category: string;
+  materials: string[];
+  estimatedDays: number;
+  priceEstimateFCFA: number;
+  deliveryEstimate?: string;
+  targetBoutiques: string[];
+  technicalSummary?: string;
+}
+
+export const RequestsApi = {
+  async getAll(buyerId?: string): Promise<PurchaseRequestItem[]> {
+    const q = buyerId ? `?buyerId=${encodeURIComponent(buyerId)}` : '';
+    return request<PurchaseRequestItem[]>(`/v1/requests${q}`);
+  },
+  async getOne(id: string): Promise<PurchaseRequestItem> {
+    return request<PurchaseRequestItem>(`/v1/requests/${id}`);
+  },
+  async analyzeWithAi(prompt: string): Promise<StructuredAiExtraction> {
+    return request<StructuredAiExtraction>('/v1/requests/ai-analyze', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    });
+  },
+  async create(data: {
+    buyerId?: string;
+    buyerName: string;
+    buyerPhone?: string;
+    rawPrompt: string;
+    category?: string;
+    budgetMinor?: number;
+  }): Promise<PurchaseRequestItem> {
+    return request<PurchaseRequestItem>('/v1/requests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  async acceptProposal(requestId: string, proposalId: string) {
+    return request<{ success: boolean; message: string; orderNumber: string }>(
+      `/v1/requests/${requestId}/accept-proposal`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ proposalId }),
+      }
+    );
+  },
+  async submitProposal(
+    requestId: string,
+    data: {
+      shopId?: string;
+      shopName: string;
+      artisanCity?: string;
+      priceMinor: number;
+      advancePaymentRequiredMinor?: number;
+      productionDays: number;
+      notes: string;
+    }
+  ): Promise<any> {
     return request(`/v1/requests/${requestId}/proposals`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -363,3 +495,66 @@ export const CmsApi = {
     });
   }
 };
+
+export const FavoritesApi = {
+  async toggleFavorite(productId: string): Promise<{ isFavorite: boolean; productId: string; totalFavorites: number }> {
+    return request(`/v1/favorites/${productId}/toggle`, {
+      method: 'POST',
+    });
+  },
+
+  async getMyIds(): Promise<string[]> {
+    try {
+      return await request<string[]>('/v1/favorites/my-ids');
+    } catch {
+      return [];
+    }
+  },
+
+  async getMyFavorites(): Promise<any[]> {
+    return request<any[]>('/v1/favorites');
+  },
+};
+
+export const ReviewsApi = {
+  async getProductReviews(productId: string): Promise<{
+    averageRating: number | null;
+    reviewsCount: number;
+    reviews: any[];
+  }> {
+    return request(`/v1/reviews/product/${productId}`);
+  },
+
+  async getShopReviews(shopId: string): Promise<{
+    shopRating: number | null;
+    reviewsCount: number;
+    reviews: any[];
+  }> {
+    return request(`/v1/reviews/shop/${shopId}`);
+  },
+
+  async canReview(productId: string): Promise<{
+    canReview: boolean;
+    hasPurchased: boolean;
+    existingReview: any | null;
+  }> {
+    try {
+      return await request(`/v1/reviews/can-review/${productId}`);
+    } catch {
+      return { canReview: false, hasPurchased: false, existingReview: null };
+    }
+  },
+
+  async createReview(data: {
+    productId: string;
+    rating: number;
+    title?: string;
+    comment?: string;
+  }): Promise<any> {
+    return request('/v1/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+

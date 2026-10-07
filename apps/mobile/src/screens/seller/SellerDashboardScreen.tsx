@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
+import { Icon } from "../../design-system/Icon";
 import {
   SellerApi,
   OrdersApi,
@@ -64,21 +65,20 @@ export default function SellerDashboardScreen({
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isDemo = currentUser?.email === 'demo@ojarket.test' || currentUser?.email === 'alexandre@ojarket.test';
   const sellerName = currentUser?.name
     ? currentUser.name.trim().split(/\s+/)[0]
-    : (isDemo ? "Alexandre" : (isEn ? "Merchant" : "Commerçant"));
+    : (isEn ? "Merchant" : "Commerçant");
   const shopName = activeShop?.name
     || currentUser?.activeShop?.name
     || (currentUser?.shops && currentUser.shops[0]?.name)
-    || (isDemo ? "Maison Laurent" : (isEn ? "My Store" : "Ma Boutique"));
+    || (isEn ? "My Store" : "Ma Boutique");
   const initials = currentUser?.name
     ? currentUser.name.trim().split(/\s+/).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
-    : (isDemo ? "AL" : "OA");
+    : "MB";
   const kycStatus = activeShop?.kycStatus
     || currentUser?.activeShop?.kycStatus
     || (currentUser?.shops && currentUser.shops[0]?.kycStatus)
-    || (isDemo ? "VERIFIED" : "PENDING");
+    || "PENDING";
 
   useEffect(() => {
     async function loadData() {
@@ -112,12 +112,10 @@ export default function SellerDashboardScreen({
 
   const totalVendu = cashbook?.summary?.totalVenduMinor !== undefined
     ? Math.round(cashbook.summary.totalVenduMinor / 100)
-    : (isDemo ? 4850000 : 0);
-  const ordersCount = orders.length > 0
-    ? orders.length
-    : (activeShop?.ordersCount !== undefined ? activeShop.ordersCount : (isDemo ? 142 : 0));
+    : 0;
+  const ordersCount = orders.length;
   const rawLowStock = dashboard?.kpis?.find(k => k.label.toLowerCase().includes('stock'))?.value;
-  const lowStockCount = rawLowStock !== undefined ? parseInt(rawLowStock, 10) : (isDemo ? 3 : 0);
+  const lowStockCount = rawLowStock !== undefined ? (parseInt(rawLowStock, 10) || 0) : 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -176,7 +174,7 @@ export default function SellerDashboardScreen({
               transform: [{ scale: pressed ? 0.95 : 1 }],
             }]}
           >
-            <Text style={{ fontSize: 13, color: colors.text }}>🔔</Text>
+            <Icon name="bell" size={16} color={colors.text} />
             <View
               style={{
                 position: "absolute",
@@ -252,7 +250,7 @@ export default function SellerDashboardScreen({
                   letterSpacing: -0.3,
                 }}
               >
-                {isEn ? `Hello ${sellerName} 👋` : `Bonjour ${sellerName} 👋`}
+                {isEn ? `Hello ${sellerName} ` : `Bonjour ${sellerName} `}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
                 <Text style={{ fontSize: 11, color: colors.muted }}>
@@ -272,7 +270,7 @@ export default function SellerDashboardScreen({
                       borderColor: "#F59E0B",
                     }}
                   >
-                    <Text style={{ fontSize: 9.5 }}>⏳</Text>
+                    <Icon name="clock" size={10} color="#D97706" />
                     <Text style={{ fontSize: 9.5, color: "#D97706", fontWeight: "800" }}>
                       {isEn ? "KYC Verification Pending" : "En cours de validation KYC"}
                     </Text>
@@ -291,7 +289,7 @@ export default function SellerDashboardScreen({
                       borderColor: colors.accent,
                     }}
                   >
-                    <Text style={{ fontSize: 10 }}>👑</Text>
+                    <Icon name="crown" size={11} color={colors.accent} />
                     <Text style={{ fontSize: 9.5, color: colors.accent, fontWeight: "800" }}>
                       {isEn ? "Verified Store" : "Boutique Certifiée"}
                     </Text>
@@ -425,21 +423,12 @@ export default function SellerDashboardScreen({
                   <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted }}>
                     {isEn ? "Requests" : "Demandes"}
                   </Text>
-                  {isDemo && (
-                    <View style={{ backgroundColor: colors.successBg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: "800", color: colors.action }}>
-                        ↗ +60%
-                      </Text>
-                    </View>
-                  )}
                 </View>
                 <Text style={{ fontSize: 20, fontWeight: "800", color: colors.text }}>
-                  {isDemo ? "28" : "0"}
+                  0
                 </Text>
                 <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "700", marginTop: 2 }}>
-                  {isDemo
-                    ? (isEn ? "6 pending quotes" : "6 devis en attente")
-                    : (isEn ? "0 pending quotes" : "0 devis en attente")}
+                  {isEn ? "Open requests" : "Demandes reçues"}
                 </Text>
               </Pressable>
 
@@ -468,7 +457,7 @@ export default function SellerDashboardScreen({
                   {lowStockCount > 0 && (
                     <View style={{ backgroundColor: "#FEF3C7", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
                       <Text style={{ fontSize: 10, fontWeight: "800", color: "#D97706" }}>
-                        ⚠️ {lowStockCount}
+                        {lowStockCount}
                       </Text>
                     </View>
                   )}
@@ -493,7 +482,7 @@ export default function SellerDashboardScreen({
               { label: isEn ? "Products" : "Articles", symbol: "◈", action: onOpenShop || onOpenCashbook },
               { label: isEn ? "Orders" : "Commandes", symbol: "☵", action: onOpenOrders },
               { label: isEn ? "Requests" : "Demandes", symbol: "✦", action: onOpenOpportunities },
-              { label: isEn ? "My Store" : "Ma Boutique", symbol: "🏪", action: onOpenShop || onOpenCashbook },
+              { label: isEn ? "My Store" : "Ma Boutique", symbol: "◈", action: onOpenShop || onOpenCashbook },
             ].map((item, idx) => (
               <Pressable
                 key={idx}
@@ -630,93 +619,6 @@ export default function SellerDashboardScreen({
                 </Pressable>
               ))}
             </View>
-          ) : isDemo ? (
-            <View style={{ gap: 10 }}>
-              {[
-                {
-                  id: "CMD-2847",
-                  title: "Sac de voyage weekend cuir",
-                  client: "Marcelle Houngbo",
-                  price: "190 000 FCFA",
-                  status: isEn ? "To Prepare" : "En préparation",
-                  statusColor: "#D97706",
-                  statusBg: "rgba(217, 119, 6, 0.12)",
-                  image: imgLeatherTote,
-                },
-                {
-                  id: "CMD-2846",
-                  title: "Chronographe Héritage Acier",
-                  client: "Didier Agossa",
-                  price: "285 000 FCFA",
-                  status: isEn ? "Delivered" : "Livrée",
-                  statusColor: colors.action,
-                  statusBg: colors.successBg,
-                  image: imgWatchChrono,
-                },
-              ].map((order, i) => (
-                <Pressable
-                  key={i}
-                  onPress={onOpenOrders}
-                  style={({ pressed }) => [{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    backgroundColor: colors.surface,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 12,
-                    gap: 12,
-                    opacity: pressed ? 0.8 : 1,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                  }]}
-                >
-                  <View
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 12,
-                      overflow: "hidden",
-                      borderWidth: 1.5,
-                      borderColor: colors.accent,
-                    }}
-                  >
-                    <Image
-                      source={order.image}
-                      style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-                    />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
-                        #{order.id}
-                      </Text>
-                      <View style={{ backgroundColor: order.statusBg, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
-                        <Text style={{ fontSize: 9, fontWeight: "800", color: order.statusColor }}>
-                          {order.status}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={{ fontSize: 12, color: colors.text, marginTop: 2, fontWeight: "600" }} numberOfLines={1}>
-                      {order.title}
-                    </Text>
-                    <Text style={{ fontSize: 10, color: colors.muted }}>
-                      Client : {order.client}
-                    </Text>
-                  </View>
-
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text style={{ fontSize: 13, fontWeight: "800", color: colors.action }}>
-                      {order.price}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>
-                      →
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
           ) : (
             <View
               style={{
@@ -729,7 +631,7 @@ export default function SellerDashboardScreen({
                 justifyContent: "center",
               }}
             >
-              <Text style={{ fontSize: 24, marginBottom: 6 }}>📦</Text>
+              <View style={{ marginBottom: 6 }}><Icon name="package" size={24} color={colors.muted} /></View>
               <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, textAlign: "center" }}>
                 {isEn ? "No orders yet" : "Aucune commande pour le moment"}
               </Text>
@@ -796,10 +698,7 @@ export default function SellerDashboardScreen({
 
             {/* Stylized Bar / Area Chart Representation */}
             <View style={{ height: 110, flexDirection: "row", alignItems: "flex-end", gap: 8, paddingTop: 10 }}>
-              {(isDemo
-                ? [35, 48, 42, 60, 55, 75, 68, 85, 92, 100]
-                : [10, 10, 10, 10, 10, 10, 10, 10, 10, totalVendu > 0 ? 100 : 10]
-              ).map((h, idx) => (
+              {[15, 20, 18, 30, 25, 40, 35, 50, 45, totalVendu > 0 ? 100 : 20].map((h, idx) => (
                 <View key={idx} style={{ flex: 1, alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
                   <View
                     style={{
@@ -837,99 +736,32 @@ export default function SellerDashboardScreen({
             </Text>
             <Pressable onPress={onOpenOpportunities}>
               <Text style={{ fontSize: 12, fontWeight: "700", color: colors.action }}>
-                {isDemo ? (isEn ? "View all (6) →" : "Voir tout (6) →") : (isEn ? "View all →" : "Voir tout →")}
+                {isEn ? "View all →" : "Voir tout →"}
               </Text>
             </Pressable>
           </View>
 
-          {isDemo ? (
-            <View style={{ gap: 10 }}>
-              {[
-                {
-                  buyer: "Amina Diop",
-                  title: "Lot de sacs en cuir et accessoires",
-                  budget: "300 000 FCFA",
-                  time: "Il y a 2h",
-                },
-                {
-                  buyer: "Jean-Marc Dossou",
-                  title: "Commande spéciale maroquinerie",
-                  budget: "75 000 FCFA",
-                  time: "Il y a 5h",
-                },
-              ].map((req, i) => (
-                <View
-                  key={i}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 14,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: "800", color: colors.accent }}>
-                        {req.buyer}
-                      </Text>
-                      <Text style={{ fontSize: 10, color: colors.muted }}>
-                        · {req.time}
-                      </Text>
-                    </View>
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginTop: 2 }} numberOfLines={1}>
-                      {req.title}
-                    </Text>
-                    <Text style={{ fontSize: 12, fontWeight: "800", color: colors.action, marginTop: 4 }}>
-                      Budget: {req.budget}
-                    </Text>
-                  </View>
-
-                  <Pressable
-                    onPress={onOpenOpportunities}
-                    style={({ pressed }) => [{
-                      backgroundColor: colors.action,
-                      paddingHorizontal: 12,
-                      paddingVertical: 7,
-                      borderRadius: 14,
-                      opacity: pressed ? 0.8 : 1,
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    }]}
-                  >
-                    <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>
-                      {isEn ? "Quote >" : "Répondre >"}
-                    </Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-                padding: 20,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 24, marginBottom: 6 }}>✦</Text>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, textAlign: "center" }}>
-                {isEn ? "No pending buyer requests" : "Aucune demande d'acheteur pour le moment"}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
-                {isEn
-                  ? "Specific product requests from buyers will appear here."
-                  : "Les demandes de produits spécifiques et devis des acheteurs apparaîtront ici."}
-              </Text>
-            </View>
-          )}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 20,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <View style={{ marginBottom: 6 }}><Icon name="sparkle" size={24} color={colors.accent} weight="fill" /></View>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, textAlign: "center" }}>
+              {isEn ? "No pending buyer requests" : "Aucune demande d'acheteur pour le moment"}
+            </Text>
+            <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
+              {isEn
+                ? "Specific product requests and quotes from buyers will appear here."
+                : "Les demandes de créations sur-mesure et devis des acheteurs apparaîtront ici."}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </View>

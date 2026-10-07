@@ -35,6 +35,23 @@ interface ShopReview {
   documentType: string;
 }
 
+interface DisputeItem {
+  id: string;
+  orderId: string;
+  orderNumber?: string;
+  reporterName: string;
+  reporterPhone?: string;
+  category: string;
+  title: string;
+  description: string;
+  evidenceUrls: string[];
+  status: "OPEN" | "UNDER_REVIEW" | "PROPOSAL_MADE" | "RESOLVED" | string;
+  proposedOutcome?: string;
+  resolution?: string;
+  resolvedAt?: string;
+  createdAt: string;
+}
+
 interface AuditEntry {
   id: string;
   action: string;
@@ -44,6 +61,148 @@ interface AuditEntry {
   time: string;
   ip: string;
   status: "SUCCESS" | "BLOCKED" | "REVIEW";
+  hash?: string;
+  previousHash?: string;
+}
+
+interface SealedAuditReport {
+  id: string;
+  reportPeriod: string;
+  generatedAt: string;
+  totalEventsCount: number;
+  totalOrdersVolumeMinor: number;
+  activeShopsCount: number;
+  resolvedDisputesCount: number;
+  activeCorridorsCount: number;
+  merkleRootHash: string;
+  isCryptographicallySealed: boolean;
+  signatureSeal: string;
+}
+
+interface ChainIntegrityResult {
+  isValid: boolean;
+  totalBlocks: number;
+  genesisHash: string;
+  latestHash: string;
+  verifiedAt: string;
+}
+
+
+function AdminIconGavel({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M14 13l5 5m-5-5l-4-4 5-5 4 4-5 5z" />
+      <path d="M3 21h18" />
+      <path d="M16 11l2 2" />
+      <path d="M6 14l3 3" />
+    </svg>
+  );
+}
+
+function AdminIconLock({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function AdminIconCrown({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M2 4l3 12h14l3-12-5 6-5-6-5 6z" />
+    </svg>
+  );
+}
+
+function AdminIconBarChart({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
+function AdminIconStore({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
+
+function AdminIconCoin({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 6v12M15 9.5a2.5 2.5 0 0 0-5 0c0 2.5 5 1.5 5 4a2.5 2.5 0 0 1-5 0" />
+    </svg>
+  );
+}
+
+function AdminIconShield({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function AdminIconPalette({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <circle cx="13.5" cy="6.5" r=".5" fill={color} />
+      <circle cx="17.5" cy="10.5" r=".5" fill={color} />
+      <circle cx="8.5" cy="7.5" r=".5" fill={color} />
+      <circle cx="6.5" cy="12.5" r=".5" fill={color} />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.6 0-.4-.2-.8-.5-1.1-.3-.3-.5-.7-.5-1.1 0-.9.7-1.6 1.6-1.6H17c3.3 0 6-2.7 6-6 0-5.5-4.5-9.6-11-8.6z" />
+    </svg>
+  );
+}
+
+function AdminIconUsers({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function AdminIconSearch({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function AdminIconFileText({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  );
+}
+
+function AdminIconAlertTriangle({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
 }
 
 export default function AdminPage() {
@@ -52,7 +211,7 @@ export default function AdminPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState<
-    "overview" | "shops" | "corridors" | "d02" | "finops" | "audit" | "cms" | "admins"
+    "overview" | "shops" | "corridors" | "d02" | "disputes" | "finops" | "audit" | "cms" | "admins"
   >("overview");
 
   // CMS State
@@ -79,6 +238,33 @@ export default function AdminPage() {
   const [shopSearch, setShopSearch] = useState("");
   const [shopFilter, setShopFilter] = useState<string>("ALL");
   const [corridorSearch, setCorridorSearch] = useState("");
+
+  // Disputes & Arbitration State (A04)
+  const [disputes, setDisputes] = useState<DisputeItem[]>([
+    {
+      id: "inc-01",
+      orderId: "cmd-mock-01",
+      orderNumber: "CMD-2847",
+      reporterName: "Amina Diop",
+      reporterPhone: "+229 97 00 11 22",
+      category: "DELAY_EXCEEDED",
+      title: "Retard de livraison sur Cotonou",
+      description: "La commande devait être livrée sous 10 jours. Demande de clarification auprès de la boutique.",
+      evidenceUrls: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop&q=80"],
+      status: "UNDER_REVIEW",
+      proposedOutcome: "Remplacement prioritaire sous 48h et geste commercial de 10 000 FCFA.",
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+  ]);
+  const [disputeFilter, setDisputeFilter] = useState<string>("ALL");
+  const [disputeLoading, setDisputeLoading] = useState(false);
+
+  // Audit Logs & Hash-Chain State (A07)
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [chainIntegrity, setChainIntegrity] = useState<ChainIntegrityResult | null>(null);
+  const [verifyingChain, setVerifyingChain] = useState(false);
+  const [auditReports, setAuditReports] = useState<SealedAuditReport[]>([]);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   const isDark = theme === "dark";
   const isEn = locale === "en";
@@ -152,6 +338,52 @@ export default function AdminPage() {
       .then(data => setCmsConfig(data))
       .catch(console.error)
       .finally(() => setCmsLoading(false));
+    }
+    if (activeNav === "disputes") {
+      setDisputeLoading(true);
+      fetch(`${apiBase}/v1/incidents`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDisputes(data);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setDisputeLoading(false));
+    }
+    if (activeNav === "audit") {
+      setAuditLoading(true);
+      fetch(`${apiBase}/v1/admin/audit-logs`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` }
+      })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAuditLogs(data.map(d => ({
+            id: d.id,
+            action: d.action,
+            target: `${d.targetResource} (${d.targetId})`,
+            operator: d.adminName,
+            role: d.adminRole,
+            time: new Date(d.createdAt).toLocaleString(locale === "en" ? "en-US" : "fr-FR"),
+            ip: d.ipAddress,
+            status: "SUCCESS",
+            hash: d.hash,
+            previousHash: d.previousHash,
+          })));
+        }
+      })
+      .catch(console.error)
+      .finally(() => setAuditLoading(false));
+
+      fetch(`${apiBase}/v1/admin/audit/reports`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` }
+      })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data)) setAuditReports(data);
+      })
+      .catch(console.error);
     }
     if (activeNav === "admins" && adminUsers.length === 0) {
       setAdminLoading(true);
@@ -399,6 +631,83 @@ export default function AdminPage() {
     },
   ]);
 
+  const handleVerifyChainIntegrity = async () => {
+    setVerifyingChain(true);
+    try {
+      const res = await fetch(`${apiBase}/v1/admin/audit/verify-chain`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChainIntegrity(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setVerifyingChain(false);
+    }
+  };
+
+  const handleGenerateAuditReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const res = await fetch(`${apiBase}/v1/admin/audit/reports/generate`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getStoredToken()}` 
+        },
+        body: JSON.stringify({ periodName: "Hebdomadaire Instantané" })
+      });
+      if (res.ok) {
+        const newReport = await res.json();
+        setAuditReports(prev => [newReport, ...prev.filter(r => r.id !== newReport.id)]);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const handleArbitrateDispute = async (id: string, resolution: string, proposedOutcome?: string) => {
+    try {
+      await fetch(`${apiBase}/v1/incidents/${id}/resolve`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resolution, proposedOutcome }),
+      });
+    } catch {}
+
+    setDisputes((prev) =>
+      prev.map((d) =>
+        d.id === id
+          ? {
+              ...d,
+              status: "RESOLVED",
+              resolution,
+              proposedOutcome: proposedOutcome || d.proposedOutcome,
+              resolvedAt: new Date().toISOString(),
+            }
+          : d
+      )
+    );
+
+    setAuditLogs((a) => [
+      {
+        id: `aud-${Date.now()}`,
+        action: "DISPUTE_ARBITRATED_RESOLVED",
+        target: `Litige #${id} (${resolution})`,
+        operator: currentUser?.name || "platform_owner",
+        role: "SUPERADMIN",
+        time: "À l'instant",
+        ip: "127.0.0.1",
+        status: "SUCCESS",
+      },
+      ...a,
+    ]);
+  };
+
   const toggleCorridor = (id: string) => {
     setCorridors((prev) =>
       prev.map((c) => {
@@ -479,6 +788,7 @@ export default function AdminPage() {
   });
 
   const pendingKycsCount = shops.filter((s) => s.status === "PENDING_KYC").length;
+  const openDisputesCount = disputes.filter((d) => d.status === "OPEN" || d.status === "UNDER_REVIEW" || d.status === "PROPOSAL_MADE").length;
   const activeCorridorsCount = corridors.filter((c) => c.isEnabled).length;
 
   // Render Luxury Security Gate Wall if unauthenticated or not an admin
@@ -579,7 +889,7 @@ export default function AdminPage() {
                 border: "1px solid var(--oj-color-accent)",
               }}
             >
-              🔐
+              <AdminIconLock size={26} color="var(--oj-color-accent)" />
             </div>
 
             <h2
@@ -621,7 +931,7 @@ export default function AdminPage() {
                   textAlign: "left",
                 }}
               >
-                ⚠️ {loginError}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><AdminIconAlertTriangle size={14} color="var(--oj-color-errorFg)" /> {loginError}</span>
               </div>
             )}
 
@@ -775,7 +1085,7 @@ export default function AdminPage() {
             }}
             className="oj-desktop-badge"
           >
-            🔒 Deny-by-Default ACTIF
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><AdminIconLock size={12} color="var(--oj-color-action)" /> Deny-by-Default ACTIF</span>
           </span>
         </div>
 
@@ -795,7 +1105,7 @@ export default function AdminPage() {
               gap: "6px",
             }}
           >
-            <span>👑</span>
+            <span><AdminIconCrown size={14} color="var(--oj-color-accent)" /></span>
             <span className="oj-admin-role-text">
               {currentUser?.name || "SUPERADMIN"}
             </span>
@@ -889,7 +1199,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">📊</span>
+                <span className="oj-admin-nav-icon"><AdminIconBarChart size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "Overview (A01)" : "Tableau de Bord"}
                 </span>
@@ -902,7 +1212,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">🏬</span>
+                <span className="oj-admin-nav-icon"><AdminIconStore size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "Shops & KYC (A03)" : "Boutiques & KYC"}
                 </span>
@@ -939,7 +1249,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">🔒</span>
+                <span className="oj-admin-nav-icon"><AdminIconLock size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "Payment Corridors (A06)" : "Corridors Financiers"}
                 </span>
@@ -960,7 +1270,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">💰</span>
+                <span className="oj-admin-nav-icon"><AdminIconCoin size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "FinOps Cashbook (S44)" : "Caisse & FinOps"}
                 </span>
@@ -973,7 +1283,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">🛡️</span>
+                <span className="oj-admin-nav-icon"><AdminIconShield size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "Audit Ledger (A07)" : "Grand Livre Immuable"}
                 </span>
@@ -993,7 +1303,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">🎨</span>
+                <span className="oj-admin-nav-icon"><AdminIconPalette size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "CMS Landing Page" : "Contenu CMS"}
                 </span>
@@ -1006,7 +1316,7 @@ export default function AdminPage() {
                   setMobileSidebarOpen(false);
                 }}
               >
-                <span className="oj-admin-nav-icon">👥</span>
+                <span className="oj-admin-nav-icon"><AdminIconUsers size={16} /></span>
                 <span className="oj-admin-nav-label">
                   {isEn ? "Admin Users" : "Administrateurs"}
                 </span>
@@ -1031,7 +1341,7 @@ export default function AdminPage() {
           {/* ==================== COMPACT SECURITY BANNER ==================== */}
           <div className="oj-admin-compact-banner">
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "16px" }}>🔒</span>
+              <AdminIconLock size={16} color="var(--oj-color-action)" />
               <span style={{ fontSize: "13px", fontWeight: 600 }}>
                 {isEn
                   ? "Deny by Default Corridor Rule Active — Zero money movement permitted without verified merchant credentials & partner agreements."
@@ -1104,7 +1414,7 @@ export default function AdminPage() {
                 <div className="oj-kpi-card" style={{ borderLeft: "4px solid var(--oj-color-accent)" }}>
                   <div className="oj-kpi-header">
                     <span>{isEn ? "KYC Pending Reviews" : "Dossiers KYC à Contrôler"}</span>
-                    <span className="oj-kpi-trend negative">⚠ {pendingKycsCount} requis</span>
+                    <span className="oj-kpi-trend negative" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AdminIconAlertTriangle size={12} /> {pendingKycsCount} requis</span>
                   </div>
                   <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums", color: "var(--oj-color-accent)" }}>
                     {pendingKycsCount} Dossiers
@@ -1177,7 +1487,7 @@ export default function AdminPage() {
               {/* Filter bar */}
               <div className="oj-admin-filter-bar">
                 <div className="oj-admin-search">
-                  <span className="oj-admin-search-icon">🔍</span>
+                  <span className="oj-admin-search-icon"><AdminIconSearch size={14} /></span>
                   <input
                     type="text"
                     placeholder={isEn ? "Search store, owner, city..." : "Rechercher une boutique, propriétaire, ville..."}
@@ -1242,7 +1552,7 @@ export default function AdminPage() {
                         </td>
                         <td>
                           <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                            📄 {s.documentType}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AdminIconFileText size={12} /> {s.documentType}</span>
                           </span>
                         </td>
                         <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
@@ -1255,7 +1565,7 @@ export default function AdminPage() {
                             </span>
                           ) : s.status === "PENDING_KYC" ? (
                             <span className="oj-status-pill pending">
-                              ⏳ {isEn ? "Pending Review" : "En attente"}
+                              {isEn ? "Pending Review" : "En attente"}
                             </span>
                           ) : (
                             <span className="oj-status-pill error">
@@ -1310,7 +1620,7 @@ export default function AdminPage() {
               {/* Filter */}
               <div className="oj-admin-filter-bar">
                 <div className="oj-admin-search">
-                  <span className="oj-admin-search-icon">🔍</span>
+                  <span className="oj-admin-search-icon"><AdminIconSearch size={14} /></span>
                   <input
                     type="text"
                     placeholder={isEn ? "Filter by country, channel..." : "Filtrer par pays, canal..."}
@@ -1358,7 +1668,7 @@ export default function AdminPage() {
                             </span>
                           ) : (
                             <span style={{ color: "#7A4A12", fontWeight: 700, fontSize: "12px" }}>
-                              ⚠ Contrat Non Vérifié
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AdminIconAlertTriangle size={12} /> Contrat Non Vérifié</span>
                             </span>
                           )}
                         </td>
@@ -1438,6 +1748,213 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* ==================== TAB: DISPUTES & ARBITRATION (A04) ==================== */}
+          {activeNav === "disputes" && (
+            <div>
+              <div className="oj-admin-header-row">
+                <div className="oj-admin-title-wrap">
+                  <h1>{isEn ? "Disputes & Tripartite Arbitration (A04)" : "Médiation & Arbitrage des Litiges (A04)"}</h1>
+                  <p>
+                    {isEn
+                      ? "Tripartite mediation between buyer, merchant store, and platform conciliation supervisor."
+                      : "Résolution tripartite des réclamations : examen des preuves, offres de conciliation et arbitrage officiel."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Filter bar */}
+              <div className="oj-admin-filter-bar">
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {(["ALL", "UNDER_REVIEW", "PROPOSAL_MADE", "RESOLVED"] as const).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setDisputeFilter(st)}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                        fontWeight: disputeFilter === st ? 700 : 500,
+                        border: "1px solid var(--oj-color-border)",
+                        background: disputeFilter === st ? "var(--oj-color-action)" : "var(--oj-color-surface)",
+                        color: disputeFilter === st ? "#FFFFFF" : "var(--oj-color-text)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {st === "ALL"
+                        ? isEn ? "All Disputes" : "Tous les Litiges"
+                        : st === "UNDER_REVIEW"
+                        ? isEn ? "In Review" : "En Examen"
+                        : st === "PROPOSAL_MADE"
+                        ? isEn ? "Proposal Offered" : "Proposition Marchande"
+                        : isEn ? "Resolved" : "Résolus"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Disputes List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {disputes
+                  .filter((d) => disputeFilter === "ALL" || d.status === disputeFilter)
+                  .map((d) => (
+                    <div
+                      key={d.id}
+                      className="oj-admin-table-card"
+                      style={{
+                        padding: "24px",
+                        borderLeft: d.status === "RESOLVED" ? "4px solid #10B981" : "4px solid #AD8455",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                        <div>
+                          <div style={{ fontSize: "11px", color: "#AD8455", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                            COMMANDE {d.orderNumber || d.orderId} · {d.category}
+                          </div>
+                          <h3 style={{ margin: "4px 0", fontSize: "18px", color: "var(--oj-color-text)" }}>
+                            {d.title}
+                          </h3>
+                          <div style={{ fontSize: "13px", color: "var(--oj-color-muted)" }}>
+                            Signalé par <strong>{d.reporterName}</strong> {d.reporterPhone ? `(${d.reporterPhone})` : ""} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
+                          </div>
+                        </div>
+
+                        <span className={`oj-status-pill ${d.status === "RESOLVED" ? "success" : d.status === "PROPOSAL_MADE" ? "pending" : "error"}`}>
+                          {d.status === "RESOLVED"
+                            ? "✓ ARBITRÉ & CLOS"
+                            : d.status === "PROPOSAL_MADE"
+                            ? "PROPOSITION FAITE"
+                            : "EN INSTRUCTION"}
+                        </span>
+                      </div>
+
+                      <p style={{ fontSize: "14px", color: "var(--oj-color-text)", lineHeight: 1.5, margin: "10px 0 16px" }}>
+                        {d.description}
+                      </p>
+
+                      {/* Evidence URLs */}
+                      {d.evidenceUrls && d.evidenceUrls.length > 0 && (
+                        <div style={{ marginBottom: "16px" }}>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--oj-color-muted)", marginBottom: "8px", textTransform: "uppercase" }}>
+                            Pièces Justificatives Téléversées :
+                          </div>
+                          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                            {d.evidenceUrls.map((url: string, idx: number) => (
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "6px 12px",
+                                  borderRadius: "6px",
+                                  backgroundColor: "var(--oj-color-subtle)",
+                                  border: "1px solid var(--oj-color-border)",
+                                  fontSize: "12px",
+                                  color: "var(--oj-color-action)",
+                                  textDecoration: "none",
+                                }}
+                              >
+                                <span><AdminIconFileText size={12} /></span>
+                                <span>Preuve #{idx + 1} (Ouvrir ↗)</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Merchant Proposal */}
+                      {d.proposedOutcome && (
+                        <div
+                          style={{
+                            padding: "12px 16px",
+                            borderRadius: "8px",
+                            backgroundColor: "rgba(173, 132, 85, 0.1)",
+                            border: "1px solid rgba(173, 132, 85, 0.3)",
+                            marginBottom: "16px",
+                          }}
+                        >
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#AD8455", textTransform: "uppercase" }}>
+                            Proposition de Règlement formulée par la Boutique :
+                          </div>
+                          <div style={{ fontSize: "13px", color: "var(--oj-color-text)", marginTop: "4px" }}>
+                            {d.proposedOutcome}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Final Resolution if already resolved */}
+                      {d.resolution && (
+                        <div
+                          style={{
+                            padding: "12px 16px",
+                            borderRadius: "8px",
+                            backgroundColor: "rgba(16, 185, 129, 0.1)",
+                            border: "1px solid rgba(16, 185, 129, 0.3)",
+                            marginBottom: "16px",
+                          }}
+                        >
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#075D49", textTransform: "uppercase" }}>
+                            Décision d'Arbitrage Officielle :
+                          </div>
+                          <div style={{ fontSize: "13px", color: "var(--oj-color-text)", marginTop: "4px" }}>
+                            {d.resolution}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Moderator Action Buttons */}
+                      {d.status !== "RESOLVED" && (
+                        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", flexWrap: "wrap", paddingTop: "12px", borderTop: "1px solid var(--oj-color-border)" }}>
+                          <button
+                            className="oj-btn-primary"
+                            style={{ height: "34px", padding: "0 14px", fontSize: "12px" }}
+                            onClick={() =>
+                              handleArbitrateDispute(
+                                d.id,
+                                "Arbitrage en faveur de l'acheteur : Remboursement intégral ou remplacement validé par la modération.",
+                                "Remboursement / Remplacement Conforme"
+                              )
+                            }
+                          >
+                            Arbitrer en faveur de l'Acheteur
+                          </button>
+                          <button
+                            className="oj-btn-secondary"
+                            style={{ height: "34px", padding: "0 14px", fontSize: "12px", color: "#AD8455", borderColor: "#AD8455" }}
+                            onClick={() =>
+                              handleArbitrateDispute(
+                                d.id,
+                                `Accord amiable validé d'après la proposition de la boutique : ${d.proposedOutcome || "Geste commercial validé"}.`,
+                                d.proposedOutcome || "Accord Amiable Validé"
+                              )
+                            }
+                          >
+                            Valider la Proposition Boutique
+                          </button>
+                          <button
+                            className="oj-btn-secondary"
+                            style={{ height: "34px", padding: "0 14px", fontSize: "12px", color: "#B42C3E", borderColor: "rgba(180,44,62,0.4)" }}
+                            onClick={() =>
+                              handleArbitrateDispute(
+                                d.id,
+                                "Réclamation non fondée après analyse des pièces. Commande confirmée conforme.",
+                                "Clôture sans suite"
+                              )
+                            }
+                          >
+                            Rejeter le Litige
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {/* ==================== TAB 5: FINOPS (S44/S46) ==================== */}
           {activeNav === "finops" && (
             <div>
@@ -1511,53 +2028,204 @@ export default function AdminPage() {
           {/* ==================== TAB 6: AUDIT LOG (A07) ==================== */}
           {activeNav === "audit" && (
             <div>
-              <div className="oj-admin-header-row">
+              <div className="oj-admin-header-row" style={{ flexWrap: "wrap", gap: "16px" }}>
                 <div className="oj-admin-title-wrap">
-                  <h1>{isEn ? "Immutable Audit Trail (A07)" : "Journal d'Audit Immuable (Append-Only)"}</h1>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h1>{isEn ? "Cryptographic Immutable Audit Ledger (A07)" : "Grand Livre d'Audit Immuable Scellé (SHA-256)"}</h1>
+                    <span className="oj-status-pill success" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <AdminIconShield size={12} color="var(--oj-color-action)" />
+                      {isEn ? "TAMPER-PROOF LEDGER" : "REGISTRE INALTÉRABLE"}
+                    </span>
+                  </div>
                   <p>
                     {isEn
-                      ? "Non-tamperable administrative event log. Cryptographic security records."
-                      : "Historique inaltérable et horodaté de toutes les actions de sécurité et gouvernance."}
+                      ? "Cryptographically chained event log with SHA-256 Merkle-link and automated periodic closing seals."
+                      : "Historique inaltérable chaîné par empreintes SHA-256 successives avec clôtures périodiques scellées par HMAC."}
                   </p>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <button
+                    className="oj-btn-secondary"
+                    onClick={handleVerifyChainIntegrity}
+                    disabled={verifyingChain}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px" }}
+                  >
+                    <AdminIconShield size={14} color="var(--oj-color-action)" />
+                    {verifyingChain ? (isEn ? "Verifying..." : "Vérification...") : (isEn ? "Verify Hash Chain" : "Vérifier la Chaîne de Blocs")}
+                  </button>
+                  <button
+                    className="oj-btn-primary"
+                    onClick={handleGenerateAuditReport}
+                    disabled={generatingReport}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px" }}
+                  >
+                    <AdminIconLock size={14} color="#FFFFFF" />
+                    {generatingReport ? (isEn ? "Sealing Report..." : "Scellement en cours...") : (isEn ? "Generate Sealed Report" : "Générer Clôture Scellée")}
+                  </button>
                 </div>
               </div>
 
-              <div className="oj-admin-table-card">
-                <table className="oj-admin-table">
-                  <thead>
-                    <tr>
-                      <th>Action de Sécurité</th>
-                      <th>Cible / Ressource</th>
-                      <th>Opérateur & Rôle</th>
-                      <th>Horodatage</th>
-                      <th>IP Source</th>
-                      <th>Résultat</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.map((log) => (
-                      <tr key={log.id}>
-                        <td>
-                          <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "12px", color: "var(--oj-color-action)" }}>
-                            [{log.action}]
+              {/* Chain Integrity Alert Banner */}
+              {chainIntegrity && (
+                <div
+                  style={{
+                    marginBottom: "20px",
+                    padding: "16px 20px",
+                    borderRadius: "12px",
+                    background: chainIntegrity.isValid ? "rgba(7, 93, 73, 0.08)" : "rgba(220, 38, 38, 0.08)",
+                    border: `1px solid ${chainIntegrity.isValid ? "var(--oj-color-action)" : "#DC2626"}`,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 700, color: chainIntegrity.isValid ? "var(--oj-color-action)" : "#DC2626", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <AdminIconShield size={16} />
+                      {chainIntegrity.isValid 
+                        ? (isEn ? "Cryptographic Chain Verified: 100% Intact" : "Intégrité Cryptographique Certifiée : 100% Conforme") 
+                        : (isEn ? "Warning: Blockchain Alteration Detected" : "Alerte : Altération Détectée dans la Chaîne")}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--oj-color-muted)", marginTop: "4px" }}>
+                      {isEn
+                        ? `Verified ${chainIntegrity.totalBlocks} event blocks from Genesis. Last verified at ${new Date(chainIntegrity.verifiedAt).toLocaleTimeString()}.`
+                        : `${chainIntegrity.totalBlocks} blocs d'événements certifiés depuis le Bloc Genèse. Vérifié à ${new Date(chainIntegrity.verifiedAt).toLocaleTimeString()}.`}
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: "11px", background: "var(--oj-color-surface)", padding: "6px 12px", borderRadius: "6px", border: "1px solid var(--oj-color-border)" }}>
+                    <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Latest Hash:" : "Dernier Hash :"}</span>{" "}
+                    <strong style={{ color: "var(--oj-color-accent)" }}>{chainIntegrity.latestHash.slice(0, 16)}...</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* Sealed Periodic Reports Summary (Dossier 6) */}
+              {auditReports.length > 0 && (
+                <div style={{ marginBottom: "24px" }}>
+                  <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <AdminIconLock size={15} color="var(--oj-color-accent)" />
+                    {isEn ? "Sealed Audit & Closing Reports" : "Rapports d'Audit & Clôtures Périodiques Scellées"}
+                  </h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "16px" }}>
+                    {auditReports.map((rep) => (
+                      <div
+                        key={rep.id}
+                        style={{
+                          background: "var(--oj-color-surface)",
+                          border: "1px solid var(--oj-color-border)",
+                          borderRadius: "12px",
+                          padding: "16px",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: "14px" }}>{rep.reportPeriod}</div>
+                            <div style={{ fontSize: "11px", color: "var(--oj-color-muted)" }}>
+                              {new Date(rep.generatedAt).toLocaleString(locale === "en" ? "en-US" : "fr-FR")}
+                            </div>
+                          </div>
+                          <span className="oj-status-pill success" style={{ fontSize: "10px", padding: "2px 8px" }}>
+                            {isEn ? "HMAC SEALED" : "SCELLÉ HMAC"}
                           </span>
-                        </td>
-                        <td>{log.target}</td>
-                        <td>
-                          <div>{log.operator}</div>
-                          <small style={{ color: "var(--oj-color-accent)", fontWeight: 700 }}>{log.role}</small>
-                        </td>
-                        <td style={{ color: "var(--oj-color-muted)" }}>{log.time}</td>
-                        <td style={{ fontFamily: "monospace", fontSize: "11px", color: "var(--oj-color-muted)" }}>{log.ip}</td>
-                        <td>
-                          <span className={`oj-status-pill ${log.status === "SUCCESS" ? "success" : log.status === "BLOCKED" ? "error" : "pending"}`}>
-                            {log.status}
-                          </span>
-                        </td>
-                      </tr>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px", marginBottom: "12px", background: "var(--oj-color-bg)", padding: "10px", borderRadius: "8px" }}>
+                          <div>
+                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Audit Blocks:" : "Événements :"}</span>{" "}
+                            <strong>{rep.totalEventsCount}</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Volume:" : "Volume :"}</span>{" "}
+                            <strong>{(rep.totalOrdersVolumeMinor / 100).toLocaleString()} XOF</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Verified Shops:" : "Boutiques :"}</span>{" "}
+                            <strong>{rep.activeShopsCount}</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Resolved Disputes:" : "Litiges Réglés :"}</span>{" "}
+                            <strong>{rep.resolvedDisputesCount}</strong>
+                          </div>
+                        </div>
+
+                        <div style={{ fontFamily: "monospace", fontSize: "10px", color: "var(--oj-color-muted)", wordBreak: "break-all" }}>
+                          <span style={{ color: "var(--oj-color-accent)", fontWeight: 700 }}>SEAL:</span> {rep.signatureSeal.slice(0, 32)}...
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Chained Events Table */}
+              <div className="oj-admin-table-card">
+                <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--oj-color-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h3 style={{ fontSize: "14px", fontWeight: 700 }}>
+                    {isEn ? "Cryptographic Event Trail (SHA-256 Chained)" : "Registre des Événements Chaînés (SHA-256)"}
+                  </h3>
+                  <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
+                    {auditLogs.length} {isEn ? "records" : "enregistrements"}
+                  </span>
+                </div>
+
+                <div style={{ overflowX: "auto" }}>
+                  <table className="oj-admin-table">
+                    <thead>
+                      <tr>
+                        <th>{isEn ? "Security Action" : "Action de Sécurité"}</th>
+                        <th>{isEn ? "Target / Resource" : "Cible / Ressource"}</th>
+                        <th>{isEn ? "Operator & Role" : "Opérateur & Rôle"}</th>
+                        <th>{isEn ? "Timestamp" : "Horodatage"}</th>
+                        <th>{isEn ? "IP / Source" : "IP Source"}</th>
+                        <th>{isEn ? "SHA-256 Hash Chaining" : "Empreinte Cryptographique"}</th>
+                        <th>{isEn ? "Status" : "Statut"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((log) => (
+                        <tr key={log.id}>
+                          <td>
+                            <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "12px", color: "var(--oj-color-action)" }}>
+                              [{log.action}]
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 600, fontSize: "13px" }}>{log.target}</td>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{log.operator}</div>
+                            <small style={{ color: "var(--oj-color-accent)", fontWeight: 700 }}>{log.role}</small>
+                          </td>
+                          <td style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{log.time}</td>
+                          <td style={{ fontFamily: "monospace", fontSize: "11px", color: "var(--oj-color-muted)" }}>{log.ip}</td>
+                          <td>
+                            <div style={{ fontFamily: "monospace", fontSize: "11px" }}>
+                              {log.hash ? (
+                                <div>
+                                  <div style={{ color: "var(--oj-color-action)", fontWeight: 700 }}>
+                                    #{log.hash.slice(0, 10)}...
+                                  </div>
+                                  <div style={{ color: "var(--oj-color-muted)", fontSize: "9px" }}>
+                                    prev: {log.previousHash?.slice(0, 8)}...
+                                  </div>
+                                </div>
+                              ) : (
+                                <span style={{ color: "var(--oj-color-muted)" }}>#GENESIS-SEAL</span>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`oj-status-pill ${log.status === "SUCCESS" ? "success" : log.status === "BLOCKED" ? "error" : "pending"}`}>
+                              {log.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
