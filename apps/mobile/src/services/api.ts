@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost || (Constants as any)?.manifest?.debuggerHost;
 const host = debuggerHost ? debuggerHost.split(':')[0] : '10.33.188.162';
 
-export const API_BASE_URL = debuggerHost ? `http://${host}:3001/api` : 'http://10.33.188.162:3001/api';
+export const API_BASE_URL = debuggerHost ? `http://${host}:3000/api/v1` : (process.env.EXPO_PUBLIC_API_URL || 'http://10.33.188.162:3000/api/v1');
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;

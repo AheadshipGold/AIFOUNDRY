@@ -7,21 +7,25 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --config ../../.eslintrc.ui.cjs src --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@aifoundry/design-system": "0.1.0",
     "@aifoundry/shared": "*",
+    "@aws-sdk/client-s3": "^3.1142.0",
+    "@aws-sdk/s3-request-presigner": "^3.1142.0",
+    "@prisma/client": "^5.14.0",
     "better-auth": "^1.7.6",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18"
   },
-
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "prisma": "^5.14.0",
     "typescript": "^5"
   }
 }
