@@ -56,7 +56,7 @@ export default function StandaloneSellerDashboard() {
   const [filter, setFilter] = useState<"ALL" | "PREPARING" | "SHIPPED">("ALL");
 
   useEffect(() => {
-    fetch("http://localhost:3001/v1/orders")
+    fetch("/api/v1/orders")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data && Array.isArray(data) && data.length > 0) {

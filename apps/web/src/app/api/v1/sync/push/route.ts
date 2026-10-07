@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserFromRequest } from '@/lib/server/auth';
 import { pushSyncMutations } from '@/lib/server/sync';
 
+export const maxDuration = 60; // 60s timeout for bulk mutation sync
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUserFromRequest(req);

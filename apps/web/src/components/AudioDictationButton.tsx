@@ -218,11 +218,11 @@ export function AudioDictationButton({
 
       if (audioBlob.size > 500) {
         const formData = new FormData();
-        formData.append("file", audioBlob, "voice-input.webm");
+        formData.append("audio", audioBlob, "voice-input.webm");
         formData.append("language", language);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-        const res = await fetch(`${apiUrl}/v1/ai/transcribe`, {
+        const apiUrl = "/api/v1";
+        const res = await fetch(`${apiUrl}/ai/voice/transcribe`, {
           method: "POST",
           body: formData,
         });

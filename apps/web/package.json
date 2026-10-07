@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint --config ../../.eslintrc.ui.cjs src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=prisma/schema.prisma"
   },
   "dependencies": {
     "@aifoundry/design-system": "0.1.0",

@@ -7,10 +7,10 @@ interface ProductPageProps {
 }
 
 async function getProductData(idOrSlug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   
   try {
-    const res = await fetch(`${baseUrl}/v1/catalog/${idOrSlug}`, {
+    const res = await fetch(`${baseUrl}/api/v1/catalog/${idOrSlug}`, {
       next: { revalidate: 60 }
     });
     

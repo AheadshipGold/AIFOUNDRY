@@ -37,7 +37,7 @@ export default function StandaloneCashbookPage() {
   const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/v1/seller/cashbook")
+    fetch("/api/v1/seller/cashbook")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data && data.recentEntries) setEntries(data.recentEntries);
@@ -65,7 +65,7 @@ export default function StandaloneCashbookPage() {
     e.preventDefault();
     const countMinor = parseInt(physicalCashFcfa.replace(/\s+/g, ""), 10) * 100 || totalEncaisse;
     try {
-      const res = await fetch("http://localhost:3001/api/v1/seller/cashbook/close", {
+      const res = await fetch("/api/v1/seller/cashbook/close", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,7 +86,7 @@ export default function StandaloneCashbookPage() {
 
   const handleExportFec = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/v1/seller/cashbook/export-fec");
+      const res = await fetch("/api/v1/seller/cashbook/export-fec");
       if (res.ok) {
         const data = await res.json();
         const blob = new Blob([data.content], { type: data.mimeType || "text/plain;charset=utf-8" });
@@ -106,7 +106,7 @@ export default function StandaloneCashbookPage() {
 
   const handleExportCsv = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/v1/seller/cashbook/export-csv");
+      const res = await fetch("/api/v1/seller/cashbook/export-csv");
       if (res.ok) {
         const data = await res.json();
         const blob = new Blob([data.content], { type: data.mimeType || "text/csv;charset=utf-8" });

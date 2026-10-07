@@ -19,7 +19,9 @@ export async function POST(req: Request) {
   try {
     const userId = await extractUserIdFromRequest(req);
     const body = await req.json();
-    const order = await createOrder({ ...body, buyerId: userId || body.buyerId });
+    // Prioritize authenticated user ID, do not allow arbitrary buyerId spoofing
+    const effectiveBuyerId = userId || undefined;
+    const order = await createOrder({ ...body, buyerId: effectiveBuyerId });
     return NextResponse.json(order, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ message: err.message || 'Erreur création commande' }, { status: 400 });

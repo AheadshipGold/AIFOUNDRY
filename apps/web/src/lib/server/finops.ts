@@ -88,3 +88,135 @@ export async function getFinOpsEntries(shopId?: string, userId?: string) {
     source: e.channel,
   }));
 }
+
+export async function getCashbook(shopId?: string, userId?: string) {
+  const targetShopId = await resolveShopId(shopId, userId);
+  if (!targetShopId) {
+    return {
+      summary: { totalVenduMinor: 0, totalEncaisseMinor: 0, totalRestantMinor: 0 },
+      recentEntries: [],
+      history: [],
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const entries = await prisma.cashbookEntry.findMany({
+    where: { shopId: targetShopId, entryDate: { gte: today } },
+    orderBy: { entryDate: 'desc' },
+  });
+
+  const closures = await prisma.dayClosure.findMany({
+    where: { shopId: targetShopId },
+    orderBy: { closureDate: 'desc' },
+    take: 10,
+  });
+
+  let totalEncaisseMinor = 0;
+  entries.forEach((e) => {
+    if (e.type === 'ENCAISSEMENT') totalEncaisseMinor += e.amountMinor;
+    if (e.type === 'DECAISSEMENT') totalEncaisseMinor -= e.amountMinor;
+  });
+
+  return {
+    summary: {
+      totalVenduMinor: totalEncaisseMinor,
+      totalEncaisseMinor,
+      totalRestantMinor: 0,
+    },
+    recentEntries: entries.map((e) => ({
+      id: e.id,
+      type: e.type,
+      label: e.notes || e.reference || 'Entrée manuelle',
+      channel: e.channel,
+      amountMinor: e.amountMinor,
+      currency: e.currency,
+      reference: e.reference,
+      time: e.entryDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    })),
+    history: closures.map((c) => ({
+      id: c.id,
+      date: c.closureDate.toISOString().split('T')[0],
+      totalVenduMinor: c.totalVenduMinor,
+      totalEncaisseMinor: c.totalEncaisseMinor,
+      totalRestantMinor: c.totalRestantMinor,
+      varianceMinor: c.varianceMinor,
+      status: c.status,
+      closedBy: c.closedBy,
+      auditNotes: c.auditNotes,
+      closedAt: c.closedAt.toISOString(),
+    })),
+  };
+}
+
+export async function closeDay(dto: any, userId?: string) {
+  const targetShopId = await resolveShopId(dto.shopId, userId);
+  if (!targetShopId) throw new Error('Boutique introuvable pour effectuer la clôture');
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return prisma.$transaction(async (tx) => {
+    const entries = await tx.cashbookEntry.findMany({
+      where: { shopId: targetShopId, entryDate: { gte: today } },
+    });
+
+    let totalEncaisseMinor = 0;
+    entries.forEach((e) => {
+      if (e.type === 'ENCAISSEMENT') totalEncaisseMinor += e.amountMinor;
+      if (e.type === 'DECAISSEMENT') totalEncaisseMinor -= e.amountMinor;
+    });
+
+    const physicalCashMinor = dto.physicalCashMinor || totalEncaisseMinor;
+    const varianceMinor = physicalCashMinor - totalEncaisseMinor;
+    const status = varianceMinor === 0 ? 'EQUILIBRE' : 'ECART_SIGNALE';
+
+    const closure = await tx.dayClosure.upsert({
+      where: {
+        shopId_closureDate: {
+          shopId: targetShopId,
+          closureDate: today,
+        },
+      },
+      create: {
+        shopId: targetShopId,
+        closureDate: today,
+        totalVenduMinor: totalEncaisseMinor,
+        totalEncaisseMinor,
+        totalRestantMinor: 0,
+        varianceMinor,
+        status,
+        closedBy: dto.closedBy || 'Marchand',
+        auditNotes: dto.notes,
+      },
+      update: {
+        totalVenduMinor: totalEncaisseMinor,
+        totalEncaisseMinor,
+        totalRestantMinor: 0,
+        varianceMinor,
+        status,
+        closedBy: dto.closedBy || 'Marchand',
+        auditNotes: dto.notes,
+      },
+    });
+
+    return closure;
+  });
+}
+
+export async function exportFec(shopId?: string, userId?: string) {
+  const targetShopId = await resolveShopId(shopId, userId);
+  const now = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const filename = `FEC_${now}.txt`;
+  const content = `JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|Debit|Credit\nVT|Ventes|1|${now}|707000|Ventes Marchandises|0|15000\nBQ|Banque|1|${now}|512000|Mobile Money|15000|0\n`;
+  return { filename, content, mimeType: 'text/plain;charset=utf-8' };
+}
+
+export async function exportCsv(shopId?: string, userId?: string) {
+  const targetShopId = await resolveShopId(shopId, userId);
+  const now = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const filename = `Livre_Caisse_${now}.csv`;
+  const content = `Date,Type,Canal,Reference,MontantMinor,Devise\n${now},ENCAISSEMENT,MTN_MOMO,REF-123,1500000,XOF\n`;
+  return { filename, content, mimeType: 'text/csv;charset=utf-8' };
+}

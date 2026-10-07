@@ -11,7 +11,8 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run typecheck --workspaces",
+    "prisma:generate": "prisma generate --schema=apps/web/prisma/schema.prisma"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

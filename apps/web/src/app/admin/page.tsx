@@ -326,12 +326,12 @@ export default function AdminPage() {
     setCurrentUser(null);
   };
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiBase = '/api/v1';
 
   useEffect(() => {
     if (activeNav === "cms" && !cmsConfig) {
       setCmsLoading(true);
-      fetch(`${apiBase}/v1/cms/landing`, {
+      fetch(`${apiBase}/cms/landing`, {
         headers: { Authorization: `Bearer ${getStoredToken()}` }
       })
       .then(r => r.json())
@@ -341,7 +341,7 @@ export default function AdminPage() {
     }
     if (activeNav === "disputes") {
       setDisputeLoading(true);
-      fetch(`${apiBase}/v1/incidents`)
+      fetch(`${apiBase}/incidents`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
@@ -353,7 +353,7 @@ export default function AdminPage() {
     }
     if (activeNav === "audit") {
       setAuditLoading(true);
-      fetch(`${apiBase}/v1/admin/audit-logs`, {
+      fetch(`${apiBase}/admin/audit-logs`, {
         headers: { Authorization: `Bearer ${getStoredToken()}` }
       })
       .then(r => r.ok ? r.json() : [])
@@ -376,7 +376,7 @@ export default function AdminPage() {
       .catch(console.error)
       .finally(() => setAuditLoading(false));
 
-      fetch(`${apiBase}/v1/admin/audit/reports`, {
+      fetch(`${apiBase}/admin/audit/reports`, {
         headers: { Authorization: `Bearer ${getStoredToken()}` }
       })
       .then(r => r.ok ? r.json() : [])
@@ -387,7 +387,7 @@ export default function AdminPage() {
     }
     if (activeNav === "admins" && adminUsers.length === 0) {
       setAdminLoading(true);
-      fetch(`${apiBase}/v1/admin/users`, {
+      fetch(`${apiBase}/admin/users`, {
         headers: { Authorization: `Bearer ${getStoredToken()}` }
       })
       .then(r => r.json())
@@ -400,7 +400,7 @@ export default function AdminPage() {
   const handleSaveCms = async () => {
     setCmsSaving(true);
     try {
-      const res = await fetch(`${apiBase}/v1/cms/landing`, {
+      const res = await fetch(`${apiBase}/cms/landing`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -422,7 +422,7 @@ export default function AdminPage() {
     if (!newAdminEmail) return;
     setAdminSaving(true);
     try {
-      const res = await fetch(`${apiBase}/v1/admin/users/create`, {
+      const res = await fetch(`${apiBase}/admin/users/create`, {
         method: "PATCH",
         headers: { 
           "Content-Type": "application/json",
@@ -433,7 +433,7 @@ export default function AdminPage() {
       if (res.ok) {
         alert(isEn ? "Admin created successfully!" : "Administrateur créé avec succès !");
         // refresh admins
-        const data = await fetch(`${apiBase}/v1/admin/users`, {
+        const data = await fetch(`${apiBase}/admin/users`, {
           headers: { Authorization: `Bearer ${getStoredToken()}` }
         }).then(r => r.json());
         setAdminUsers(data);
@@ -634,7 +634,7 @@ export default function AdminPage() {
   const handleVerifyChainIntegrity = async () => {
     setVerifyingChain(true);
     try {
-      const res = await fetch(`${apiBase}/v1/admin/audit/verify-chain`, {
+      const res = await fetch(`${apiBase}/admin/audit/verify-chain`, {
         headers: { Authorization: `Bearer ${getStoredToken()}` }
       });
       if (res.ok) {
@@ -651,7 +651,7 @@ export default function AdminPage() {
   const handleGenerateAuditReport = async () => {
     setGeneratingReport(true);
     try {
-      const res = await fetch(`${apiBase}/v1/admin/audit/reports/generate`, {
+      const res = await fetch(`${apiBase}/admin/audit/reports/generate`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -672,7 +672,7 @@ export default function AdminPage() {
 
   const handleArbitrateDispute = async (id: string, resolution: string, proposedOutcome?: string) => {
     try {
-      await fetch(`${apiBase}/v1/incidents/${id}/resolve`, {
+      await fetch(`${apiBase}/incidents/${id}/resolve`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resolution, proposedOutcome }),

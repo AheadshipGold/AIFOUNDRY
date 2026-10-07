@@ -156,7 +156,7 @@ export default function StandaloneOfferPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://localhost:3001/v1/orders", {
+      const res = await fetch("/api/v1/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

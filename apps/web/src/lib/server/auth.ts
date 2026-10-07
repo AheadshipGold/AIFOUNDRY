@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { auth } from './better-auth';
-import * as crypto from 'crypto';
+import { fromNodeHeaders } from 'better-auth/node';
 
 export interface RegisterUserDto {
   name: string;
@@ -43,25 +43,20 @@ export interface RegisterSellerDto {
   merchantPhone?: string;
 }
 
-function hashPasswordLegacy(password: string): string {
-  return crypto.createHash('sha256').update(password + '_ojarket_salt_2026').digest('hex');
-}
-
-export async function createBetterAuthSession(userId: string, reqHeaders?: any): Promise<string> {
-  const token = crypto.randomBytes(24).toString('base64url');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  await prisma.session.create({
-    data: {
-      userId,
-      token,
-      expiresAt,
-      ipAddress: reqHeaders?.['x-forwarded-for'] || reqHeaders?.ip || null,
-      userAgent: reqHeaders?.['user-agent'] || null,
-    },
-  });
-
-  return token;
+function createRequestHeaders(reqHeaders?: any): Headers {
+  const headers = new Headers();
+  headers.set('host', 'localhost:3000');
+  headers.set('origin', 'http://localhost:3000');
+  if (reqHeaders) {
+    if (typeof reqHeaders.get === 'function') {
+      reqHeaders.forEach((val: string, key: string) => headers.set(key, val));
+    } else {
+      for (const [k, v] of Object.entries(reqHeaders)) {
+        if (typeof v === 'string') headers.set(k, v);
+      }
+    }
+  }
+  return headers;
 }
 
 export async function registerUser(dto: RegisterUserDto, reqHeaders?: any) {
@@ -97,48 +92,36 @@ export async function registerUser(dto: RegisterUserDto, reqHeaders?: any) {
   }
 
   const password = dto.password ? dto.password.trim() : 'Password123!';
-  const hashedPassword = hashPasswordLegacy(password);
+  const headers = createRequestHeaders(reqHeaders);
 
-  try {
-    const signUpRes = await auth.api.signUpEmail({
-      body: {
-        email,
-        password,
-        name,
-        username: cleanUsername,
-        displayUsername: cleanUsername,
-        phone: dto.phone ? dto.phone.trim() : undefined,
-        role: 'BUYER',
-        locale: 'fr',
-      },
-    });
-
-    if (signUpRes?.user) {
-      const token = signUpRes.token || (await createBetterAuthSession(signUpRes.user.id, reqHeaders));
-      const fullProfile = await getMe(signUpRes.user.id);
-      return { token, user: fullProfile };
-    }
-  } catch (err: any) {
-    // Fallback direct Prisma creation
-  }
-
-  const createdUser = await prisma.user.create({
-    data: {
+  const signUpRes = await auth.api.signUpEmail({
+    body: {
       email,
+      password,
       name,
       username: cleanUsername,
       displayUsername: cleanUsername,
-      passwordHash: hashedPassword,
-      phone: dto.phone ? dto.phone.trim() : null,
+      phone: dto.phone ? dto.phone.trim() : undefined,
       role: 'BUYER',
       locale: 'fr',
-      emailVerified: true,
-      isEmailVerified: true,
     },
+    headers,
   });
 
-  const token = await createBetterAuthSession(createdUser.id, reqHeaders);
-  const fullProfile = await getMe(createdUser.id);
+  if (!signUpRes?.user) {
+    throw new Error("Échec de la création du compte par Better Auth");
+  }
+
+  let token = signUpRes.token;
+  if (!token) {
+    const session = await prisma.session.findFirst({
+      where: { userId: signUpRes.user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    token = session?.token || '';
+  }
+
+  const fullProfile = await getMe(signUpRes.user.id);
   return { token, user: fullProfile };
 }
 
@@ -151,60 +134,42 @@ export async function loginUser(dto: LoginUserDto, reqHeaders?: any) {
   const password = dto.password ? dto.password.trim() : '';
   const cleanRaw = raw.replace(/^@+/, '').toLowerCase();
   const isEmail = raw.includes('@');
+  const headers = createRequestHeaders(reqHeaders);
 
-  try {
-    if (isEmail) {
-      const signInRes = await auth.api.signInEmail({
-        body: { email: raw.toLowerCase(), password },
-      });
-      if (signInRes?.user && signInRes.token) {
-        const fullProfile = await getMe(signInRes.user.id);
-        return { token: signInRes.token, user: fullProfile };
-      }
-    } else {
-      const signInRes = await auth.api.signInUsername({
-        body: { username: cleanRaw, password },
-      });
-      if (signInRes?.user && signInRes.token) {
-        const fullProfile = await getMe(signInRes.user.id);
-        return { token: signInRes.token, user: fullProfile };
-      }
-    }
-  } catch (betterAuthErr: any) {
-    // Fallback
+  let signInRes: any;
+  if (isEmail) {
+    signInRes = await auth.api.signInEmail({
+      body: { email: raw.toLowerCase(), password },
+      headers,
+    });
+  } else {
+    signInRes = await auth.api.signInUsername({
+      body: { username: cleanRaw, password },
+      headers,
+    });
   }
 
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { email: raw.toLowerCase() },
-        { username: cleanRaw },
-        { username: `@${cleanRaw}` },
-        { username: raw },
-        { phone: raw },
-      ],
-    },
-  });
-
-  if (!user) {
-    throw new Error('Aucun compte trouvé avec cet identifiant');
+  if (!signInRes?.user) {
+    throw new Error('Identifiant ou mot de passe incorrect');
   }
 
-  if (password && user.passwordHash) {
-    const hashed = hashPasswordLegacy(password);
-    if (hashed !== user.passwordHash) {
-      throw new Error('Mot de passe incorrect');
-    }
+  let token = signInRes.token;
+  if (!token) {
+    const session = await prisma.session.findFirst({
+      where: { userId: signInRes.user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    token = session?.token || '';
   }
 
-  const token = await createBetterAuthSession(user.id, reqHeaders);
-  const fullProfile = await getMe(user.id);
+  const fullProfile = await getMe(signInRes.user.id);
   return { token, user: fullProfile };
 }
 
 export async function googleAuth(dto: GoogleAuthDto, reqHeaders?: any) {
+  const email = dto.email.toLowerCase();
   let user = await prisma.user.findUnique({
-    where: { email: dto.email.toLowerCase() },
+    where: { email },
   });
 
   if (!user) {
@@ -213,7 +178,7 @@ export async function googleAuth(dto: GoogleAuthDto, reqHeaders?: any) {
 
     user = await prisma.user.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email,
         name: dto.name,
         googleId: dto.googleId,
         avatarUrl: dto.avatarUrl,
@@ -224,6 +189,14 @@ export async function googleAuth(dto: GoogleAuthDto, reqHeaders?: any) {
         emailVerified: true,
       },
     });
+
+    await prisma.account.create({
+      data: {
+        userId: user.id,
+        accountId: dto.googleId,
+        providerId: 'google',
+      },
+    });
   } else if (!user.googleId) {
     user = await prisma.user.update({
       where: { id: user.id },
@@ -232,9 +205,33 @@ export async function googleAuth(dto: GoogleAuthDto, reqHeaders?: any) {
         avatarUrl: user.avatarUrl || dto.avatarUrl,
       },
     });
+
+    const existingAccount = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: 'google' },
+    });
+    if (!existingAccount) {
+      await prisma.account.create({
+        data: {
+          userId: user.id,
+          accountId: dto.googleId,
+          providerId: 'google',
+        },
+      });
+    }
   }
 
-  const token = await createBetterAuthSession(user.id, reqHeaders);
+  // Create an authentic session via Better Auth adapter table
+  const token = require('crypto').randomBytes(24).toString('base64url');
+  const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      token,
+      expiresAt,
+    },
+  });
+
   const fullProfile = await getMe(user.id);
   return { token, user: fullProfile };
 }
@@ -321,24 +318,18 @@ export async function updateProfile(userId: string, dto: UpdateProfileDto) {
   return getMe(userId);
 }
 
-export async function changePassword(userId: string, dto: ChangePasswordDto) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error('Utilisateur introuvable');
-
-  if (dto.oldPassword && user.passwordHash) {
-    const hashedOld = hashPasswordLegacy(dto.oldPassword);
-    if (hashedOld !== user.passwordHash) {
-      throw new Error('Ancien mot de passe incorrect');
-    }
-  }
-
-  const hashedNew = hashPasswordLegacy(dto.newPassword);
-  await prisma.user.update({
-    where: { id: userId },
-    data: { passwordHash: hashedNew },
+export async function changePassword(userId: string, dto: ChangePasswordDto, reqHeaders?: any) {
+  const headers = createRequestHeaders(reqHeaders);
+  const result = await auth.api.changePassword({
+    body: {
+      currentPassword: dto.oldPassword || '',
+      newPassword: dto.newPassword,
+      revokeOtherSessions: true,
+    },
+    headers,
   });
 
-  return { success: true, message: 'Mot de passe mis à jour avec succès' };
+  return { success: true, message: 'Mot de passe mis à jour avec succès via Better Auth' };
 }
 
 export async function registerSeller(userId: string, dto: RegisterSellerDto) {
@@ -407,15 +398,9 @@ export async function registerSeller(userId: string, dto: RegisterSellerDto) {
 }
 
 export async function extractUserIdFromRequest(req: Request): Promise<string | null> {
-  const explicitUserId = req.headers.get('x-user-id');
-  if (explicitUserId) {
-    const exists = await prisma.user.findUnique({ where: { id: explicitUserId }, select: { id: true } });
-    if (exists) return exists.id;
-  }
-
   const authHeader = req.headers.get('authorization');
   if (authHeader) {
-    const token = authHeader.replace(/^Bearers+/i, '').trim();
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
     if (token) {
       const dbSession = await prisma.session.findUnique({
         where: { token },
@@ -425,25 +410,16 @@ export async function extractUserIdFromRequest(req: Request): Promise<string | n
       if (dbSession && dbSession.expiresAt > new Date()) {
         return dbSession.userId;
       }
-
-      if (token.startsWith('ojk_sess_')) {
-        const withoutPrefix = token.substring('ojk_sess_'.length);
-        const lastUnderscore = withoutPrefix.lastIndexOf('_');
-        const possibleId = lastUnderscore > 0 ? withoutPrefix.substring(0, lastUnderscore) : withoutPrefix;
-        const userExists = await prisma.user.findUnique({
-          where: { id: possibleId },
-          select: { id: true },
-        });
-        if (userExists) return userExists.id;
-      }
-
-      const directUser = await prisma.user.findUnique({
-        where: { id: token },
-        select: { id: true },
-      });
-      if (directUser) return directUser.id;
     }
   }
+
+  // Check session cookie via Better Auth getSession
+  try {
+    const session = await auth.api.getSession({ headers: req.headers });
+    if (session?.user?.id) {
+      return session.user.id;
+    }
+  } catch {}
 
   return null;
 }

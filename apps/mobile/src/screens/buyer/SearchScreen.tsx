@@ -45,8 +45,8 @@ function formatXOF(price: number, currency = "FCFA") {
 const resolveImageUrl = (url: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  const base = API_BASE_URL.replace(':3001/api', ':3000');
-  return `${base}${url.startsWith('/') ? url : '/' + url}`;
+  const origin = API_BASE_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+  return `${origin}${url.startsWith('/') ? url : '/' + url}`;
 };
 
 function mapApiProduct(prod: ProductItem): Product {

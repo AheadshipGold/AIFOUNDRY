@@ -11,10 +11,10 @@ interface ShopPageProps {
 }
 
 async function getShopData(slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   
   try {
-    const res = await fetch(`${baseUrl}/v1/shops/${slug}`, {
+    const res = await fetch(`${baseUrl}/api/v1/shops/${slug}`, {
       next: { revalidate: 60 }
     });
     

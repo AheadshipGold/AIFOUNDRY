@@ -28,6 +28,8 @@ export interface OrderRecord {
     reference: string;
   };
   lines: OrderItemLine[];
+  buyerId?: string;
+  shopId?: string;
   createdAt: string;
 }
 
@@ -65,6 +67,8 @@ function mapToRecord(o: any): OrderRecord {
       reference: o.orderNumber,
     },
     lines,
+    buyerId: o.buyerId,
+    shopId: o.shopId,
     createdAt: o.createdAt.toISOString(),
   };
 }
@@ -191,7 +195,7 @@ export async function createOrder(dto: {
         totalAmountMinor: grandTotalMinor,
         grossSaleAmountMinor: grandTotalMinor,
         currency: 'XOF',
-        paymentChannel: dto.paymentChannel as any,
+        paymentChannel: (['MTN_MOMO', 'MOOV_MONEY', 'CELTIIS_CASH', 'CARD', 'DIRECT_TRANSFER', 'CASH_ON_DELIVERY', 'PICKUP'].includes(dto.paymentChannel) ? dto.paymentChannel : 'MTN_MOMO') as any,
         paymentStatus: 'PENDING',
         fulfillmentStatus: 'PENDING',
         deliveryAddress: dto.deliveryAddress,

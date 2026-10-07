@@ -61,7 +61,7 @@ export default function StandaloneBespokePage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:3001/v1/requests")
+    fetch("/api/v1/requests")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data && Array.isArray(data)) setRequests(data);
@@ -96,7 +96,7 @@ export default function StandaloneBespokePage() {
     const budgetNum = parseInt(budgetFcfa.replace(/\s+/g, ""), 10) * 100 || 25000000;
 
     try {
-      const res = await fetch("http://localhost:3001/v1/requests", {
+      const res = await fetch("/api/v1/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

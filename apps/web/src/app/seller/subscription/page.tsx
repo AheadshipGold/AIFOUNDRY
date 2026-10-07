@@ -99,7 +99,7 @@ export default function SellerSubscriptionPage() {
   ];
 
   useEffect(() => {
-    fetch("http://localhost:3001/v1/subscriptions/shop/shop-01")
+    fetch("/api/v1/subscriptions/current")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) setCurrentSub(data);
@@ -132,7 +132,7 @@ export default function SellerSubscriptionPage() {
     setCheckoutError(null);
 
     try {
-      const response = await fetch("http://localhost:3001/v1/subscriptions/moneroo/initialize", {
+      const response = await fetch("/api/v1/subscriptions/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

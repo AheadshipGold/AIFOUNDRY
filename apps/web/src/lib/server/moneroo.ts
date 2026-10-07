@@ -86,9 +86,15 @@ export class MonerooAdapter {
   }
 
   verifyWebhookSignature(rawBody: string, signatureHeader?: string): boolean {
-    if (!this.webhookSecret || !signatureHeader) return true;
+    if (!this.webhookSecret) {
+      // In production, missing webhook secret must deny
+      if (process.env.NODE_ENV === 'production') return false;
+      return true;
+    }
+    if (!signatureHeader) return false;
     try {
       const computed = crypto.createHmac('sha256', this.webhookSecret).update(rawBody).digest('hex');
+      if (computed.length !== signatureHeader.length) return false;
       return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signatureHeader));
     } catch {
       return false;
