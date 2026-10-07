@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@neon/config": "^1.8.4",
+    "@neon/env": "^1.5.1",
     "@playwright/test": "^1.51.1",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",

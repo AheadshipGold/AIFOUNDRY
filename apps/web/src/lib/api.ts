@@ -54,7 +54,7 @@ export interface RegisterSellerResponse {
   message: string;
 }
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = '/api';
 const TOKEN_KEY = 'ojarket_token';
 const USER_KEY = 'ojarket_web_user';
 
