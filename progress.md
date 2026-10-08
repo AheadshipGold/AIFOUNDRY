@@ -5,6 +5,42 @@ Ce fichier trace toutes les avancées, décisions et implémentations réalisée
 
 ---
 
+## [08 Octobre 2026] - Phase : Déploiement Cloud Global, Vercel Production, Domaine & Stockage R2 (Agent : Antigravity)
+**Branche :** `AIFOUNDRYlocrep`
+
+**Accomplissements majeurs : Mise en production officielle de la plateforme sur le Cloud, branchement du domaine et configuration du stockage médias**
+1. **Déploiement en Production sur Vercel (`https://www.ojarket.com`) :**
+   - Importation et déploiement du monorepo Next.js avec `apps/web` en Root Directory.
+   - Liaison réussie avec la base de données Serverless PostgreSQL sur **Neon** (`DATABASE_URL` poolée et `DIRECT_URL`).
+   - Compilation et synchronisation automatique du client Prisma lors du post-build.
+   - Vitrine publique, console d'administration et catalogue de prestige Kingston Bio 100 % opérationnels en ligne.
+2. **Configuration du Nom de Domaine Officiel & DNS :**
+   - Domaine de marque **`ojarket.com`** et sous-domaine **`www.ojarket.com`** configurés avec certificats SSL valides.
+   - Intégration de la zone DNS et protection CDN sur **Cloudflare**.
+3. **Mise en Place du Stockage Objets Médias (Cloudflare R2) :**
+   - Création du bucket de stockage dédié **`ojarket-media`** (Western Europe).
+   - Génération des identifiants API S3 (`Access Key ID`, `Secret Access Key`) avec droits complets de lecture/écriture (`Object Read & Write`).
+   - Configuration des variables d'environnement (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`, `R2_PUBLIC_DOMAIN`) pour accueillir les uploads des créations artisanales.
+
+---
+
+## [07 Octobre 2026] - Phase : Migration Base Cloud Neon & Unification Full-Stack (Agent : Antigravity)
+**Branche :** `AIFOUNDRYlocrep`
+
+**Accomplissements majeurs : Migration intégrale des données réelles vers Neon Cloud et résolution du client API Web**
+1. **Migration PostgreSQL vers Neon (Serverless Lakebase) :**
+   - Configuration du projet Neon (`aged-sea-96770443`) avec `neon.ts` et le CLI `neonctl`.
+   - Transfert sans perte de l'ensemble des données réelles depuis le conteneur Docker local vers Neon : 58 utilisateurs, 7 boutiques marchandes (dont Kingston Bio), 11 produits d'artisanat de luxe, 23 commandes et l'historique de caisse.
+   - Préservation stricte du compte administrateur authentique (`damacarre@gmail.com`).
+2. **Résolution du Bug API Web & Synchronisation Catalogue :**
+   - Correction critique dans `apps/web/src/lib/api.ts` : rectification de `API_BASE_URL` (`/api` au lieu de `/api/v1`) pour éliminer le dédoublement de chemin `/v1/v1` qui provoquait une erreur 404 silencieuse.
+   - Réaffichage instantané des créations sur la vitrine Web et parité stricte avec l'application mobile.
+   - Test de synchronisation bidirectionnelle validé avec succès (mise à jour du prix du *Chronomètre Heritage* répercutée en base et sur le CMS).
+3. **Versionnage & Git :**
+   - Commit et push de consolidation réussis sur GitHub (`d8e40f7`).
+
+---
+
 ## [01 Octobre 2026 - Soir] - Phase : Câblage Mobile Live, Suite de Preuves T01-T06 & Administration Centrale 03B (Agent : Antigravity)
 **Branche :** `codex/ui-design-system-v3`
 
