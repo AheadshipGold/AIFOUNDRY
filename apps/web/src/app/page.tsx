@@ -3414,8 +3414,8 @@ function MainMarketplaceView() {
         <div className="oj-footer-bottom">
           <span>© {new Date().getFullYear()} Ojarket Inc. {isEn ? "All rights reserved." : "Tous droits réservés."}</span>
           <div style={{ display: "flex", gap: "16px" }}>
-            <a href="#" style={{ color: "inherit" }}>{isEn ? "Terms" : "Conditions"}</a>
-            <a href="#" style={{ color: "inherit" }}>{isEn ? "Privacy" : "Confidentialité"}</a>
+            <Link href="/terms" style={{ color: "inherit", textDecoration: "none" }}>{isEn ? "Terms" : "Conditions"}</Link>
+            <Link href="/privacy" style={{ color: "inherit", textDecoration: "none" }}>{isEn ? "Privacy" : "Confidentialité"}</Link>
           </div>
         </div>
       </footer>
