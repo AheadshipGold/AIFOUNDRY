@@ -2,8 +2,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Politique de Confidentialite et Protection des Donnees - Ojarket",
-  description: "Protection des donnees personnelles, conformite RGPD, APDP Benin et securite des transactions sur Ojarket.",
+  title: "Politique de Confidentialité & Protection des Données — Ojarket",
+  description: "Protection des données personnelles, conformité RGPD, APDP Bénin et sécurité des transactions sur Ojarket.",
 };
 
 export default function PrivacyPage() {
@@ -36,75 +36,75 @@ export default function PrivacyPage() {
             alignItems: "center",
             gap: "8px",
           }}>
-            Retour a l accueil
+            ← Retour à l’accueil
           </Link>
           <span style={{ fontSize: "12px", color: "#8A9994", textTransform: "uppercase", letterSpacing: "1px" }}>
-            Derniere mise a jour : Octobre 2026
+            Dernière mise à jour : Octobre 2026
           </span>
         </div>
 
         <h1 style={{ fontSize: "32px", fontWeight: 700, color: "#F8F6F0", marginBottom: "8px" }}>
-          Politique de Confidentialite et Protection des Donnees
+          Politique de Confidentialité & Protection des Données
         </h1>
         <p style={{ color: "#AD8455", fontSize: "15px", fontWeight: 500, marginBottom: "36px", borderBottom: "1px solid #1E2D28", paddingBottom: "20px" }}>
-          Engagements d Integrite Numerique et Respect de la Vie Privee - Ojarket
+          Engagements d’Intégrité Numérique & Respect de la Vie Privée · Ojarket
         </p>
 
         <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>1. Engagement General et Cadre Reglementaire</h2>
+          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>1. Engagement Général & Cadre Réglementaire</h2>
           <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            La preservation de la confidentialite de vos informations est un pilier fondateur de l excellence d Ojarket. Nous nous conformons rigoureusement au Livre V du Code du Numerique en Republique du Benin regissant la protection des donnees personnelles (APDP), ainsi qu aux standards internationaux de securite et de confidentialite (RGPD).
+            La préservation de la confidentialité de vos informations est un pilier fondateur de l’excellence d’Ojarket. Nous nous conformons rigoureusement au Livre V du Code du Numérique en République du Bénin régissant la protection des données personnelles (APDP), ainsi qu’aux standards internationaux de sécurité et de confidentialité (RGPD).
           </p>
         </section>
 
         <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>2. Donnees Collectees</h2>
+          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>2. Données Collectées</h2>
           <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Nous collectons uniquement les donnees strictement necessaires au fonctionnement optimal de nos services d exception :
+            Nous collectons uniquement les données strictement nécessaires au fonctionnement optimal de nos services d’exception :
           </p>
           <ul style={{ color: "#C5D1CD", fontSize: "15px", paddingLeft: "20px" }}>
-            <li style={{ marginBottom: "8px" }}><strong>Identite et Authentification :</strong> Nom, prenom, adresse e-mail, numero de telephone securise via Better Auth et chiffrement HMAC-SHA256.</li>
-            <li style={{ marginBottom: "8px" }}><strong>Verification Marchande (KYC) :</strong> Documents legaux d identification des artisans pour certifier l authenticite de la chaine d approvisionnement de luxe.</li>
-            <li style={{ marginBottom: "8px" }}><strong>Transactions et Commandes :</strong> Historique chiffre des reglements, adresses de livraison des pieces artisanales et devis sur-mesure (Parcours D02).</li>
-            <li style={{ marginBottom: "8px" }}><strong>Metadonnees d Audit FinOps :</strong> Horodatages immuables pour garantir l equilibre des livres de caisse et la prevention absolue de la fraude.</li>
+            <li style={{ marginBottom: "8px" }}><strong>Identité & Authentification :</strong> Nom, prénom, adresse e-mail, numéro de téléphone sécurisé via Better Auth et chiffrement HMAC-SHA256.</li>
+            <li style={{ marginBottom: "8px" }}><strong>Vérification Marchande (KYC) :</strong> Documents légaux d’identification des artisans pour certifier l’authenticité de la chaîne d’approvisionnement de luxe.</li>
+            <li style={{ marginBottom: "8px" }}><strong>Transactions & Commandes :</strong> Historique chiffré des règlements, adresses de livraison des pièces artisanales et devis sur-mesure (Parcours D02).</li>
+            <li style={{ marginBottom: "8px" }}><strong>Métadonnées d’Audit FinOps :</strong> Horodatages immuables pour garantir l’équilibre des livres de caisse et la prévention absolue de la fraude.</li>
           </ul>
         </section>
 
         <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>3. Utilisation et Finalite des Donnees</h2>
+          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>3. Utilisation & Finalité des Données</h2>
           <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Vos donnees ne sont ni vendues, ni louees, ni cedees a des courtiers tiers. Elles sont exclusivement utilisees pour :
+            Vos données ne sont ni vendues, ni louées, ni cédées à des tiers. Elles sont exclusivement utilisées pour :
           </p>
           <ul style={{ color: "#C5D1CD", fontSize: "15px", paddingLeft: "20px" }}>
-            <li style={{ marginBottom: "8px" }}>La livraison securisee des creations physiques et l acces aux droits de telechargement des creations numeriques.</li>
-            <li style={{ marginBottom: "8px" }}>La mise en relation acheteur-createur pour les projets de confection sur-mesure.</li>
-            <li style={{ marginBottom: "8px" }}>La certification des avis d achats verifies pour maintenir l integrite du catalogue.</li>
+            <li style={{ marginBottom: "8px" }}>La livraison sécurisée des créations physiques et l’accès aux droits de téléchargement des créations numériques.</li>
+            <li style={{ marginBottom: "8px" }}>La mise en relation acheteur-créateur pour les projets de confection sur-mesure.</li>
+            <li style={{ marginBottom: "8px" }}>La certification des avis d’achats vérifiés pour maintenir l’intégrité du catalogue.</li>
           </ul>
         </section>
 
         <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>4. Securite de l Infrastructure et Cryptographie</h2>
+          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>4. Sécurité de l’Infrastructure & Cryptographie</h2>
           <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Toutes les connexions sont protegees par le chiffrement TLS 1.3 de bout en bout via Cloudflare. La base de donnees PostgreSQL Serverless (hebergee sur Neon) applique une isolation etanche des donnees marchandes. Vos sessions sont signees par des cles cryptographiques privees inaccessibles au public.
+            Toutes les connexions sont protégées par le chiffrement TLS 1.3 de bout en bout via Cloudflare. La base de données PostgreSQL Serverless (hébergée sur Neon) applique une isolation étanche des données marchandes. Vos sessions sont signées par des clés cryptographiques privées inaccessibles au public.
           </p>
         </section>
 
         <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>5. Vos Droits (Acces, Rectification, Suppression)</h2>
+          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>5. Vos Droits (Accès, Rectification, Suppression)</h2>
           <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Conformement aux reglementations sur la protection des donnees personnelles, vous disposez d un droit permanent d acces, de rectification, de portabilite et de suppression de vos donnees.
+            Conformément aux réglementations sur la protection des données personnelles, vous disposez d’un droit permanent d’accès, de rectification, de portabilité et de suppression de vos données.
           </p>
           <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Pour exercer vos droits ou demander la suppression definitive de votre compte, adressez un message a notre Delegue a la Protection des Donnees (DPO) : <strong>privacy@ojarket.com</strong>.
+            Pour exercer vos droits ou demander la suppression définitive de votre compte, adressez un message à notre Délégué à la Protection des Données (DPO) : <strong>services@ojarket.com</strong>.
           </p>
         </section>
 
         <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #1E2D28", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
           <span style={{ fontSize: "14px", color: "#8A9994" }}>
-            Contact DPO : <strong>privacy@ojarket.com</strong>
+            Contact DPO : <strong>services@ojarket.com</strong>
           </span>
           <Link href="/terms" style={{ color: "#D4B483", fontSize: "14px", textDecoration: "underline" }}>
-            Consulter les Conditions Generales (CGU / CGV)
+            Consulter les Conditions Générales (CGU / CGV) →
           </Link>
         </div>
       </div>
