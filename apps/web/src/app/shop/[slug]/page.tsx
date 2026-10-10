@@ -1,32 +1,59 @@
 import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import './landing.css';
+import './shop.css';
 import ShareButton from './ShareButton';
+import { getShopBySlug } from '@/lib/server/catalog';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface ShopPageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function getShopData(slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
+async function fetchShop(identifier: string) {
   try {
-    const res = await fetch(`${baseUrl}/api/v1/shops/${slug}`, {
-      next: { revalidate: 60 }
-    });
-    
-    if (!res.ok) {
-      return null;
-    }
-    
-    return res.json();
-  } catch (error) {
-    console.error('Error fetching shop data:', error);
+    return await getShopBySlug(identifier);
+  } catch {
     return null;
   }
+}
+
+function formatCraftType(type?: string | null): string {
+  if (!type) return "Atelier d'Artisan d'Élite";
+  if (type === 'haute_facture') return "Maison d'Art & Haute Création";
+  if (type === 'artisanat_luxe') return "Maison d'Artisanat de Luxe";
+  if (type === 'joaillerie') return "Haute Joaillerie & Orfèvrerie";
+  return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatCategoryLabel(cat?: string | null): string {
+  if (!cat) return "Création d'Art";
+  const map: Record<string, string> = {
+    leather: 'Maroquinerie de Luxe',
+    maroquinerie: 'Maroquinerie de Luxe',
+    jewelry: 'Haute Joaillerie & Orfèvrerie',
+    wood: 'Ébénisterie & Mobilier d\'Art',
+    textile: 'Textile d\'Art & Tissage',
+    fashion: 'Mode & Haute Couture Africaine',
+    mode_africaine: 'Haute Couture & Mode Africaine',
+    shoes: 'Chaussures & Bottier d\'Artisan',
+    chaussures: 'Chaussures & Bottier d\'Artisan',
+    cosmetics: 'Cosmétique Bio & Bien-Être',
+    cosmetique_bio: 'Cosmétique Bio & Bien-Être',
+    art: 'Tableaux & Art Contemporain',
+    tableaux_art: 'Tableaux & Art Contemporain',
+    home: 'Décoration & Art de la Table',
+    decoration: 'Décoration & Art de la Table',
+    gourmet: 'Épicerie Fine & Terroir Bio',
+    epicerie_fine: 'Épicerie Fine & Terroir Bio',
+    accessories: 'Accessoires de Luxe & Horlogerie',
+    accessoires_luxe: 'Accessoires de Luxe & Horlogerie',
+    digital: 'Art Numérique & Patrons',
+    digital_art: 'Art Numérique & Patrons',
+  };
+  return map[cat] || cat;
 }
 
 /**
@@ -34,7 +61,7 @@ async function getShopData(slug: string) {
  */
 export async function generateMetadata({ params }: ShopPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const shop = await getShopData(slug);
+  const shop = await fetchShop(slug);
 
   if (!shop) {
     return {
@@ -50,7 +77,7 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
     : `Découvrez la boutique officielle ${shop.name} (${location}) sur Ojarket. Produits de luxe et créations sur-mesure garantis.`;
 
   const bannerImage = shop.bannerUrl || 'https://ojarket.com/reference-assets/market-tote.png';
-  const canonicalUrl = `https://ojarket.com/shop/${slug}`;
+  const canonicalUrl = `https://ojarket.com/shop/${shop.slug || slug}`;
 
   return {
     title,
@@ -85,218 +112,505 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
 
 export default async function ShopPage({ params }: ShopPageProps) {
   const { slug } = await params;
-  const shop = await getShopData(slug);
+  const shop = await fetchShop(slug);
 
   if (!shop) {
     return (
-      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8F6F0', color: '#1A1A1A', padding: '2rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontFamily: 'serif', marginBottom: '1rem', color: '#075D49' }}>Boutique Introuvable</h1>
-        <p style={{ color: '#666', marginBottom: '2rem' }}>La boutique ou le vendeur recherché n’existe pas ou a changé d’adresse.</p>
-        <Link href="/" style={{ padding: '0.75rem 1.75rem', backgroundColor: '#075D49', color: '#FFF', borderRadius: '4px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600 }}>
+      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8F6F0', color: '#151E1C', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(7,93,73,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#075D49' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <h1 style={{ fontSize: '2rem', fontFamily: 'serif', marginBottom: '0.75rem', color: '#075D49', fontWeight: 700 }}>
+          Boutique Introuvable
+        </h1>
+        <p style={{ color: '#5B6661', maxWidth: '440px', lineHeight: 1.6, marginBottom: '2rem', fontSize: '1rem' }}>
+          La boutique ou le vendeur recherché n’existe pas, est en cours de modération ou a changé d’adresse de galerie.
+        </p>
+        <Link 
+          href="/" 
+          style={{ 
+            padding: '0.85rem 2rem', 
+            backgroundColor: '#075D49', 
+            color: '#FFFFFF', 
+            borderRadius: '8px', 
+            textDecoration: 'none', 
+            fontSize: '0.95rem', 
+            fontWeight: 700,
+            boxShadow: '0 4px 14px rgba(7,93,73,0.25)',
+            transition: 'all 0.2s ease',
+          }}
+        >
           Retour à la galerie principale
         </Link>
       </div>
     );
   }
 
-  const { name, description, craftType, city, country, isVerified, bannerUrl, rating, reviewsCount, products, reviews } = shop;
+  const { name, description, craftType, city, country, bannerUrl, rating, reviewsCount, products, reviews, storefrontTheme } = shop;
+  const currentTheme = storefrontTheme === 'dark' ? 'dark' : 'light';
+  const displayLocation = `${city}${country ? `, ${country}` : ''}`;
+  const initialLetter = name ? name.charAt(0).toUpperCase() : 'M';
+  const formattedCraft = formatCraftType(craftType);
+  const shareUrl = `https://ojarket.com/shop/${shop.slug || slug}`;
+  const whatsappUrl = `https://wa.me/22900000000?text=${encodeURIComponent(`Bonjour ${name}, je découvre votre boutique sur Ojarket et souhaite échanger au sujet de vos créations.`)}`;
 
   return (
-    <div className="luxury-storefront" style={{ backgroundColor: '#F8F6F0', color: '#1A1A1A', minHeight: '100vh' }}>
-      {/* Top navigation */}
-      <nav style={{ padding: '1rem 2rem', borderBottom: '1px solid #E5E0D8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#075D49', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Galerie Ojarket
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <a
-            href={`ojarket://shop/${slug}`}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              backgroundColor: 'rgba(7, 93, 73, 0.08)',
-              color: '#075D49',
-              border: '1px solid rgba(7, 93, 73, 0.2)',
-              textDecoration: 'none',
-              fontSize: '12px',
-              fontWeight: 700,
-            }}
-          >
-            Ouvrir dans l'App Mobile
-          </a>
-          <ShareButton shopName={name} shopUrl={`https://ojarket.com/shop/${slug}`} />
-        </div>
-      </nav>
-
-      {/* Hero Banner */}
-      <div 
-        className="storefront-banner" 
-        style={{ 
-          backgroundImage: bannerUrl ? `url(${bannerUrl})` : 'none',
-          backgroundColor: bannerUrl ? 'transparent' : '#0A1210',
-          minHeight: '280px',
-          height: '35vh'
-        }}
-      >
-        <div className="banner-overlay" style={{ background: 'linear-gradient(to bottom, rgba(10,18,16,0.6), rgba(10,18,16,0.9))' }}></div>
-        <div className="banner-content" style={{ maxWidth: '800px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.75rem', backgroundColor: 'rgba(173,132,85,0.2)', border: '1px solid #AD8455', borderRadius: '999px', marginBottom: '1rem' }}>
-            <span style={{ color: '#D4B483', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
-              {craftType || 'Boutique Officielle'}
-            </span>
-            {isVerified && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#10B981', fontSize: '0.75rem', fontWeight: 600 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-                Vérifié
-              </span>
-            )}
-          </div>
-          <h1 className="banner-title" style={{ color: '#FFFFFF', fontSize: '2.5rem', fontFamily: 'serif', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{name}</h1>
-          <p style={{ color: '#D4B483', fontSize: '0.95rem', margin: 0 }}>
-            {city}{country ? `, ${country}` : ''}
-          </p>
+    <div className="luxury-storefront" data-theme={currentTheme}>
+      {/* 1. Announcement Bar */}
+      <div className="storefront-announcement-bar">
+        <div className="announcement-content">
+          <span>Maison d'Art Certifiée Ojarket</span>
+          <span className="announcement-separator">&bull;</span>
+          <span>Expédition Assurée Cotonou, Abidjan, Bamako, Dakar &amp; Monde</span>
+          <span className="announcement-separator">&bull;</span>
+          <span>Paiement Sécurisé avec Séquestre Anti-Fraude</span>
         </div>
       </div>
-      
-      {/* Main Container */}
-      <main className="storefront-main" style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 1.5rem' }}>
-        <header className="storefront-header" style={{ marginBottom: '3rem', textAlign: 'center' }}>
-          {description && (
-            <p className="storefront-description" style={{ color: '#4A4A4A', fontSize: '1.05rem', lineHeight: '1.8', maxWidth: '750px', margin: '0 auto 1.5rem auto' }}>
-              {description}
-            </p>
-          )}
 
-          {/* Rating Summary or Diamond Sparkle */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1.25rem', backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E5E0D8' }}>
-            {rating != null ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#AD8455' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#AD8455" stroke="none">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                  <span style={{ fontWeight: 700, color: '#1A1A1A' }}>{rating.toFixed(1)}</span>
-                </div>
-                <span style={{ color: '#777', fontSize: '0.85rem' }}>({reviewsCount} avis {reviewsCount > 1 ? 'vérifiés' : 'vérifié'})</span>
-              </>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#AD8455' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#AD8455" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {/* 2. Frosted Glass Master Storefront Navigation */}
+      <header className="storefront-master-header">
+        <div className="storefront-header-inner">
+          <div className="storefront-header-brand">
+            <Link href="/" className="storefront-ojarket-badge" aria-label="Accueil Ojarket">
+              <img
+                src={
+                  currentTheme === 'dark'
+                    ? '/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Dark_Transparent.png'
+                    : '/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Transparent.png'
+                }
+                alt="Ojarket"
+                className="storefront-ojarket-logo"
+              />
+            </Link>
+            <span className="storefront-divider">|</span>
+            <div className="storefront-artisan-identity">
+              <span className="storefront-artisan-name">{name}</span>
+              <span className="storefront-certified-seal">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#AD8455" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z" />
                 </svg>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-                  Boutique Vérifiée · Sélection Certifiée
-                </span>
-              </div>
-            )}
+                Certifié
+              </span>
+            </div>
           </div>
-        </header>
 
-        {/* Products Section */}
-        <section style={{ marginBottom: '4rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '2px solid #075D49', paddingBottom: '0.75rem' }}>
-            <h2 style={{ fontSize: '1.4rem', fontFamily: 'serif', color: '#075D49', margin: 0 }}>
-              Produits & Sélection de la Boutique ({products ? products.length : 0})
+          <div className="storefront-header-actions">
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="storefront-whatsapp-btn"
+              title="Discuter directement avec l'artisan sur WhatsApp"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
+              </svg>
+              <span>Conciergerie WhatsApp</span>
+            </a>
+            <a
+              href={`ojarket://shop/${shop.slug || slug}`}
+              className="storefront-app-btn"
+            >
+              <span>App Mobile</span>
+            </a>
+            <ShareButton shopName={name} shopUrl={shareUrl} />
+          </div>
+        </div>
+      </header>
+
+      {/* 3. Grand Atelier Hero */}
+      <section className="storefront-hero">
+        <div
+          className="storefront-hero-bg"
+          style={{
+            backgroundImage: bannerUrl ? `url(${bannerUrl})` : 'url(/brand/cover_luxury_pattern.jpg)',
+          }}
+        />
+        <div className="storefront-hero-overlay" />
+        <div className="storefront-hero-content">
+          <div className="atelier-crest">
+            <span className="crest-monogram">{initialLetter}</span>
+          </div>
+          <div className="atelier-pill-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4B483" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z" />
+            </svg>
+            <span>{formattedCraft} &bull; Maison Officielle</span>
+          </div>
+          <h1 className="atelier-title">{name}</h1>
+          <p className="atelier-location">
+            {displayLocation}
+          </p>
+
+          <div className="atelier-trust-strip">
+            <div className="trust-item">
+              <span className="trust-bullet">&bull;</span>
+              <span>Garantie d'Origine 100% Authentique</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-bullet">&bull;</span>
+              <span>Maître Artisan d'Élite</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-bullet">&bull;</span>
+              <span>Paiement sous Séquestre Ojarket</span>
+            </div>
+          </div>
+
+          <div className="atelier-hero-ctas">
+            <a href="#catalogue" className="btn-atelier-primary">
+              Explorer les Créations ({products ? products.length : 0})
+            </a>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-atelier-secondary"
+            >
+              Contacter l'Atelier
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Atelier Manifesto & Editorial Split */}
+      <section className="atelier-manifesto-section">
+        <div className="manifesto-inner">
+          <div className="manifesto-text">
+            <span className="manifesto-eyebrow">Manifeste de la Maison</span>
+            <h2 className="manifesto-heading">L'Excellence du Terroir &amp; du Savoir-Faire Ouest-Africain</h2>
+            <p className="manifesto-body">
+              {description || "Chaque pièce est façonnée avec une exigence sans compromis, alliant matières nobles et traditions d'exception pour sublimer votre quotidien. Notre maison perpétue une vision contemporaine de l'artisanat d'art, certifiée et protégée par la garantie Ojarket."}
+            </p>
+          </div>
+          <div className="manifesto-metrics-grid">
+            <div className="metric-box">
+              <span className="metric-value">{products ? products.length : 0}</span>
+              <span className="metric-label">Créations Uniques</span>
+            </div>
+            <div className="metric-box">
+              <span className="metric-value">100%</span>
+              <span className="metric-label">Matières Nobles</span>
+            </div>
+            <div className="metric-box">
+              <span className="metric-value">{city}</span>
+              <span className="metric-label">Atelier d'Origine</span>
+            </div>
+            <div className="metric-box">
+              <span className="metric-value">A+</span>
+              <span className="metric-label">Grade de Contrôle</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Catalog & Products Grid (Shopify Plus Standard) */}
+      <section id="catalogue" className="storefront-catalog-section">
+        <div className="catalog-header-bar">
+          <div>
+            <h2 className="catalog-title">
+              Créations &amp; Sélection Officielle
             </h2>
+            <p className="catalog-sub">
+              Pièces exclusives disponibles à la commande et livrées avec certificat d'authenticité.
+            </p>
           </div>
+          <div className="catalog-badge-verified">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#AD8455" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Catalogue Vérifié par Ojarket</span>
+          </div>
+        </div>
 
-          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
-            {products && products.length > 0 ? (
-              products.map((product: any) => (
-                <Link
-                  key={product.id}
-                  href={`/p/${product.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <div 
-                    style={{ 
-                      backgroundColor: '#FFF', 
-                      borderRadius: '8px', 
-                      overflow: 'hidden', 
-                      border: '1px solid #E5E0D8',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: '100%',
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                    }}
-                  >
-                    <div style={{ position: 'relative', height: '240px', backgroundColor: '#F0ECE1', overflow: 'hidden' }}>
-                      {product.image ? (
-                        <img 
-                          src={product.image} 
-                          alt={product.title} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#AD8455' }}>
-                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z" />
-                          </svg>
-                          <span style={{ fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 600 }}>Ojarket Prestige</span>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#AD8455', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
-                        {product.category || 'Création'}
+        <div className="products-grid">
+          {products && products.length > 0 ? (
+            products.map((product: any) => (
+              <Link
+                key={product.id}
+                href={`/p/${product.id}`}
+                className="boutique-product-card"
+              >
+                <div className="boutique-product-img-wrap">
+                  <span className="card-status-badge">
+                    {formatCategoryLabel(product.category)}
+                  </span>
+                  {product.image ? (
+                    <>
+                      <img 
+                        src={product.image} 
+                        alt="" 
+                        aria-hidden="true" 
+                        className="boutique-product-img-ambient" 
+                      />
+                      <img 
+                        src={product.image} 
+                        alt={product.title} 
+                        className="boutique-product-img"
+                      />
+                    </>
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#D4B483', background: 'linear-gradient(135deg, #111C1A 0%, #06241D 100%)' }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z" />
+                      </svg>
+                      <span style={{ fontSize: '0.75rem', marginTop: '0.6rem', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                        Ojarket Prestige
                       </span>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1A1A1A', margin: '0 0 0.5rem 0', lineHeight: 1.3 }}>
-                        {product.title}
-                      </h3>
-                      <div style={{ marginTop: 'auto', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F5F3ED' }}>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#075D49' }}>
-                          {((product.priceMinor || 0) / 100).toLocaleString('fr-FR')} {product.currency || 'XOF'}
-                        </span>
-                        {product.rating != null ? (
-                          <span style={{ fontSize: '0.8rem', color: '#AD8455', fontWeight: 600 }}>
-                            ★ {product.rating.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.7rem', color: '#AD8455', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            Nouveau
-                          </span>
-                        )}
-                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="boutique-product-body">
+                  <span className="boutique-product-category">
+                    {product.originCity ? `${product.originCity} · ` : ''}{formatCategoryLabel(product.category)}
+                  </span>
+                  <h3 className="boutique-product-title">
+                    {product.title}
+                  </h3>
+                  <div className="boutique-product-footer">
+                    <span className="boutique-product-price">
+                      {((product.priceMinor || 0) / 100).toLocaleString('fr-FR')} {product.currency || 'XOF'}
+                    </span>
+                    {product.rating != null ? (
+                      <span className="boutique-diamond-seal">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#D4B483" stroke="none">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <span>{product.rating.toFixed(1)}</span>
+                      </span>
+                    ) : (
+                      <span className="boutique-diamond-seal">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D4B483" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z" />
+                        </svg>
+                        <span>NOUVEAU</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="card-order-btn">
+                    <span>Explorer la création</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1 / -1', padding: '4rem 2rem', textAlign: 'center', backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px dashed #D4B483' }}>
+              <div style={{ width: '48px', height: '48px', margin: '0 auto 1rem', borderRadius: '50%', backgroundColor: 'rgba(212,180,131,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#AD8455' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z" />
+                </svg>
+              </div>
+              <h3 style={{ fontFamily: 'serif', fontSize: '1.25rem', color: '#151E1C', marginBottom: '0.5rem' }}>
+                Collection Privée en Préparation
+              </h3>
+              <p style={{ color: '#5B6661', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
+                Le maître d'atelier finalise l'inventaire de ses nouvelles pièces. Contactez la conciergerie pour une commande privée exclusive.
+              </p>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-atelier-primary"
+                style={{ display: 'inline-block' }}
+              >
+                Demande Spéciale Conciergerie
+              </a>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 6. Verified Reviews Section (if any verified reviews exist) */}
+      {reviews && reviews.length > 0 && (
+        <section className="storefront-reviews-section">
+          <div className="reviews-card-container">
+            <div className="reviews-header">
+              <div>
+                <h3 className="reviews-header-title">
+                  Avis Clients Vérifiés ({reviews.length})
+                </h3>
+                <p className="reviews-header-subtitle">
+                  Seuls les acheteurs ayant validé et réceptionné leur commande peuvent laisser un témoignage.
+                </p>
+              </div>
+              {rating != null && (
+                <div className="reviews-rating-badge">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#D4B483" stroke="none">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span className="reviews-rating-value">{rating.toFixed(1)} / 5</span>
+                </div>
+              )}
+            </div>
+
+            <div className="reviews-grid">
+              {reviews.map((rev: any) => (
+                <div key={rev.id} className="review-card-item">
+                  <div className="review-card-header">
+                    <span className="review-author-name">{rev.buyerName}</span>
+                    <div className="review-stars-row">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill={star <= (rev.rating || 5) ? '#D4B483' : 'none'}
+                          stroke="#D4B483"
+                          strokeWidth="1.5"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      ))}
                     </div>
                   </div>
-                </Link>
-              ))
-            ) : (
-              <div style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', backgroundColor: '#FFF', borderRadius: '8px', border: '1px dashed #D4B483' }}>
-                <p style={{ color: '#666', margin: 0 }}>Cette boutique n'a pas encore d'articles publiques enregistrées.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Verified Reviews Section */}
-        {reviews && reviews.length > 0 && (
-          <section style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #E5E0D8' }}>
-            <h2 style={{ fontSize: '1.3rem', fontFamily: 'serif', color: '#075D49', marginBottom: '1.5rem' }}>
-              Avis Clients Vérifiés ({reviews.length})
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-              {reviews.map((rev: any) => (
-                <div key={rev.id} style={{ backgroundColor: '#FFF', padding: '1.25rem', borderRadius: '8px', border: '1px solid #E5E0D8' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{rev.buyerName}</span>
-                    <span style={{ color: '#AD8455', fontSize: '0.9rem' }}>
-                      {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
-                    </span>
-                  </div>
-                  {rev.title && <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', color: '#333' }}>{rev.title}</h4>}
-                  {rev.comment && <p style={{ margin: 0, fontSize: '0.85rem', color: '#666', lineHeight: 1.5 }}>{rev.comment}</p>}
+                  {rev.title && <h4 className="review-card-title">{rev.title}</h4>}
+                  {rev.comment && <p className="review-card-text">{rev.comment}</p>}
                 </div>
               ))}
             </div>
-          </section>
-        )}
-      </main>
+          </div>
+        </section>
+      )}
+
+      {/* 7. Trust Pillars (Shopify Standards) */}
+      <section className="storefront-trust-section">
+        <div className="trust-pillars-grid">
+          <div className="pillar-card">
+            <div className="pillar-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <h3 className="pillar-title">Authenticité Certifiée</h3>
+            <p className="pillar-desc">
+              Chaque création est vérifiée et estampillée selon les standards de la haute facture ouest-africaine.
+            </p>
+          </div>
+
+          <div className="pillar-card">
+            <div className="pillar-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="3" width="15" height="13"/>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+              </svg>
+            </div>
+            <h3 className="pillar-title">Expédition Sécurisée</h3>
+            <p className="pillar-desc">
+              Emballage soigné de prestige, livraison express et remise en main propre contre signature.
+            </p>
+          </div>
+
+          <div className="pillar-card">
+            <div className="pillar-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <h3 className="pillar-title">Séquestre Anti-Fraude</h3>
+            <p className="pillar-desc">
+              Vos paiements sont conservés sous séquestre sécurisé et libérés au vendeur uniquement après votre validation.
+            </p>
+          </div>
+
+          <div className="pillar-card">
+            <div className="pillar-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+              </svg>
+            </div>
+            <h3 className="pillar-title">Conciergerie Privée</h3>
+            <p className="pillar-desc">
+              Un conseiller d'art dédié vous accompagne pour vos commandes privées, sur-mesure et cadeaux d'affaires.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. WhatsApp Direct Banner */}
+      <section className="storefront-whatsapp-banner">
+        <div className="whatsapp-banner-inner">
+          <div className="whatsapp-banner-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
+            </svg>
+            <span>Service Conciergerie Dédié</span>
+          </div>
+          <h2 className="whatsapp-banner-title">
+            Une création sur-mesure ou une question pour {name} ?
+          </h2>
+          <p className="whatsapp-banner-desc">
+            Échangez directement avec le maître d'atelier et notre conciergerie Ojarket pour vos personnalisations, formats spécifiques et commandes institutionnelles.
+          </p>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="whatsapp-banner-btn"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
+            </svg>
+            <span>Échanger sur WhatsApp avec l'Atelier</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 9. Storefront Footer */}
+      <footer className="storefront-master-footer">
+        <div className="footer-inner">
+          <div className="footer-brand">
+            <div className="footer-brand-header">
+              <span className="footer-brand-title">{name}</span>
+              <span className="footer-badge-artisan">Maison Partenaire Officielle</span>
+            </div>
+            <p className="footer-brand-desc">
+              Boutique Officielle Certifiée &bull; Maison d&apos;Art &amp; Haute Facture Ouest-Africaine &bull; {shop.city || 'Cotonou'}{shop.country ? `, ${shop.country}` : ', Bénin'}
+            </p>
+          </div>
+          <div className="footer-payments-block">
+            <div className="footer-payments-label">Corridors de Paiement Agréés UEMOA :</div>
+            <div className="footer-payments">
+              <span className="payment-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
+                <span>MTN Mobile Money</span>
+              </span>
+              <span className="payment-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
+                <span>Moov Money Flooz</span>
+              </span>
+              <span className="payment-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
+                <span>Celtiis Cash</span>
+              </span>
+              <span className="payment-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
+                <span>Cartes Bancaires Visa &bull; Mastercard</span>
+              </span>
+              <span className="payment-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="21" x2="21" y2="21" /><line x1="3" y1="10" x2="21" y2="10" /><polyline points="5 6 12 3 19 6" /><line x1="4" y1="10" x2="4" y2="21" /><line x1="20" y1="10" x2="20" y2="21" /></svg>
+                <span>Virement UEMOA</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom-bar">
+          <div className="footer-copyright">
+            &copy; {new Date().getFullYear()} {name} &bull; Opéré sur Ojarket Merchant Commerce OS &bull; Protocole Deny-by-Default A06 &bull; Tous droits réservés.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -150,7 +150,7 @@ export default function StandaloneBespokePage() {
           <Link href="/" className="landing-brand-link">
             <div className="brand-symbol">Ọ</div>
             <div className="brand-text-block">
-              <span className="brand-title">OJAR盤KET</span>
+              <span className="brand-title">OJARKET</span>
               <span className="brand-sub">RÉSEAU DEVIS & COMMANDES SPÉCIFIQUES (D02)</span>
             </div>
           </Link>

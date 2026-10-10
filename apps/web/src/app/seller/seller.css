@@ -1,0 +1,673 @@
+/* ==========================================================================
+   Ojarket Merchant Commerce OS - Luxury Dark Theme Styling
+   ========================================================================== */
+
+.seller-shell,
+[data-theme="dark"].seller-shell {
+  --oj-color-canvas: #081018;
+  --oj-color-surface: #111C1A;
+  --oj-color-subtle: #182624;
+  --oj-color-text: #F8F6F0;
+  --oj-color-muted: rgba(248, 246, 240, 0.7);
+  --oj-color-border: #233834;
+  --oj-color-action: #0D4A38;
+  --oj-color-onAction: #FFFFFF;
+  --oj-color-accent: #D4B483;
+
+  display: flex;
+  height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
+  max-width: 100vw;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  background-color: #081018 !important;
+  color: #F8F6F0 !important;
+  font-family: var(--oj-font-ui, system-ui, -apple-system, sans-serif);
+}
+
+/* --------------------------------------------------------------------------
+   Left Navigation Sidebar (Pinned, Sleek & Non-Intrusive)
+   -------------------------------------------------------------------------- */
+.seller-sidebar {
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  height: 100vh;
+  background-color: #0B1614 !important;
+  border-right: 1px solid #1C2E2A !important;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 40;
+}
+
+.seller-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.seller-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.seller-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(212, 180, 131, 0.15);
+  border-radius: 999px;
+}
+
+.seller-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 180, 131, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Main Content Area
+   -------------------------------------------------------------------------- */
+.seller-main {
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background-color: #081018 !important;
+  color: #F8F6F0 !important;
+}
+
+.seller-header {
+  height: 56px;
+  min-height: 56px;
+  max-height: 56px;
+  border-bottom: 1px solid #1C2E2A !important;
+  background-color: rgba(11, 22, 20, 0.95) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 30;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.seller-content {
+  flex: 1;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px 32px 48px;
+  background-color: #081018 !important;
+  color: #F8F6F0 !important;
+  scroll-behavior: smooth;
+}
+
+.seller-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.seller-content::-webkit-scrollbar-track {
+  background: #081018;
+}
+
+.seller-content::-webkit-scrollbar-thumb {
+  background: rgba(212, 180, 131, 0.2);
+  border-radius: 999px;
+}
+
+.seller-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 180, 131, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   Navigation Items
+   -------------------------------------------------------------------------- */
+.seller-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(248, 246, 240, 0.7) !important;
+  transition: all 0.15s ease;
+  border-left: 2.5px solid transparent;
+}
+
+.seller-nav-link:hover {
+  color: #F8F6F0 !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  transform: translateX(1px);
+}
+
+.seller-nav-link.active {
+  font-weight: 600;
+  color: #F8F6F0 !important;
+  background-color: rgba(13, 74, 56, 0.3) !important;
+  border-left: 2.5px solid #D4B483 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Cards and UI Components
+   -------------------------------------------------------------------------- */
+.seller-card {
+  background-color: #111C1A !important;
+  border: 1px solid #233834 !important;
+  border-radius: 10px;
+  color: #F8F6F0 !important;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.seller-card:hover {
+  border-color: rgba(212, 180, 131, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Tactile & Living Luxury Interactive Controls (Rule 11)
+   -------------------------------------------------------------------------- */
+.seller-shell button,
+.seller-shell a[role="button"] {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.seller-action-btn {
+  background: linear-gradient(135deg, #0A5C47 0%, #063F31 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(7, 93, 73, 0.35);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-action-btn:hover {
+  background: linear-gradient(135deg, #0E775B 0%, #085542 100%) !important;
+  border-color: rgba(16, 185, 129, 0.85) !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(7, 93, 73, 0.45), 0 0 12px rgba(16, 185, 129, 0.25);
+  color: #FFFFFF !important;
+}
+
+.seller-action-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 1px 4px rgba(7, 93, 73, 0.3);
+}
+
+.seller-secondary-btn {
+  background: rgba(212, 180, 131, 0.08) !important;
+  color: #D4B483 !important;
+  border: 1px solid rgba(212, 180, 131, 0.3) !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-secondary-btn:hover {
+  background: rgba(212, 180, 131, 0.2) !important;
+  border-color: #D4B483 !important;
+  color: #F8F6F0 !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(212, 180, 131, 0.22);
+}
+
+.seller-secondary-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: none;
+}
+
+/* Boutique Storefront Link in Sidebar */
+.seller-storefront-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #D4B483 !important;
+  text-decoration: none;
+  background: rgba(173, 132, 85, 0.08);
+  border: 1px solid rgba(173, 132, 85, 0.25);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-storefront-btn svg {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-storefront-btn:hover {
+  background: rgba(173, 132, 85, 0.2) !important;
+  border-color: #D4B483 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(212, 180, 131, 0.28);
+}
+
+.seller-storefront-btn:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.seller-storefront-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Sidebar Footer Buttons (Logout & Login) */
+.seller-footer-logout {
+  background: rgba(229, 115, 115, 0.06);
+  border: 1px solid rgba(229, 115, 115, 0.15);
+  font-size: 11px;
+  font-weight: 500;
+  color: #E57373 !important;
+  cursor: pointer;
+  padding: 4px 9px;
+  border-radius: 5px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-footer-logout:hover {
+  background: rgba(229, 115, 115, 0.2) !important;
+  border-color: #EF5350 !important;
+  color: #FFCDD2 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(229, 115, 115, 0.3);
+}
+
+.seller-footer-logout:active {
+  transform: translateY(1px) scale(0.96);
+}
+
+.seller-footer-login {
+  background: rgba(212, 180, 131, 0.1);
+  border: 1px solid rgba(212, 180, 131, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  color: #D4B483 !important;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 5px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-footer-login:hover {
+  background: rgba(212, 180, 131, 0.25) !important;
+  border-color: #D4B483 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(212, 180, 131, 0.25);
+}
+
+.seller-footer-login:active {
+  transform: translateY(1px) scale(0.96);
+}
+
+/* Filter Pills (Tabs) */
+.seller-filter-pill {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(0, 0, 0, 0.25);
+  color: rgba(248, 246, 240, 0.65);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-filter-pill:hover {
+  border-color: rgba(212, 180, 131, 0.4);
+  color: #F8F6F0;
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.seller-filter-pill.active {
+  border-color: #D4B483 !important;
+  background-color: rgba(173, 132, 85, 0.22) !important;
+  color: #D4B483 !important;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(173, 132, 85, 0.25);
+}
+
+.seller-filter-pill.active:hover {
+  background-color: rgba(173, 132, 85, 0.32) !important;
+  border-color: #E2CA9D !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1.5px);
+}
+
+.seller-filter-pill:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Catalog Table Action: Publier */
+.seller-btn-publish {
+  padding: 6px 12px;
+  border-radius: 5px;
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-btn-publish:hover {
+  background-color: #075D49 !important;
+  border-color: #10B981 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.seller-btn-publish:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Catalog Table Action: Retirer (Unpublish) */
+.seller-btn-unpublish {
+  padding: 6px 12px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(248, 246, 240, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-btn-unpublish:hover {
+  background-color: rgba(212, 180, 131, 0.16) !important;
+  border-color: rgba(212, 180, 131, 0.5) !important;
+  color: #D4B483 !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.seller-btn-unpublish:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Catalog Table Action: Supprimer (Ôter le produit) */
+.seller-btn-delete {
+  padding: 6px 10px;
+  border-radius: 5px;
+  background-color: rgba(229, 115, 115, 0.08);
+  color: #E57373;
+  border: 1px solid rgba(229, 115, 115, 0.22);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-btn-delete:hover {
+  background-color: rgba(229, 115, 115, 0.22) !important;
+  border-color: #EF5350 !important;
+  color: #FFCDD2 !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(229, 115, 115, 0.35);
+}
+
+.seller-btn-delete:active {
+  transform: translateY(1px) scale(0.96);
+}
+
+/* Language Switcher Button */
+.seller-lang-btn {
+  border: none;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-lang-btn:hover {
+  background-color: rgba(173, 132, 85, 0.25) !important;
+  color: #F8F6F0 !important;
+}
+
+.seller-lang-btn.active {
+  background-color: rgba(173, 132, 85, 0.35) !important;
+  color: #D4B483 !important;
+}
+
+.seller-lang-btn:active {
+  transform: scale(0.96);
+}
+
+
+/* --------------------------------------------------------------------------
+   Merchant Subscription & Prestige Checkout Modal Styles
+   -------------------------------------------------------------------------- */
+
+.seller-plan-card {
+  border-radius: 18px;
+  background-color: #0E1A17;
+  border: 1px solid #1C2E2A;
+  padding: 32px 26px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-plan-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212, 180, 131, 0.4);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+}
+
+.seller-plan-card.featured {
+  border: 2px solid #075D49;
+  background: linear-gradient(180deg, #102420 0%, #0C1A17 100%);
+  box-shadow: 0 12px 32px rgba(7, 93, 73, 0.25);
+}
+
+.seller-plan-card.featured:hover {
+  border-color: #10B981;
+  box-shadow: 0 18px 44px rgba(16, 185, 129, 0.25);
+}
+
+.seller-plan-card.prestige {
+  border: 1.5px solid rgba(212, 180, 131, 0.45);
+  background: linear-gradient(180deg, #151D18 0%, #0D1613 100%);
+}
+
+.seller-plan-card.prestige:hover {
+  border-color: #D4B483;
+  box-shadow: 0 18px 44px rgba(212, 180, 131, 0.25);
+}
+
+.seller-plan-choose-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #075D49 0%, #0A6D56 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 14px rgba(7, 93, 73, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.02em;
+}
+
+.seller-plan-choose-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #09735B 0%, #10B981 100%);
+  border-color: #34D399;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+.seller-plan-choose-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 6px rgba(7, 93, 73, 0.3);
+}
+
+.seller-plan-choose-btn.prestige-btn {
+  background: linear-gradient(135deg, #AD8455 0%, #C49A45 100%);
+  border-color: #E2CA9D;
+  color: #081018;
+  box-shadow: 0 4px 16px rgba(173, 132, 85, 0.35);
+}
+
+.seller-plan-choose-btn.prestige-btn:hover {
+  background: linear-gradient(135deg, #C49A45 0%, #E2CA9D 100%);
+  border-color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(212, 180, 131, 0.45);
+}
+
+.seller-plan-choose-btn.free-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #F8F6F0;
+  box-shadow: none;
+}
+
+.seller-plan-choose-btn.free-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(212, 180, 131, 0.4);
+  color: #D4B483;
+}
+
+.seller-plan-current-badge {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  cursor: default;
+  letter-spacing: 0.02em;
+}
+
+/* Modal Overlay & Dialog */
+.seller-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 10, 12, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  animation: sellerFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sellerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.seller-modal-dialog {
+  background: linear-gradient(180deg, #0F1E1B 0%, #0A1412 100%);
+  border: 1px solid rgba(212, 180, 131, 0.35);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 40px rgba(173, 132, 85, 0.12);
+  position: relative;
+  padding: 32px 32px 28px;
+  animation: sellerPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sellerPopIn {
+  from { transform: scale(0.96) translateY(8px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.seller-modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #F8F6F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-modal-close-btn:hover {
+  background: rgba(229, 115, 115, 0.15);
+  border-color: rgba(229, 115, 115, 0.4);
+  color: #FFCDD2;
+  transform: rotate(90deg);
+}
+
+.seller-corridor-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-corridor-tile:hover {
+  background: rgba(212, 180, 131, 0.08);
+  border-color: rgba(212, 180, 131, 0.35);
+  transform: translateY(-1.5px);
+}
+
+.seller-corridor-tile.selected {
+  background: rgba(7, 93, 73, 0.2);
+  border: 1.5px solid #10B981;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.18);
+}

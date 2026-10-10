@@ -5,19 +5,39 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Dynamic API resolution: on physical device via Expo Dev Client, Metro's hostUri provides the machine LAN IP.
-// Default to the computer's LAN IP 10.33.188.162 for physical devices on same Wi-Fi.
-const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost || (Constants as any)?.manifest?.debuggerHost;
-const host = debuggerHost ? debuggerHost.split(':')[0] : '10.33.188.162';
+// Hardcoded to strictly use the .env variable, with automatic local LAN fallback
+const RAW_API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.201.5.162:3000/api';
 
-export const API_BASE_URL = debuggerHost ? `http://${host}:3000/api` : (process.env.EXPO_PUBLIC_API_URL || 'http://10.33.188.162:3000/api');
+// All endpoints below are written as `/v1/...`. The env value may end with
+// `/api` or `/api/v1`: strip a trailing `/v1` so we never call `/api/v1/v1/...`.
+export const API_BASE_URL = RAW_API_URL.replace(/\/+$/, '').replace(/\/v1$/, '');
+
+// Dynamic local Wi-Fi IP auto-detected from Expo Metro
+const METRO_HOST_IP =
+  Constants.expoConfig?.hostUri?.split(':')[0] ||
+  (Constants as any).manifest2?.extra?.expoClient?.hostUri?.split(':')[0] ||
+  '10.201.5.162';
+export const LAN_BASE_URL = `http://${METRO_HOST_IP}:3000/api`;
+
+let _activeBaseUrl = API_BASE_URL;
+
+/** Public origin of the web platform (used to resolve relative upload URLs). */
+export const API_ORIGIN = _activeBaseUrl.replace(/\/api$/, '');
+
+/** Resolves a possibly relative media URL (e.g. `/uploads/x.jpg`) to an absolute one. */
+export function resolveMediaUrl(url?: string | null): string | null {
+  if (!url) return null;
+  if (/^(https?:|data:|file:)/i.test(url)) return url;
+  const origin = _activeBaseUrl.replace(/\/api$/, '');
+  return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+}
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
   const customHeaders = (options?.headers as Record<string, string>) || {};
+  
+  // Bypass localtunnel warning page if using localtunnel
+  customHeaders['Bypass-Tunnel-Reminder'] = 'true';
+
   let authHeader = customHeaders['Authorization'] || customHeaders['authorization'];
 
   if (!authHeader) {
@@ -47,33 +67,54 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     ...(explicitUserId ? { 'x-user-id': explicitUserId } : {}),
   };
 
-  try {
-    const res = await fetch(url, {
-      ...options,
-      headers: finalHeaders,
-      signal: controller.signal,
-    });
+  const executeFetch = async (baseUrl: string, timeoutMs = 5000): Promise<T> => {
+    const url = `${baseUrl}${endpoint}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    clearTimeout(timeoutId);
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers: finalHeaders,
+        signal: controller.signal,
+      });
 
-    if (!res.ok) {
-      let errDetail = res.statusText;
-      try {
-        const errorJson = await res.json();
-        if (errorJson && errorJson.message) {
-          errDetail = Array.isArray(errorJson.message) ? errorJson.message.join(', ') : errorJson.message;
-        }
-      } catch {
-        // use default statusText
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        let errDetail = res.statusText;
+        try {
+          const errorJson = await res.json();
+          if (errorJson && errorJson.message) {
+            errDetail = Array.isArray(errorJson.message) ? errorJson.message.join(', ') : errorJson.message;
+          }
+        } catch {}
+        throw new Error(errDetail || `Erreur API ${res.status}`);
       }
-      throw new Error(errDetail || `Erreur API ${res.status}`);
+
+      return await res.json();
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  };
+
+  // 1. Try active base URL first
+  try {
+    return await executeFetch(_activeBaseUrl, 15000);
+  } catch (primaryErr) {
+    // 2. Dual failover: If active URL fails, try alternate (LAN if tunnel failed, or tunnel if LAN failed)
+    const alternateUrl = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
+    if (alternateUrl !== _activeBaseUrl) {
+      try {
+        const result = await executeFetch(alternateUrl, 10000);
+        _activeBaseUrl = alternateUrl;
+        return result;
+      } catch {}
     }
 
-    return await res.json();
-  } catch (err) {
-    clearTimeout(timeoutId);
-    console.warn(`[API] Failed to fetch ${url}:`, (err as Error).message);
-    throw err;
+    console.warn(`[API] Failed to fetch ${endpoint}:`, (primaryErr as Error).message);
+    throw primaryErr;
   }
 }
 
@@ -263,6 +304,7 @@ export interface OrderItemLine {
   quantity: number;
   unitPriceMinor: number;
   totalMinor: number;
+  image?: string;
 }
 
 export interface OrderRecord {
@@ -332,14 +374,14 @@ export const OrdersApi = {
 
 export interface FinOpsEntry {
   id: string;
-  type: 'ENCAISSEMENT' | 'DECAISSEMENT' | 'VENTE_A_CREDIT';
+  type: 'ENCAISSEMENT' | 'DECAISSEMENT' | 'VENTE_A_CREDIT' | string;
   label: string;
-  channel: 'MTN MoMo' | 'Moov Money' | 'Celtiis Cash' | 'Espèces' | 'Virement';
+  /** Payment channel enum (MTN_MOMO, MOOV_MONEY, CELTIIS_CASH, CASH_ON_DELIVERY, ...) */
+  channel: string;
   amountMinor: number;
   currency: string;
   reference: string;
   time: string;
-  source: 'SELLER_MANUAL' | 'PROVIDER' | 'COD';
 }
 
 export interface DayClosureRecord {
@@ -349,7 +391,7 @@ export interface DayClosureRecord {
   totalEncaisseMinor: number;
   totalRestantMinor: number;
   varianceMinor: number;
-  status: 'EQUILIBRE' | 'ECART_SIGNALE' | 'BALANCED';
+  status: 'EQUILIBRE' | 'ECART_SIGNALE' | 'BALANCED' | string;
   closedBy: string;
   auditNotes?: string;
   closedAt: string;
@@ -370,9 +412,167 @@ export interface SellerDashboardData {
   priorities: Array<{ text: string; action: string; type: string }>;
 }
 
+export interface SellerOverview {
+  shop: {
+    id: string;
+    slug: string;
+    name: string;
+    city: string;
+    country: string;
+    currency: string;
+    isVerified: boolean;
+    kycStatus: string;
+  };
+  roleInShop: string;
+  revenue: {
+    monthMinor: number;
+    collectedMonthMinor: number;
+    prevMonthMinor: number;
+    growthPercent: number | null;
+    cashTodayMinor: number;
+  };
+  orders: {
+    total: number;
+    byStatus: Record<string, number>;
+    toFulfill: number;
+    paymentPending: number;
+    recent: OrderRecord[];
+  };
+  catalog: { total: number; published: number; drafts: number; lowStock: number; outOfStock: number };
+  requests: { open: number };
+  reviews: { count: number; rating: number | null };
+  series: Array<{ date: string; amountMinor: number; count: number }>;
+}
+
+export interface SellerProduct {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  priceMinor: number;
+  currency: string;
+  stockOnHand: number;
+  image: string;
+  images?: string[];
+  isPublished?: boolean;
+  rating: number | null;
+  reviewsCount: number;
+  variants: ProductVariant[];
+  createdAt?: string;
+}
+
+export interface SellerShopDetails {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  craftType: string;
+  city: string;
+  country: string;
+  currency: string;
+  isVerified: boolean;
+  kycStatus: string;
+  storefrontTheme: string;
+  bannerUrl: string | null;
+  counts: { products: number; orders: number; proposals: number; reviews: number };
+}
+
+export interface ShopPaymentConnection {
+  channel: string;
+  name: string;
+  category: 'MOBILE_MONEY' | 'CASH' | 'BANK' | 'CARD';
+  platformEnabled: boolean;
+  shopEnabled: boolean;
+  merchantPhone: string;
+  merchantNumber: string;
+  description: string;
+}
+
 export const SellerApi = {
   async getDashboard(): Promise<SellerDashboardData> {
     return request<SellerDashboardData>('/v1/seller/dashboard');
+  },
+
+  async getOverview(): Promise<SellerOverview> {
+    return request<SellerOverview>('/v1/seller/overview');
+  },
+
+  /** Orders RECEIVED by the shop (sales) */
+  async getOrders(): Promise<OrderRecord[]> {
+    const res = await request<{ orders: OrderRecord[] }>('/v1/seller/orders');
+    return res.orders || [];
+  },
+
+  async getShop(): Promise<SellerShopDetails> {
+    const res = await request<{ shop: SellerShopDetails }>('/v1/seller/shop');
+    return res.shop;
+  },
+
+  async updateShop(data: Partial<Pick<SellerShopDetails, 'name' | 'description' | 'city' | 'craftType' | 'storefrontTheme' | 'bannerUrl'>>): Promise<any> {
+    return request('/v1/seller/shop', { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  async getPaymentConnections(): Promise<ShopPaymentConnection[]> {
+    const res = await request<{ connections: ShopPaymentConnection[] }>('/v1/seller/shop/payment-connections');
+    return res.connections || [];
+  },
+
+  async updatePaymentConnections(
+    connections: Array<{ channel: string; shopEnabled: boolean; merchantPhone?: string; merchantNumber?: string }>
+  ): Promise<{ success: boolean; message: string }> {
+    return request('/v1/seller/shop/payment-connections', {
+      method: 'PATCH',
+      body: JSON.stringify({ connections }),
+    });
+  },
+
+  async getProducts(): Promise<SellerProduct[]> {
+    const res = await request<{ products: SellerProduct[] }>('/v1/seller/products');
+    return res.products || [];
+  },
+
+  async createProduct(data: {
+    title: string;
+    description?: string;
+    category?: string;
+    priceMinor: number;
+    stockOnHand?: number;
+    images?: string[];
+  }): Promise<SellerProduct> {
+    return request<SellerProduct>('/v1/seller/products', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async updateProduct(
+    id: string,
+    data: { title?: string; description?: string; isPublished?: boolean; priceMinor?: number; stockOnHand?: number; images?: string[] }
+  ): Promise<SellerProduct> {
+    return request<SellerProduct>(`/v1/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  async deleteProduct(id: string): Promise<{ success: boolean }> {
+    return request(`/v1/products/${id}`, { method: 'DELETE' });
+  },
+
+  /** Uploads a local image (file:// URI) and returns its public URL */
+  async uploadImage(localUri: string, mimeType?: string | null): Promise<string> {
+    const token = await getValidAuthToken();
+    const ext = (localUri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+    const type = mimeType || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+    const form = new FormData();
+    form.append('file', { uri: localUri, name: `product.${ext === 'jpeg' ? 'jpg' : ext}`, type } as any);
+    const res = await fetch(`${API_BASE_URL}/v1/seller/uploads`, {
+      method: 'POST',
+      headers: {
+        'Bypass-Tunnel-Reminder': 'true',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: form,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json?.url) {
+      throw new Error(json?.message || 'Échec du téléversement de la photo');
+    }
+    return resolveMediaUrl(json.url) || json.url;
   },
 
   async getCashbook(): Promise<CashbookData> {
@@ -383,10 +583,11 @@ export const SellerApi = {
     label: string;
     amountMinor: number;
     channel: string;
+    type?: 'ENCAISSEMENT' | 'DECAISSEMENT';
     reference?: string;
     notes?: string;
   }): Promise<any> {
-    return request('/v1/seller/cashbook/collect', {
+    return request('/v1/seller/cashbook', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -403,18 +604,19 @@ export const SellerApi = {
     });
   },
 
-  async exportFec(): Promise<{ filename: string; content: string; mimeType: string }> {
-    return request<{ filename: string; content: string; mimeType: string }>('/v1/seller/cashbook/export-fec', {
+  async exportFec(): Promise<{ filename: string; content: string; mimeType: string; count?: number }> {
+    return request('/v1/seller/cashbook/export-fec', {
       headers: authHeaders(),
     });
   },
 
-  async exportCsv(): Promise<{ filename: string; content: string; mimeType: string }> {
-    return request<{ filename: string; content: string; mimeType: string }>('/v1/seller/cashbook/export-csv', {
+  async exportCsv(): Promise<{ filename: string; content: string; mimeType: string; count?: number }> {
+    return request('/v1/seller/cashbook/export-csv', {
       headers: authHeaders(),
     });
   },
 };
+
 
 // ---------------------------------------------------------
 // 5. AUTHENTIFICATION & SESSION
@@ -426,11 +628,14 @@ export interface AuthUser {
   phone: string | null;
   name: string;
   username?: string;
+  avatarUrl?: string | null;
   city?: string;
   role: 'BUYER' | 'SELLER' | 'ADMIN' | 'OPERATOR';
   locale: string;
   shops: AuthShop[];
   activeShop: AuthShop | null;
+  /** Legacy singular field still returned by the backend */
+  shop?: AuthShop | null;
 }
 
 export interface AuthShop {
@@ -446,6 +651,70 @@ export interface AuthShop {
   productsCount: number;
   ordersCount: number;
   role: string;
+  bannerUrl?: string | null;
+}
+
+/**
+ * Normalizes any backend user payload into the mobile contract:
+ * guarantees `shops[]` and `activeShop` whatever the API returned
+ * (`shop`, `shops`, `activeShop`), keeping the previously selected shop if still valid.
+ */
+export function normalizeAuthUser(raw: any, previousActiveShopId?: string | null): AuthUser {
+  const list: AuthShop[] = [];
+  const push = (s: any) => {
+    if (s && s.id && !list.some((x) => x.id === s.id)) {
+      list.push({
+        id: s.id,
+        slug: s.slug || s.id,
+        name: s.name || 'Boutique',
+        craftType: s.craftType || '',
+        city: s.city || '',
+        country: s.country || '',
+        currency: s.currency || 'XOF',
+        isVerified: Boolean(s.isVerified),
+        kycStatus: (s.kycStatus || 'PENDING') as AuthShop['kycStatus'],
+        productsCount: s.productsCount ?? 0,
+        ordersCount: s.ordersCount ?? 0,
+        role: s.role || 'OWNER',
+        bannerUrl: s.bannerUrl ?? null,
+      });
+    }
+  };
+  if (Array.isArray(raw?.shops)) raw.shops.forEach(push);
+  push(raw?.activeShop);
+  push(raw?.shop);
+
+  const active =
+    list.find((s) => s.id === previousActiveShopId) ||
+    list.find((s) => s.id === raw?.activeShop?.id) ||
+    list[0] ||
+    null;
+
+  return {
+    id: raw?.id,
+    email: raw?.email || '',
+    phone: raw?.phone ?? null,
+    name: raw?.name || '',
+    username: raw?.username,
+    avatarUrl: raw?.avatarUrl ?? null,
+    city: raw?.city,
+    role: raw?.role || 'BUYER',
+    locale: raw?.locale || 'fr',
+    shops: list,
+    activeShop: active,
+    shop: active,
+  };
+}
+
+/** True when the user owns or belongs to at least one shop. */
+export function hasShop(user?: AuthUser | null): boolean {
+  return Boolean(user && (user.activeShop || (user.shops && user.shops.length > 0) || user.shop));
+}
+
+/** Current shop of the user (active first, then first membership). */
+export function getActiveShop(user?: AuthUser | null): AuthShop | null {
+  if (!user) return null;
+  return user.activeShop || (user.shops && user.shops[0]) || user.shop || null;
 }
 
 export interface AuthResponse {
@@ -502,10 +771,11 @@ function authHeaders(): Record<string, string> {
 
 export const AuthApi = {
   async loginWithEmail(identifier: string, password: string): Promise<AuthResponse> {
-    return request<AuthResponse>('/v1/auth/login', {
+    const res = await request<AuthResponse>('/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ identifier, password }),
     });
+    return { token: res.token, user: normalizeAuthUser(res.user) };
   },
 
   async registerWithEmail(data: {
@@ -515,10 +785,11 @@ export const AuthApi = {
     phone?: string;
     password: string;
   }): Promise<AuthResponse> {
-    return request<AuthResponse>('/v1/auth/register', {
+    const res = await request<AuthResponse>('/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return { token: res.token, user: normalizeAuthUser(res.user) };
   },
 
   async loginWithGoogle(data: {
@@ -527,10 +798,11 @@ export const AuthApi = {
     googleId: string;
     avatarUrl?: string;
   }): Promise<AuthResponse> {
-    return request<AuthResponse>('/v1/auth/google', {
+    const res = await request<AuthResponse>('/v1/auth/google', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return { token: res.token, user: normalizeAuthUser(res.user) };
   },
 
   async updateProfile(data: {
@@ -539,11 +811,12 @@ export const AuthApi = {
     phone?: string;
     email?: string;
   }): Promise<AuthUser> {
-    return request<AuthUser>('/v1/auth/profile', {
+    const res = await request<any>('/v1/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
       headers: authHeaders(),
     });
+    return normalizeAuthUser(res);
   },
 
   async changePassword(oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
@@ -554,10 +827,11 @@ export const AuthApi = {
     });
   },
 
-  async getMe(): Promise<AuthUser> {
-    return request<AuthUser>('/v1/auth/me', {
+  async getMe(previousActiveShopId?: string | null): Promise<AuthUser> {
+    const res = await request<any>('/v1/auth/me', {
       headers: authHeaders(),
     });
+    return normalizeAuthUser(res, previousActiveShopId);
   },
 
   async registerSeller(data: {

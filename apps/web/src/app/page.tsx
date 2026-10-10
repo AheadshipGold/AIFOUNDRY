@@ -1,7 +1,9 @@
 "use client";
+import { SellerOverview, SellerShop, SellerOpportunities, SellerOrders, SellerCashbook } from '../components/seller';
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DesignProvider, useDesign } from "../design-system/provider";
 import { translations, Locale } from "@aifoundry/shared";
 import "../design-system/styles.css";
@@ -49,6 +51,7 @@ interface Product {
   image: string;
   description: string;
   stock?: number;
+  badgeText?: string;
   variants?: { name: string; color?: string }[];
 }
 
@@ -300,6 +303,7 @@ export default function MasterOjarketPage() {
 export type AuthSessionUser = AuthUser;
 
 function MainMarketplaceView() {
+  const router = useRouter();
   const { locale, setLocale, theme, setMode } = useDesign();
   const isEn = locale === "en";
   const isDark = theme === "dark";
@@ -324,7 +328,7 @@ function MainMarketplaceView() {
   const [cartOpen, setCartOpen] = useState(false);
   const [needModalOpen, setNeedModalOpen] = useState(false);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [sellerTab, setSellerTab] = useState<"overview" | "opportunities" | "orders" | "cashbook">("overview");
+  const [sellerTab, setSellerTab] = useState<"overview" | "shop" | "opportunities" | "orders" | "cashbook">("overview");
   const [needDesc, setNeedDesc] = useState("");
   const [needBudget, setNeedBudget] = useState("");
   const [needPlace, setNeedPlace] = useState("");
@@ -496,16 +500,7 @@ function MainMarketplaceView() {
     if (target === "buyer") {
       setUniverse("buyer");
     } else {
-      if (!currentUser) {
-        setPendingAction("openSellerSpace");
-        setAuthModalOpen(true);
-        return;
-      }
-      if (currentUser.role === "SELLER" || currentUser.role === "ADMIN" || (currentUser.shops && currentUser.shops.length > 0)) {
-        setUniverse("seller");
-      } else {
-        setSellerGateModalOpen(true);
-      }
+      router.push("/seller");
     }
   };
 
@@ -1057,7 +1052,15 @@ function MainMarketplaceView() {
                   <div className="oj-hero-card">
                     <div className="oj-hero-content oj-hero-content-anim" key={`hero-content-${heroSlideIndex}`}>
                       <span className="oj-hero-eyebrow">
-                        {isEn ? "FEATURED PIECE • CURATED SELECTION" : "PIÈCE D'EXCEPTION • SÉLECTION DU SITE"}
+                        {activeHeroProd?.badgeText ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                            <IconDiamondSparkle /> {activeHeroProd.badgeText.toUpperCase()}
+                          </span>
+                        ) : isEn ? (
+                          "FEATURED PIECE • CURATED SELECTION"
+                        ) : (
+                          "PIÈCE D'EXCEPTION • SÉLECTION DU SITE"
+                        )}
                       </span>
                       <h1 className="oj-hero-title">
                         {activeHeroProd?.title}
@@ -1077,9 +1080,12 @@ function MainMarketplaceView() {
                         {activeHeroProd?.seller?.name ? (
                           <div style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.75)", display: "flex", alignItems: "center", gap: "6px" }}>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><IconStorefront /> <span>{activeHeroProd.seller.name}</span></span>
+                            {activeHeroProd.seller.city ? (
+                              <span style={{ color: "rgba(255, 255, 255, 0.5)" }}>· {activeHeroProd.seller.city}</span>
+                            ) : null}
                             {activeHeroProd.seller.isPremium && (
-                              <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "10px", background: "rgba(212, 180, 131, 0.25)", color: "#D4B483", border: "1px solid rgba(212, 180, 131, 0.4)" }}>
-                                Officiel
+                              <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "10px", background: "rgba(212, 180, 131, 0.25)", color: "#D4B483", border: "1px solid rgba(212, 180, 131, 0.4)", fontWeight: 600 }}>
+                                {activeHeroProd.badgeText || (isEn ? "Official" : "Officiel")}
                               </span>
                             )}
                           </div>
@@ -2188,15 +2194,28 @@ function MainMarketplaceView() {
               </span>
             </div>
 
-            <div className="oj-seller-tabs">
-              {(["overview", "opportunities", "orders", "cashbook"] as const).map((tab) => (
+            <div className="oj-seller-tabs" style={{ display: 'flex', gap: '32px', borderBottom: '1px solid var(--oj-color-border)', marginBottom: '32px', overflowX: 'auto', paddingBottom: '1px' }}>
+              {(["overview", "shop", "opportunities", "orders", "cashbook"] as const).map((tab) => (
                 <button
                   key={tab}
-                  className={`oj-seller-tab ${sellerTab === tab ? "active" : ""}`}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: sellerTab === tab ? '2px solid var(--oj-color-action)' : '2px solid transparent',
+                    color: sellerTab === tab ? 'var(--oj-color-text-primary)' : 'var(--oj-color-text-secondary)',
+                    padding: '12px 0',
+                    fontSize: '14px',
+                    fontWeight: sellerTab === tab ? 500 : 400,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => setSellerTab(tab)}
                 >
                   {tab === "overview"
                     ? isEn ? "Dashboard" : "Tableau de bord"
+                    : tab === "shop"
+                    ? isEn ? "My Boutique" : "Ma Boutique"
                     : tab === "opportunities"
                     ? isEn ? `Buyer Demands (${sellerRequests.length})` : `Demandes acheteurs (${sellerRequests.length})`
                     : tab === "orders"
@@ -2206,329 +2225,14 @@ function MainMarketplaceView() {
               ))}
             </div>
 
-            {sellerTab === "overview" && (
-              <div>
-                <div className="oj-kpi-grid">
-                  {[
-                    {
-                      label: isEn ? "Sales" : "Ventes",
-                      value: formatPrice(finopsKpis.vendu),
-                      trend: finopsKpis.vendu > 0 ? "+100%" : "0%",
-                      positive: finopsKpis.vendu > 0,
-                    },
-                    {
-                      label: isEn ? "Orders" : "Commandes",
-                      value: `${sellerOrders.length}`,
-                      trend: sellerOrders.length > 0 ? `+${sellerOrders.length}` : "0",
-                      positive: sellerOrders.length > 0,
-                    },
-                    {
-                      label: isEn ? "Requests" : "Demandes clients",
-                      value: `${sellerRequests.length}`,
-                      trend: sellerRequests.length > 0 ? `+${sellerRequests.length}` : "0",
-                      positive: sellerRequests.length > 0,
-                    },
-                    {
-                      label: isEn ? "Low Stock" : "Stock faible",
-                      value: "0",
-                      trend: isEn ? "Items" : "Articles",
-                      positive: true,
-                    },
-                  ].map((kpi, i) => (
-                    <div key={i} className="oj-kpi-card">
-                      <div className="oj-kpi-header">
-                        <span>{kpi.label}</span>
-                        <span className={`oj-kpi-trend ${kpi.positive ? "positive" : "neutral"}`}>
-                          {kpi.positive ? "↗" : "•"} {kpi.trend}
-                        </span>
-                      </div>
-                      <strong className="oj-kpi-value">{kpi.value}</strong>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="oj-todo-box">
-                  <h3 style={{ margin: "0 0 16px", fontFamily: "var(--oj-font-editorial)" }}>
-                    {isEn ? "Needs Action" : "Actions prioritaires"}
-                  </h3>
-                  {[
-                    {
-                      label: isEn ? "Orders to prepare" : "Commandes à préparer",
-                      count: `${sellerOrders.filter(o => o.fulfillmentStatus === 'PREPARING' || o.fulfillmentStatus === 'PENDING').length}`,
-                      action: () => setSellerTab("orders"),
-                    },
-                    {
-                      label: isEn ? "Buyer requests to quote" : "Demandes clients à chiffrer",
-                      count: `${sellerRequests.filter(r => r.status === 'OPEN').length}`,
-                      action: () => setSellerTab("opportunities"),
-                    },
-                    {
-                      label: isEn ? "Direct payments recorded" : "Encaissements enregistrés",
-                      count: `${finopsEntries.length}`,
-                      action: () => setSellerTab("cashbook"),
-                    },
-                  ].map((todo, i) => (
-                    <div key={i} className="oj-todo-item">
-                      <div>
-                        <strong>{todo.label}</strong>
-                        <small style={{ display: "block", color: "var(--oj-color-muted)", fontSize: "13px" }}>
-                          {todo.count} {isEn ? "items" : "éléments"}
-                        </small>
-                      </div>
-                      <button className="oj-btn-ghost" onClick={todo.action}>→</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {sellerTab === "opportunities" && (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <div>
-                    <h3 style={{ margin: "0 0 4px", fontFamily: "var(--oj-font-editorial)", fontSize: "20px" }}>
-                      {isEn ? "Buyer Demands & Opportunities" : "Demandes Acheteurs & Opportunités"}
-                    </h3>
-                    <p style={{ margin: 0, color: "var(--oj-color-muted)", fontSize: "13px" }}>
-                      {isEn ? "Browse requests submitted by clients and propose formal quotes." : "Consultez les demandes publiées par les clients et proposez vos devis."}
-                    </p>
-                  </div>
-                </div>
-
-                {quoteSuccessMsg && (
-                  <div style={{ background: "#E6F4EE", color: "#185F46", padding: "12px 18px", borderRadius: "10px", marginBottom: "20px", fontWeight: 600, fontSize: "13px" }}>
-                    ✓ {quoteSuccessMsg}
-                  </div>
-                )}
-
-                {sellerRequests.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
-                    <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><IconBag /></div>
-                    <h4 style={{ margin: "0 0 8px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
-                      {isEn ? "No buyer demands at the moment" : "Aucune demande acheteur pour le moment"}
-                    </h4>
-                    <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: 0, maxWidth: "440px", marginLeft: "auto", marginRight: "auto" }}>
-                      {isEn ? "Custom product requests from buyers will automatically appear here." : "Les demandes spécifiques des acheteurs apparaîtront automatiquement ici dès leur publication."}
-                    </p>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {sellerRequests.map((req) => (
-                      <div
-                        key={req.id}
-                        style={{
-                          background: "var(--oj-color-surface)",
-                          border: "1px solid var(--oj-color-border)",
-                          borderRadius: "var(--oj-radius-card)",
-                          padding: "24px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          flexWrap: "wrap",
-                          gap: "20px",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: "280px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                            <span className="oj-status-pill pending">{req.category}</span>
-                            <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                              {req.buyerName}
-                            </span>
-                          </div>
-                          <h4 style={{ margin: "0 0 8px", fontSize: "17px", fontWeight: 600 }}>{req.title}</h4>
-                          <p style={{ margin: "0 0 16px", color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.5" }}>
-                            {req.description}
-                          </p>
-                          <div style={{ display: "flex", gap: "20px", fontSize: "13px" }}>
-                            <div>
-                              <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Target Budget:" : "Budget indicatif :"} </span>
-                              <strong style={{ color: "var(--oj-color-action)" }}>
-                                {req.targetBudgetMinor ? formatPrice(Math.round(req.targetBudgetMinor / 100)) : "À négocier"}
-                              </strong>
-                            </div>
-                            <div>
-                              <span style={{ color: "var(--oj-color-muted)" }}>{isEn ? "Quotes:" : "Devis soumis :"} </span>
-                              <strong>{req.proposals?.length || 0}</strong>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "180px" }}>
-                          <button
-                            className="oj-btn-primary"
-                            onClick={() => {
-                              setSelectedRequestForQuote(req);
-                              setQuoteModalOpen(true);
-                            }}
-                          >
-                            {t.d02.submitProposal} →
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {sellerTab === "orders" && (
-              <div>
-                {sellerOrders.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--oj-color-surface)", borderRadius: "var(--oj-radius-card)", border: "1px solid var(--oj-color-border)" }}>
-                    <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><IconCart /></div>
-                    <h4 style={{ margin: "0 0 8px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
-                      {isEn ? "No orders yet" : "Aucune commande pour le moment"}
-                    </h4>
-                    <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", margin: 0, maxWidth: "420px", marginLeft: "auto", marginRight: "auto" }}>
-                      {isEn ? "Your store is ready to receive orders. Your sales will appear here automatically." : "Votre boutique est prête à recevoir ses premières ventes. Vos commandes apparaîtront automatiquement ici."}
-                    </p>
-                  </div>
-                ) : (
-                  <table className="oj-order-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                          {isEn ? "Order" : "Commande"}
-                        </th>
-                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                          {isEn ? "Customer" : "Client"}
-                        </th>
-                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                          {isEn ? "Amount" : "Montant"}
-                        </th>
-                        <th style={{ textAlign: "left", padding: "12px 0", borderBottom: "1px solid var(--oj-color-border)", fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                          {isEn ? "Status" : "Statut"}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sellerOrders.map((ord) => (
-                        <tr key={ord.id}>
-                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
-                            <div style={{ fontWeight: 600 }}>{ord.orderNumber}</div>
-                            <small style={{ color: "var(--oj-color-muted)" }}>{ord.paymentChannel || "Paiement direct"}</small>
-                          </td>
-                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
-                            <div>{ord.buyerName}</div>
-                            <small style={{ color: "var(--oj-color-muted)" }}>{ord.buyerPhone || ""}</small>
-                          </td>
-                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-                            {formatPrice(Math.round(ord.totalAmountMinor / 100))}
-                          </td>
-                          <td style={{ padding: "16px 0", borderBottom: "1px solid var(--oj-color-border)" }}>
-                            <span className={`oj-status-pill ${ord.fulfillmentStatus === 'DELIVERED' ? 'success' : 'pending'}`}>
-                              {ord.fulfillmentStatus || ord.paymentStatus || "En cours"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-
-            {sellerTab === "cashbook" && (
-              <div>
-                {/* Triade FinOps */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-                  <div className="oj-kpi-card" style={{ borderLeft: "4px solid var(--oj-color-action)" }}>
-                    <div className="oj-kpi-header"><span style={{ fontWeight: 700 }}>{t.finops.vendu}</span></div>
-                    <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums" }}>{formatPrice(finopsKpis.vendu)}</strong>
-                    <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{t.finops.venduSub}</small>
-                  </div>
-                  <div className="oj-kpi-card" style={{ borderLeft: "4px solid #185F46" }}>
-                    <div className="oj-kpi-header"><span style={{ fontWeight: 700 }}>{t.finops.encaisse}</span></div>
-                    <strong className="oj-kpi-value" style={{ color: "#185F46", fontVariantNumeric: "tabular-nums" }}>{formatPrice(finopsKpis.encaisse)}</strong>
-                    <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{t.finops.encaisseSub}</small>
-                  </div>
-                  <div className="oj-kpi-card" style={{ borderLeft: "4px solid #AD8455" }}>
-                    <div className="oj-kpi-header"><span style={{ fontWeight: 700 }}>{t.finops.restant}</span></div>
-                    <strong className="oj-kpi-value" style={{ color: "#AD8455", fontVariantNumeric: "tabular-nums" }}>{formatPrice(finopsKpis.restant)}</strong>
-                    <small style={{ color: "var(--oj-color-muted)", fontSize: "12px" }}>{t.finops.restantSub}</small>
-                  </div>
-                </div>
-
-                {/* Actions FinOps */}
-                <div style={{ display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" }}>
-                  <button className="oj-btn-primary" onClick={() => setCollectModalOpen(true)}>
-                    + {t.finops.recordCollection}
-                  </button>
-                  <button className="oj-btn-secondary" onClick={() => setDailyCloseModalOpen(true)}>
-                    ✓ {t.finops.dailyClose} (S44)
-                  </button>
-                </div>
-
-                {closureSuccess && (
-                  <div style={{ background: "#E6F4EE", color: "#185F46", padding: "14px 20px", borderRadius: "10px", marginBottom: "20px", fontWeight: 600, fontSize: "13px" }}>
-                    ✓ {isEn ? "Daily close registered successfully! Audit ledger updated." : "Clôture de journée enregistrée avec succès ! Grand livre immuable mis à jour."}
-                  </div>
-                )}
-
-                {/* Journal de Caisse Table */}
-                <div style={{ background: "var(--oj-color-surface)", border: "1px solid var(--oj-color-border)", borderRadius: "var(--oj-radius-card)", padding: "20px", marginBottom: "24px" }}>
-                  <h4 style={{ margin: "0 0 16px", fontFamily: "var(--oj-font-editorial)", fontSize: "18px" }}>
-                    {t.finops.cashbookTitle}
-                  </h4>
-                  {finopsEntries.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--oj-color-muted)" }}>
-                      <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 600 }}>
-                        {isEn ? "No cashbook transactions yet" : "Aucun mouvement de caisse enregistré"}
-                      </p>
-                      <small style={{ fontSize: "13px" }}>
-                        {isEn ? "Use the button above to record your direct sales and collections." : "Utilisez le bouton ci-dessus pour enregistrer vos encaissements et ventes directes."}
-                      </small>
-                    </div>
-                  ) : (
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid var(--oj-color-border)", color: "var(--oj-color-muted)" }}>
-                          <th style={{ textAlign: "left", padding: "10px 0" }}>Libellé & Référence</th>
-                          <th style={{ textAlign: "left", padding: "10px 0" }}>Canal</th>
-                          <th style={{ textAlign: "left", padding: "10px 0" }}>Heure</th>
-                          <th style={{ textAlign: "left", padding: "10px 0" }}>Statut</th>
-                          <th style={{ textAlign: "right", padding: "10px 0" }}>Montant</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {finopsEntries.map((e) => (
-                          <tr key={e.id} style={{ borderBottom: "1px solid var(--oj-color-subtle)" }}>
-                            <td style={{ padding: "14px 0" }}>
-                              <div style={{ fontWeight: 600 }}>{e.label}</div>
-                              <small style={{ color: "var(--oj-color-muted)" }}>{e.reference}</small>
-                            </td>
-                            <td style={{ padding: "14px 0" }}>{e.channel}</td>
-                            <td style={{ padding: "14px 0", color: "var(--oj-color-muted)" }}>{e.time}</td>
-                            <td style={{ padding: "14px 0" }}>
-                              <span className="oj-status-pill success">{e.status || "Confirmé"}</span>
-                            </td>
-                            <td style={{ padding: "14px 0", textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                              {formatPrice(typeof e.amountMinor === "number" ? Math.round(e.amountMinor / 100) : (e as any).amount || 0)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-
-                {/* Grand Livre Immuable (Append-only preview) */}
-                <div style={{ background: "var(--oj-color-subtle)", borderRadius: "var(--oj-radius-card)", padding: "16px", fontSize: "12px" }}>
-                  <div style={{ fontWeight: 700, marginBottom: "8px", color: "var(--oj-color-action)" }}>
-                    Grand Livre Immuable (Append-Only Events — V3 Architecture)
-                  </div>
-                  <div style={{ color: "var(--oj-color-muted)", lineHeight: "1.6" }}>
-                    Toute écriture de vente ou encaissement génère un événement non supprimable (`PAYMENT_CONFIRMED`, `SALE_CREATED`, `DAY_CLOSED`). Les rectifications se font par contre-passation auditée.
-                  </div>
-                </div>
-              </div>
-            )}
-
+            {sellerTab === "overview" && <SellerOverview isEn={isEn} finopsKpis={finopsKpis} sellerOrders={sellerOrders} sellerRequests={sellerRequests} />}
+            {sellerTab === "shop" && <SellerShop isEn={isEn} products={featuredProducts.filter((p: any) => p.shopId === (currentUser?.activeShop?.id || currentUser?.id))} />}
+            {sellerTab === "opportunities" && <SellerOpportunities isEn={isEn} requests={sellerRequests} />}
+            {sellerTab === "orders" && <SellerOrders isEn={isEn} orders={sellerOrders} />}
+            {sellerTab === "cashbook" && <SellerCashbook isEn={isEn} finopsKpis={finopsKpis} finopsEntries={finopsEntries} />}
           </div>
         </main>
       )}
-
       {/* ==================== PRODUCT DETAIL MODAL ==================== */}
       {selectedProduct && (
         <div className="oj-modal-overlay" onClick={() => setSelectedProduct(null)}>

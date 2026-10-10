@@ -144,7 +144,7 @@ export default function StandaloneOfferPage() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"MTN_MOMO" | "MOOV_MONEY" | "CELTIIS_CASH" | "CARD">("MTN_MOMO");
+  const [paymentMethod, setPaymentMethod] = useState<"MTN_MOMO" | "MOOV_MONEY" | "CELTIIS_CASH" | "CARD" | "CASH_ON_DELIVERY" | "DIRECT_TRANSFER">("MTN_MOMO");
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -203,7 +203,7 @@ export default function StandaloneOfferPage() {
           <Link href="/" className="landing-brand-link">
             <div className="brand-symbol">Ọ</div>
             <div className="brand-text-block">
-              <span className="brand-title">OJAR盤KET</span>
+              <span className="brand-title">OJARKET</span>
               <span className="brand-sub">HAUTE MAISON OUEST-AFRICAINE</span>
             </div>
           </Link>
@@ -499,7 +499,9 @@ export default function StandaloneOfferPage() {
                         { id: "MTN_MOMO", label: "MTN MoMo" },
                         { id: "MOOV_MONEY", label: "Moov Money" },
                         { id: "CELTIIS_CASH", label: "Celtiis Cash" },
+                        { id: "CASH_ON_DELIVERY", label: "Espèces à la Livraison" },
                         { id: "CARD", label: "Carte Bancaire" },
+                        { id: "DIRECT_TRANSFER", label: "Virement Bancaire" },
                       ].map((ch) => (
                         <button
                           key={ch.id}

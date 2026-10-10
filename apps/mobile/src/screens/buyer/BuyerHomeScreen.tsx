@@ -47,8 +47,16 @@ function formatXOF(price: number, currency = "FCFA") {
   return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
 }
 
+const resolveImageUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (/^(https?:|data:|file:)/i.test(url)) return url;
+  const origin = API_BASE_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+  return `${origin}${url.startsWith('/') ? url : '/' + url}`;
+};
+
 function mapApiProduct(prod: ProductItem): Product {
   const isDigital = (prod.category || "").toLowerCase().includes("digital");
+  const rawImage = prod.image || (prod as any).images?.[0] || null;
   return {
     id: prod.id,
     title: prod.title || "",
@@ -58,7 +66,7 @@ function mapApiProduct(prod: ProductItem): Product {
     currency: "FCFA",
     rating: (prod as any).rating !== undefined ? (prod as any).rating : null,
     reviews: (prod as any).reviewsCount !== undefined ? (prod as any).reviewsCount : 0,
-    image: prod.image ? { uri: prod.image } : null,
+    image: rawImage ? { uri: resolveImageUrl(rawImage) } : null,
     category: prod.category || "other",
     isDigital: !!isDigital,
     format: isDigital ? "PDF Vectoriel (14.5 Mo)" : undefined,
@@ -112,11 +120,19 @@ export default function BuyerHomeScreen({
     }, 4500);
     return () => clearInterval(interval);
   }, [heroProducts]);
-  const resolveImageUrl = (url: string) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    const origin = API_BASE_URL.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
-    return `${origin}${url.startsWith('/') ? url : '/' + url}`;
+
+  const getProductImageSource = (img: any) => {
+    if (!img) return isDark ? iconBrandDark : iconBrandLight;
+    if (typeof img === 'number') return img;
+    if (typeof img === 'object' && img?.uri) {
+      const uri = typeof img.uri === 'string' ? resolveImageUrl(img.uri) : '';
+      return uri ? { uri } : (isDark ? iconBrandDark : iconBrandLight);
+    }
+    if (typeof img === 'string') {
+      const uri = resolveImageUrl(img);
+      return uri ? { uri } : (isDark ? iconBrandDark : iconBrandLight);
+    }
+    return isDark ? iconBrandDark : iconBrandLight;
   };
 
   useEffect(() => {
@@ -165,7 +181,8 @@ export default function BuyerHomeScreen({
     { id: "digital", label: isEn ? "Digital" : "Numérique", image: require("../../../assets/products/digital-patterns.jpg"), isAll: false, icon: "download" },
   ];
 
-  const filtered = (cms?.featuredProducts || []).filter((p: any) => {
+  const sourceList = products.length > 0 ? products : (cms?.featuredProducts || []);
+  const filtered = sourceList.filter((p: any) => {
     const matchesCat = activeCat === "all" || p.category === activeCat;
     const matchesSearch = search.trim() === "" || (p.title || "").toLowerCase().includes(search.toLowerCase()) || (p.seller?.name || p.seller || "").toLowerCase().includes(search.toLowerCase());
     return matchesCat && matchesSearch;
@@ -514,14 +531,19 @@ export default function BuyerHomeScreen({
                           />
                         ) : null}
                         <View style={{ position: "absolute", top: 6, right: 6, backgroundColor: "rgba(2,43,34,0.85)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: "rgba(212,180,131,0.4)" }}>
-                          {prod.reviewsCount && prod.reviewsCount > 0 && prod.rating ? (
-                          <Text style={{ fontSize: 9, fontWeight: "800", color: colors.accent }}>★ {prod.rating.toFixed(1)}</Text>
-                        ) : (
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                            <Icon name="sparkle" size={8} color={colors.accent} weight="fill" />
-                            <Text style={{ fontSize: 8, fontWeight: "800", color: colors.accent, letterSpacing: 0.6 }}>{isEn ? "NEW" : "NOUVEAU"}</Text>
-                          </View>
-                        )}
+                          {prod.badgeText ? (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                              <Icon name="sparkle" size={8} color={colors.accent} weight="fill" />
+                              <Text style={{ fontSize: 8, fontWeight: "800", color: colors.accent, letterSpacing: 0.6 }}>{prod.badgeText.toUpperCase()}</Text>
+                            </View>
+                          ) : prod.reviewsCount && prod.reviewsCount > 0 && prod.rating != null ? (
+                            <Text style={{ fontSize: 9, fontWeight: "800", color: colors.accent }}>★ {prod.rating.toFixed(1)}</Text>
+                          ) : (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                              <Icon name="sparkle" size={8} color={colors.accent} weight="fill" />
+                              <Text style={{ fontSize: 8, fontWeight: "800", color: colors.accent, letterSpacing: 0.6 }}>{isEn ? "NEW" : "NOUVEAU"}</Text>
+                            </View>
+                          )}
                         </View>
                       </View>
 
@@ -531,7 +553,7 @@ export default function BuyerHomeScreen({
 
                       {prod.seller?.name ? (
                         <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginBottom: 6 }} numberOfLines={1}>
-                          • {prod.seller.name}
+                          • {prod.seller.name}{prod.seller.city ? ` · ${prod.seller.city}` : ""}
                         </Text>
                       ) : null}
 
@@ -631,7 +653,7 @@ export default function BuyerHomeScreen({
                         }}
                       >
                         <Image
-                          source={typeof prod.image === 'string' ? { uri: resolveImageUrl(prod.image) } : (prod.image || (isDark ? iconBrandDark : iconBrandLight))}
+                          source={getProductImageSource(prod.image)}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -735,7 +757,7 @@ export default function BuyerHomeScreen({
                             >
                               {formatXOF(prod.price)}
                             </Text>
-                            {prod.reviews && prod.reviews > 0 && prod.rating ? (
+                            {prod.reviews && prod.reviews > 0 && prod.rating != null ? (
                               <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
                                 ★ {prod.rating.toFixed(1)} ({prod.reviews})
                               </Text>
@@ -807,7 +829,7 @@ export default function BuyerHomeScreen({
                         }}
                       >
                         <Image
-                          source={typeof prod.image === 'string' ? { uri: resolveImageUrl(prod.image) } : (prod.image || (isDark ? iconBrandDark : iconBrandLight))}
+                          source={getProductImageSource(prod.image)}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -911,7 +933,7 @@ export default function BuyerHomeScreen({
                             >
                               {formatXOF(prod.price)}
                             </Text>
-                            {prod.reviews && prod.reviews > 0 && prod.rating ? (
+                            {prod.reviews && prod.reviews > 0 && prod.rating != null ? (
                               <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }}>
                                 ★ {prod.rating.toFixed(1)} ({prod.reviews})
                               </Text>

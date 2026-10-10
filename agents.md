@@ -117,3 +117,30 @@ cd apps/mobile && npm run typecheck
 
 *Toute déviation de ce document sera considérée comme une régression critique.*
 
+
+---
+
+## 10. RÈGLE D'AUTORISATION DE COMMIT INVIOLABLE
+
+- **Approbation Explicite Requise :** L'agent a l'interdiction absolue de faire un commit ou un push sur GitHub sans l'autorisation explicite et préalable de l'utilisateur. Aucune exception n'est tolérée.
+
+---
+
+## 11. INTERACTIVITÉ TACTILE, MICRO-ANIMATIONS & BOUTONS VIVANTS (DIRECTIVE ABSOLUE)
+
+1. **Bannissement des Boutons "Morts" ou Statiques :**
+   - Tout élément cliquable (bouton d'action, onglet de filtre, bouton d'état "Publier/Retirer", bouton de suppression, liens de navigation, switcher de langue, modales) doit être **organiquement vivant et réactif**. Aucun bouton ne doit rester statique ou inerte au survol.
+2. **Standard de Réactivité Physique Obligatoire :**
+   - **Curseur :** `cursor: pointer` obligatoire sans exception sur tout élément interactif.
+   - **Transition Physique Fluide :** `transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1)` pour éliminer tout effet saccadé ou brutal.
+   - **État Hover (Élévation & Halo Lumineux) :**
+     - Translation tactile vers le haut : `transform: translateY(-1.5px)` ou `translateY(-2px)`.
+     - Accentuation chromatique de la bordure et de l'arrière-plan.
+     - Halo de lumière doux (*box-shadow glow*) aux couleurs de l'action (émeraude `#10B981` pour les actions positives, or champagne `#D4B483` pour les actions secondaires/prestige, rubis `#E57373` pour les actions destructives).
+   - **État Active (Pression Mécanique & Haptique Visuel) :**
+     - Compression mécanique instantanée : `transform: translateY(1px) scale(0.98)` ou `scale(0.97)`.
+     - Réduction d'élévation d'ombre donnant une sensation physique d'enfoncement de touche de haute précision.
+3. **Interdiction des Styles Inline qui Annulent les Pseudo-Classes :**
+   - Ne jamais verrouiller un bouton avec des propriétés `style={{ backgroundColor: ... }}` fixes qui empêchent les pseudo-classes `:hover` et `:active` de s'exprimer. Toujours employer des classes CSS dédiées ou des variables CSS dynamiques afin de garantir la réactivité d'élite.
+4. **Micro-Interactions Vectorielles :**
+   - Les icônes associées aux boutons (flèches, corbeilles, plus) doivent réagir subtilement lors de l'interaction (ex: flèche de lien externe qui glisse de 2px vers le haut-droit au survol).

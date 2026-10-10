@@ -11,14 +11,13 @@ import {
   StatusBar,
   Keyboard,
   KeyboardAvoidingView,
+  Share,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
 import { Icon } from "../../design-system/Icon";
 import {
   Button,
-  Card,
-  Badge,
 } from "../../design-system/components";
 import { SellerApi, CashbookData, type AuthUser } from "../../services/api";
 
@@ -35,12 +34,21 @@ export default function SellerCashbookScreen({
   const topInset = Math.max(insets.top, Platform.OS === "android" ? (StatusBar.currentHeight || 28) : 0);
   const { colors, locale } = useDesign();
   const isEn = locale === "en";
+
   const [closed, setClosed] = useState(false);
   const [cashbook, setCashbook] = useState<CashbookData | null>(null);
   const [loading, setLoading] = useState(true);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [exportingFec, setExportingFec] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
-    useEffect(() => {
+  const [showCollectModal, setShowCollectModal] = useState(false);
+  const [collectLabel, setCollectLabel] = useState("");
+  const [collectAmount, setCollectAmount] = useState("");
+  const [collectChannel, setCollectChannel] = useState("CASH_ON_DELIVERY");
+  const [submittingCollect, setSubmittingCollect] = useState(false);
+
+  useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
@@ -60,18 +68,20 @@ export default function SellerCashbookScreen({
   }, []);
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const cb = await SellerApi.getCashbook();
-        setCashbook(cb);
-      } catch (err) {
-        console.warn("Failed to load cashbook data", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
+    loadCashbook();
   }, [currentUser]);
+
+  const loadCashbook = async () => {
+    try {
+      setLoading(true);
+      const cb = await SellerApi.getCashbook();
+      setCashbook(cb);
+    } catch (err) {
+      console.warn("Failed to load cashbook data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCloseDay = () => {
     Alert.alert(
@@ -90,6 +100,11 @@ export default function SellerCashbookScreen({
                 closedBy: currentUser?.name || (isEn ? 'Store Merchant' : 'Commerçant Vendeur'),
               });
               setClosed(true);
+              Alert.alert(
+                isEn ? "Close Successful" : "Clôture Réussie",
+                isEn ? "Daily ledger balanced and sealed." : "Caisse journalière équilibrée et scellée avec succès."
+              );
+              await loadCashbook();
             } catch (error) {
               console.warn("Failed to close day", error);
               Alert.alert("Error", "Failed to close the day");
@@ -98,6 +113,46 @@ export default function SellerCashbookScreen({
         },
       ]
     );
+  };
+
+  const handleExportFec = async () => {
+    try {
+      setExportingFec(true);
+      const res = await SellerApi.exportFec();
+      if (!res?.content) {
+        Alert.alert(isEn ? "Empty Ledger" : "Livre de Caisse Vide", isEn ? "No transactions to export yet." : "Aucune transaction enregistrée pour le moment.");
+        return;
+      }
+      await Share.share({
+        title: res.filename || "FEC_Comptable_Ojarket.txt",
+        message: res.content,
+      });
+    } catch (err: any) {
+      console.warn("FEC Export error", err);
+      Alert.alert(isEn ? "Export Error" : "Erreur Export", err?.message || "Impossible d'exporter le FEC.");
+    } finally {
+      setExportingFec(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      setExportingCsv(true);
+      const res = await SellerApi.exportCsv();
+      if (!res?.content) {
+        Alert.alert(isEn ? "Empty Ledger" : "Livre de Caisse Vide", isEn ? "No transactions to export yet." : "Aucune transaction enregistrée pour le moment.");
+        return;
+      }
+      await Share.share({
+        title: res.filename || "Journal_Caisse_Ojarket.csv",
+        message: res.content,
+      });
+    } catch (err: any) {
+      console.warn("CSV Export error", err);
+      Alert.alert(isEn ? "Export Error" : "Erreur Export", err?.message || "Impossible d'exporter le CSV.");
+    } finally {
+      setExportingCsv(false);
+    }
   };
 
   const totalVendu = cashbook?.summary?.totalVenduMinor !== undefined
@@ -110,45 +165,17 @@ export default function SellerCashbookScreen({
     ? Math.round(cashbook.summary.totalRestantMinor / 100)
     : 0;
 
-  const defaultEntries = [
-    {
-      time: "14:10",
-      desc: "Encaissement MTN MoMo (Commande #CMD-2847)",
-      amount: "+48 000 FCFA",
-      tag: "Confirmé marchand",
-    },
-    {
-      time: "11:35",
-      desc: "Encaissement Espèces boutique (Vente directe)",
-      amount: "+25 000 FCFA",
-      tag: "Caisse physique",
-    },
-    {
-      time: "09:50",
-      desc: "Acompte Virement bancaire (Commande #CMD-2846)",
-      amount: "+150 000 FCFA",
-      tag: "Vérifié compte",
-    },
-  ];
-
   const entriesToDisplay = (cashbook?.recentEntries && cashbook.recentEntries.length > 0)
-    ? cashbook.recentEntries.map((entry) => ({
+    ? cashbook.recentEntries.map((entry: any) => ({
         time: entry.time,
         desc: entry.label + (entry.reference ? ` (${entry.reference})` : ""),
-        amount: `${entry.amountMinor >= 0 ? "+" : ""}${Math.round(entry.amountMinor / 100)} FCFA`,
+        amount: `${entry.amountMinor >= 0 ? "+" : ""}${Math.round(entry.amountMinor / 100).toLocaleString("fr-FR")} FCFA`,
         tag: entry.channel + (entry.source === 'SELLER_MANUAL' ? ' · Manuel' : ' · Vérifié'),
       }))
     : [];
 
-
-  const [showCollectModal, setShowCollectModal] = useState(false);
-  const [collectLabel, setCollectLabel] = useState("");
-  const [collectAmount, setCollectAmount] = useState("");
-  const [collectChannel, setCollectChannel] = useState("CASH_ON_DELIVERY");
-  const [submittingCollect, setSubmittingCollect] = useState(false);
-
   const handleRecordCollection = async () => {
-    const amountNum = parseInt(collectAmount.replace(/\s+/g, ""), 10);
+    const amountNum = parseInt(collectAmount.replace(/[^\d]/g, ""), 10);
     if (!amountNum || amountNum <= 0) {
       Alert.alert(isEn ? "Invalid Amount" : "Montant Invalide", isEn ? "Please enter a valid amount" : "Veuillez entrer un montant valide");
       return;
@@ -165,51 +192,20 @@ export default function SellerCashbookScreen({
         amountMinor: amountNum * 100,
         channel: collectChannel,
       });
-    } catch {
-      // Offline fallback
+
+      setShowCollectModal(false);
+      setCollectLabel("");
+      setCollectAmount("");
+      Alert.alert(
+        isEn ? "Collection Recorded" : "Encaissement Enregistré",
+        isEn ? `+${amountNum.toLocaleString("fr-FR")} FCFA added to cashbook.` : `+${amountNum.toLocaleString("fr-FR")} FCFA ajoutés au journal de caisse.`
+      );
+      await loadCashbook();
+    } catch (err: any) {
+      Alert.alert(isEn ? "Error" : "Erreur", err?.message || "Échec de l'encaissement.");
+    } finally {
+      setSubmittingCollect(false);
     }
-
-    // Update local cashbook state immediately
-    const newEntry = {
-      time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-      desc: collectLabel.trim(),
-      amount: `+${amountNum.toLocaleString("fr-FR")} FCFA`,
-      tag: collectChannel === "MTN_MOMO" ? "MTN MoMo · Direct" : collectChannel === "MOOV_MONEY" ? "Moov · Direct" : "Espèces · Direct",
-    };
-
-    if (cashbook) {
-      setCashbook({
-        ...cashbook,
-        summary: {
-          totalVenduMinor: cashbook.summary.totalVenduMinor + amountNum * 100,
-          totalEncaisseMinor: cashbook.summary.totalEncaisseMinor + amountNum * 100,
-          totalRestantMinor: cashbook.summary.totalRestantMinor,
-        },
-        recentEntries: [
-          {
-            id: `entry_${Date.now()}`,
-            type: "ENCAISSEMENT",
-            label: collectLabel.trim(),
-            amountMinor: amountNum * 100,
-            currency: "XOF",
-            channel: (collectChannel === "MTN_MOMO" ? "MTN MoMo" : collectChannel === "MOOV_MONEY" ? "Moov Money" : "Espèces") as any,
-            reference: `MAN-${Date.now().toString().slice(-4)}`,
-            source: "SELLER_MANUAL",
-            time: newEntry.time,
-          },
-          ...cashbook.recentEntries,
-        ],
-      });
-    }
-
-    setSubmittingCollect(false);
-    setShowCollectModal(false);
-    setCollectLabel("");
-    setCollectAmount("");
-    Alert.alert(
-      isEn ? "Collection Recorded" : "Encaissement Enregistré",
-      isEn ? `+${amountNum.toLocaleString("fr-FR")} FCFA added to cashbook.` : `+${amountNum.toLocaleString("fr-FR")} FCFA ajoutés au journal de caisse.`
-    );
   };
 
   return (
@@ -244,11 +240,11 @@ export default function SellerCashbookScreen({
             transform: [{ scale: pressed ? 0.95 : 1 }],
           }]}
         >
-          <Text style={{ fontSize: 16, color: colors.action, fontWeight: "700" }}>←</Text>
+          <Icon name="arrow-left" size={16} color={colors.action} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "800", letterSpacing: 1.1 }}>
-            {isEn ? "FINANCIAL OVERVIEW" : "VUE FINANCIÈRE"}
+            {isEn ? "FINANCIAL LEDGER (S44)" : "LIVRE DE CAISSE (S44)"}
           </Text>
           <Text
             style={{
@@ -258,7 +254,7 @@ export default function SellerCashbookScreen({
               color: colors.text,
             }}
           >
-            {isEn ? "Cashbook" : "Caisse & Journal"}
+            {isEn ? "Cashbook & FinOps" : "Caisse & FinOps"}
           </Text>
         </View>
 
@@ -282,155 +278,244 @@ export default function SellerCashbookScreen({
       {/* Scrollable Content */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-
-      {loading ? (
-        <View style={{ padding: 40, alignItems: "center" }}>
-          <ActivityIndicator size="large" color={colors.action} />
-        </View>
-      ) : (
-        <>
-          {/* Financial Summary Triad */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 18,
-              borderWidth: 1,
-              borderColor: colors.border,
-              padding: 18,
-              marginBottom: 24,
-            }}
-          >
-            <Text style={{ fontSize: 10, fontWeight: "800", color: colors.accent, letterSpacing: 1, marginBottom: 12 }}>
-              {isEn ? "TODAY'S SUMMARY" : "RÉSUMÉ DU JOUR"}
-            </Text>
-
-            <View style={{ gap: 10 }}>
-              <View
-                style={{
-                  backgroundColor: colors.canvas,
-                  padding: 12,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-              >
-                <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
-                  {isEn ? "SOLD (Gross order revenue)" : "VENDU (Chiffre brut des commandes)"}
-                </Text>
-                <Text style={{ fontSize: 20, fontWeight: "800", color: colors.text, marginTop: 2 }}>
-                  {totalVendu.toLocaleString("fr-FR")} FCFA
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  backgroundColor: colors.successBg,
-                  padding: 12,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: colors.action,
-                }}
-              >
-                <Text style={{ fontSize: 10, color: colors.action, fontWeight: "700" }}>
-                  {isEn ? "RECEIVED (Actual funds via MTN / Moov / Cash)" : "ENCAISSÉ (Fonds réels reçus MTN / Moov / Caisse)"}
-                </Text>
-                <Text style={{ fontSize: 20, fontWeight: "800", color: colors.action, marginTop: 2 }}>
-                  {totalEncaisse.toLocaleString("fr-FR")} FCFA
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  backgroundColor: colors.canvas,
-                  padding: 12,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-              >
-                <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
-                  {isEn ? "REMAINING (To be collected on delivery / balance)" : "RESTANT (À percevoir à la livraison / solde)"}
-                </Text>
-                <Text style={{ fontSize: 20, fontWeight: "800", color: "#D97706", marginTop: 2 }}>
-                  {totalRestant.toLocaleString("fr-FR")} FCFA
-                </Text>
-              </View>
-            </View>
+        {loading ? (
+          <View style={{ padding: 40, alignItems: "center" }}>
+            <ActivityIndicator size="large" color={colors.action} />
           </View>
-
-          {/* Cashbook Journal Entries */}
-          <Text
-            style={{
-              fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-              fontSize: 18,
-              fontWeight: "700",
-              color: colors.text,
-              marginBottom: 12,
-            }}
-          >
-            {isEn ? "Daily Cash Entries" : "Écritures financières du jour"}
-          </Text>
-
-          {entriesToDisplay.length > 0 ? (
-            <View style={{ gap: 10, marginBottom: 28 }}>
-              {entriesToDisplay.map((item, idx) => (
-                <View
-                  key={idx}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 14,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
-                      {item.time} · {item.tag}
-                    </Text>
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginTop: 2 }}>
-                      {item.desc}
-                    </Text>
-                  </View>
-
-                  <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action }}>
-                    {item.amount}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : (
+        ) : (
+          <>
+            {/* Financial Summary Triad */}
             <View
               style={{
                 backgroundColor: colors.surface,
-                borderRadius: 16,
+                borderRadius: 18,
                 borderWidth: 1,
                 borderColor: colors.border,
-                padding: 24,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 28,
+                padding: 18,
+                marginBottom: 20,
               }}
             >
-              <View style={{ marginBottom: 8 }}><Icon name="wallet" size={28} color={colors.muted} /></View>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.text, textAlign: "center" }}>
-                {isEn ? "No cashbook entries today" : "Aucune écriture de caisse aujourd'hui"}
+              <Text style={{ fontSize: 10, fontWeight: "800", color: colors.accent, letterSpacing: 1, marginBottom: 12 }}>
+                {isEn ? "TODAY'S SUMMARY" : "RÉSUMÉ DU JOUR"}
               </Text>
-              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
-                {isEn
-                  ? "Record incoming cash or mobile money payments received at your store."
-                  : "Enregistrez vos encaissements d'espèces ou paiements Mobile Money reçus en boutique."}
-              </Text>
+
+              <View style={{ gap: 10 }}>
+                <View
+                  style={{
+                    backgroundColor: colors.canvas,
+                    padding: 12,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
+                    {isEn ? "SOLD (Gross order revenue)" : "VENDU (Chiffre brut des commandes)"}
+                  </Text>
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: colors.text, marginTop: 2 }}>
+                    {totalVendu.toLocaleString("fr-FR")} FCFA
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: colors.successBg,
+                    padding: 12,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.action,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, color: colors.action, fontWeight: "700" }}>
+                    {isEn ? "COLLECTED (Confirmed MTN / Moov / Cash)" : "ENCAISSÉ (Fonds réels reçus MTN / Moov / Caisse)"}
+                  </Text>
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: colors.action, marginTop: 2 }}>
+                    {totalEncaisse.toLocaleString("fr-FR")} FCFA
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: colors.canvas,
+                    padding: 12,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
+                    {isEn ? "REMAINING (To collect on delivery / balance)" : "RESTANT (À percevoir à la livraison / solde)"}
+                  </Text>
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: "#D97706", marginTop: 2 }}>
+                    {totalRestant.toLocaleString("fr-FR")} FCFA
+                  </Text>
+                </View>
+              </View>
             </View>
-          )}
-        </>
-      )}
+
+            {/* Export Buttons: FEC & CSV */}
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
+              <Pressable
+                onPress={handleExportFec}
+                disabled={exportingFec}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.accent,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  gap: 6,
+                  opacity: pressed || exportingFec ? 0.75 : 1,
+                }]}
+              >
+                {exportingFec ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <>
+                    <Icon name="download" size={14} color={colors.accent} />
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: colors.accent }}>
+                      Export FEC (Fiscal)
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              <Pressable
+                onPress={handleExportCsv}
+                disabled={exportingCsv}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  gap: 6,
+                  opacity: pressed || exportingCsv ? 0.75 : 1,
+                }]}
+              >
+                {exportingCsv ? (
+                  <ActivityIndicator size="small" color={colors.text} />
+                ) : (
+                  <>
+                    <Icon name="file-text" size={14} color={colors.text} />
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: colors.text }}>
+                      Export CSV (Excel)
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Cashbook Journal Entries */}
+            <Text
+              style={{
+                fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.text,
+                marginBottom: 12,
+              }}
+            >
+              {isEn ? "Daily Cash Entries" : "Écritures financières du jour"}
+            </Text>
+
+            {entriesToDisplay.length > 0 ? (
+              <View style={{ gap: 10, marginBottom: 24 }}>
+                {entriesToDisplay.map((item, idx) => (
+                  <View
+                    key={idx}
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      padding: 14,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "700" }}>
+                        {item.time} · {item.tag}
+                      </Text>
+                      <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text, marginTop: 2 }}>
+                        {item.desc}
+                      </Text>
+                    </View>
+
+                    <Text style={{ fontSize: 14, fontWeight: "800", color: colors.action }}>
+                      {item.amount}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  padding: 24,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 24,
+                }}
+              >
+                <View style={{ marginBottom: 8 }}><Icon name="wallet" size={28} color={colors.muted} /></View>
+                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.text, textAlign: "center" }}>
+                  {isEn ? "No cashbook entries today" : "Aucune écriture de caisse aujourd'hui"}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 4, lineHeight: 16 }}>
+                  {isEn
+                    ? "Record incoming cash or mobile money payments received at your store."
+                    : "Enregistrez vos encaissements d'espèces ou paiements Mobile Money reçus en boutique."}
+                </Text>
+              </View>
+            )}
+
+            {/* Daily Close Action */}
+            {closed ? (
+              <View
+                style={{
+                  backgroundColor: colors.successBg,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.action,
+                  padding: 18,
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ marginBottom: 6 }}>
+                  <Icon name="check-circle" size={26} color={colors.action} weight="fill" />
+                </View>
+                <Text style={{ fontSize: 15, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                  {isEn ? "Daily Close Validated" : "Clôture de journée validée"}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted, textAlign: "center" }}>
+                  {isEn ? "Entries sealed in the immutable ledger. Reports are ready for export." : "Écritures scellées dans le journal immuable. Les rapports sont prêts pour export."}
+                </Text>
+              </View>
+            ) : (
+              <Button onPress={handleCloseDay}>
+                {isEn ? "Close the Day (Balance Cashbook) →" : "Clôturer la journée (Équilibrer la caisse) →"}
+              </Button>
+            )}
+          </>
+        )}
+      </ScrollView>
 
       {/* Collect Direct Sale Modal */}
       {showCollectModal && (
@@ -468,7 +553,7 @@ export default function SellerCashbookScreen({
                   {isEn ? "Record Direct Sale" : "Encaisser une Vente"}
                 </Text>
                 <Pressable onPress={() => setShowCollectModal(false)}>
-                  <Text style={{ fontSize: 18, color: colors.muted }}>✕</Text>
+                  <Icon name="x" size={20} color={colors.muted} />
                 </Pressable>
               </View>
 
@@ -566,33 +651,6 @@ export default function SellerCashbookScreen({
           </View>
         </KeyboardAvoidingView>
       )}
-
-      {/* Daily Close Action */}
-      {closed ? (
-        <View
-          style={{
-            backgroundColor: colors.successBg,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: colors.action,
-            padding: 18,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ fontSize: 24, color: colors.action, marginBottom: 6 }}>✓</Text>
-          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
-            {isEn ? "Daily Close Validated" : "Clôture de journée validée"}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.muted, textAlign: "center" }}>
-            {isEn ? "Entries sealed in the immutable ledger. Reports are ready for export." : "Écritures scellées dans le journal immuable. Les rapports sont prêts pour export."}
-          </Text>
-        </View>
-      ) : (
-        <Button onPress={handleCloseDay}>
-          {isEn ? "Close the Day →" : "Clôturer la journée →"}
-        </Button>
-      )}
-      </ScrollView>
     </View>
   );
 }

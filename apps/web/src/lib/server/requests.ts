@@ -95,3 +95,53 @@ export async function createPurchaseRequest(dto: {
     createdAt: req.createdAt.toISOString(),
   };
 }
+
+export async function submitProposal(
+  requestId: string,
+  dto: {
+    shopId: string;
+    priceMinor: number;
+    advancePaymentRequiredMinor?: number;
+    productionDays?: number;
+    proposalNotes: string;
+    offerVariantId?: string;
+  }
+) {
+  const request = await prisma.purchaseRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!request) {
+    throw new Error(`Demande sur-mesure [${requestId}] introuvable`);
+  }
+
+  const proposal = await prisma.sellerProposal.create({
+    data: {
+      requestId,
+      shopId: dto.shopId,
+      offerVariantId: dto.offerVariantId,
+      priceMinor: dto.priceMinor,
+      advancePaymentRequiredMinor: dto.advancePaymentRequiredMinor || 0,
+      currency: request.currency || 'XOF',
+      productionDays: dto.productionDays || 7,
+      proposalNotes: dto.proposalNotes,
+      status: 'PENDING',
+    },
+    include: { shop: true },
+  });
+
+  return {
+    id: proposal.id,
+    requestId: proposal.requestId,
+    shopId: proposal.shopId,
+    shopName: proposal.shop.name,
+    priceMinor: proposal.priceMinor,
+    advancePaymentRequiredMinor: proposal.advancePaymentRequiredMinor,
+    currency: proposal.currency,
+    productionDays: proposal.productionDays,
+    notes: proposal.proposalNotes,
+    status: proposal.status,
+    createdAt: proposal.createdAt.toISOString(),
+  };
+}
+

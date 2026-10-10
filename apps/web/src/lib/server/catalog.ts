@@ -25,11 +25,16 @@ export interface ProductItem {
   currency: string;
   stockOnHand: number;
   image: string;
+  images?: string[];
+  isPublished?: boolean;
+  originCity?: string;
   tags: string[];
   materials: string[];
   variants: ProductVariant[];
   rating: number | null;
   reviewsCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 function mapToProductItem(product: any): ProductItem {
@@ -69,11 +74,16 @@ function mapToProductItem(product: any): ProductItem {
     currency,
     stockOnHand,
     image: product.images && product.images.length > 0 ? product.images[0] : '',
+    images: product.images || [],
+    isPublished: product.isPublished ?? true,
+    originCity: product.originCity || 'Cotonou',
     tags: [],
     materials: [],
     variants,
     rating,
     reviewsCount,
+    createdAt: product.createdAt?.toISOString?.() || product.createdAt,
+    updatedAt: product.updatedAt?.toISOString?.() || product.updatedAt,
   };
 }
 
@@ -208,9 +218,18 @@ export async function reserveVariantStock(variantId: string, qty: number): Promi
   return result.count > 0;
 }
 
-export async function getShopBySlug(slug: string) {
-  const shop = await prisma.shop.findUnique({
-    where: { slug },
+export async function getShopBySlug(identifier: string) {
+  if (!identifier) {
+    throw new Error('Identifiant ou slug de boutique manquant.');
+  }
+
+  const shop = await prisma.shop.findFirst({
+    where: {
+      OR: [
+        { slug: identifier },
+        { id: identifier },
+      ],
+    },
     include: {
       products: {
         where: { isPublished: true },
@@ -233,7 +252,7 @@ export async function getShopBySlug(slug: string) {
   });
 
   if (!shop) {
-    throw new Error(`Boutique avec le slug "${slug}" introuvable.`);
+    throw new Error(`Boutique "${identifier}" introuvable.`);
   }
 
   const reviewsCount = shop.reviews.length;
@@ -269,4 +288,130 @@ export async function getShopBySlug(slug: string) {
     })),
     createdAt: shop.createdAt.toISOString(),
   };
+}
+
+export async function getSellerCatalog(shopId: string): Promise<ProductItem[]> {
+  const products = await prisma.product.findMany({
+    where: { shopId },
+    include: {
+      shop: true,
+      variants: {
+        include: {
+          stockMovements: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+      },
+      reviews: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return products.map((p) => mapToProductItem(p));
+}
+
+export async function getSellerProductById(id: string, shopId: string): Promise<ProductItem> {
+  const product = await prisma.product.findFirst({
+    where: { id, shopId },
+    include: {
+      shop: true,
+      variants: true,
+      reviews: true,
+    },
+  });
+
+  if (!product) {
+    throw new Error(`Produit introuvable dans cette boutique`);
+  }
+
+  return mapToProductItem(product);
+}
+
+export async function updateSellerProduct(
+  id: string,
+  shopId: string,
+  dto: {
+    title?: string;
+    description?: string;
+    category?: string;
+    originCity?: string;
+    isPublished?: boolean;
+    images?: string[];
+    priceMinor?: number;
+    stockOnHand?: number;
+  }
+): Promise<ProductItem> {
+  const existing = await prisma.product.findFirst({
+    where: { id, shopId },
+    include: { variants: true },
+  });
+
+  if (!existing) {
+    throw new Error(`Produit introuvable ou vous n’avez pas les droits dessus`);
+  }
+
+  const updateData: any = {};
+  if (dto.title !== undefined) updateData.title = dto.title;
+  if (dto.description !== undefined) updateData.description = dto.description;
+  if (dto.category !== undefined) updateData.category = dto.category;
+  if (dto.originCity !== undefined) updateData.originCity = dto.originCity;
+  if (dto.isPublished !== undefined) updateData.isPublished = dto.isPublished;
+  if (dto.images !== undefined) updateData.images = dto.images;
+
+  if (existing.variants.length > 0 && (dto.priceMinor !== undefined || dto.stockOnHand !== undefined)) {
+    const primaryVariant = existing.variants[0];
+    const variantUpdate: any = {};
+    if (dto.priceMinor !== undefined) variantUpdate.priceMinor = dto.priceMinor;
+    if (dto.stockOnHand !== undefined) {
+      const delta = dto.stockOnHand - primaryVariant.stockOnHand;
+      variantUpdate.stockOnHand = dto.stockOnHand;
+
+      if (delta !== 0) {
+        await prisma.stockMovement.create({
+          data: {
+            variantId: primaryVariant.id,
+            delta,
+            reason: 'INVENTORY_ADJUSTMENT',
+            reference: `Mise à jour manuelle stock vendeur (${delta > 0 ? '+' : ''}${delta})`,
+          },
+        });
+      }
+    }
+
+    if (Object.keys(variantUpdate).length > 0) {
+      await prisma.offerVariant.update({
+        where: { id: primaryVariant.id },
+        data: variantUpdate,
+      });
+    }
+  }
+
+  const updated = await prisma.product.update({
+    where: { id },
+    data: updateData,
+    include: {
+      shop: true,
+      variants: true,
+      reviews: true,
+    },
+  });
+
+  return mapToProductItem(updated);
+}
+
+export async function deleteSellerProduct(id: string, shopId: string): Promise<boolean> {
+  const existing = await prisma.product.findFirst({
+    where: { id, shopId },
+  });
+
+  if (!existing) {
+    throw new Error(`Produit introuvable dans cette boutique`);
+  }
+
+  await prisma.product.delete({
+    where: { id },
+  });
+
+  return true;
 }

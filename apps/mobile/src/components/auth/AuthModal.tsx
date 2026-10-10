@@ -14,7 +14,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useDesign } from '../../design-system/provider';
-import { AuthApi, setAuthToken, type AuthUser } from '../../services/api';
+import { AuthApi, setAuthToken, normalizeAuthUser, type AuthUser } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GoogleLogo from '../common/GoogleLogo';
 import { promptGoogleSignIn } from '../../services/googleAuth';
@@ -566,7 +566,7 @@ export async function restoreSession(): Promise<{ user: AuthUser; token: string 
     const { token, user } = JSON.parse(raw);
     if (token && user) {
       setAuthToken(token);
-      return { user, token };
+      return { user: normalizeAuthUser(user), token };
     }
   } catch {
     // Corrupted session

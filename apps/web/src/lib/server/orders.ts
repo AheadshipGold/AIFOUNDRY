@@ -8,6 +8,7 @@ export interface OrderItemLine {
   quantity: number;
   unitPriceMinor: number;
   totalMinor: number;
+  image?: string;
 }
 
 export interface OrderRecord {
@@ -41,7 +42,8 @@ function mapToRecord(o: any): OrderRecord {
     sku: l.variant?.sku || 'SKU-GENERIC',
     quantity: l.quantity,
     unitPriceMinor: l.unitPriceMinor,
-    totalMinor: l.totalMinor,
+    totalMinor: l.totalMinor ?? l.unitPriceMinor * l.quantity,
+    image: l.variant?.product?.images?.[0] || undefined,
   }));
 
   const mtnConn = o.shop?.paymentConnections?.find((c: any) => c.channel === 'MTN_MOMO');
@@ -53,7 +55,7 @@ function mapToRecord(o: any): OrderRecord {
     id: o.id,
     orderNumber: o.orderNumber,
     buyerName: o.buyer?.name || 'Client Direct',
-    buyerPhone: o.buyer?.phone || '+229 00 00 00 00',
+    buyerPhone: o.buyer?.phone || o.buyer?.phoneNumber || '',
     deliveryAddress: o.deliveryAddress || 'Retrait en boutique',
     totalAmountMinor: o.grossSaleAmountMinor,
     currency: o.currency,
@@ -84,9 +86,9 @@ export async function getOrders(shopId?: string, userId?: string): Promise<Order
   }
 
   const orders = await prisma.order.findMany({
-    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    where: whereClause,
     include: {
-      lines: { include: { variant: true } },
+      lines: { include: { variant: { include: { product: true } } } },
       buyer: true,
       shop: { include: { paymentConnections: true } },
     },
@@ -185,6 +187,23 @@ export async function createOrder(dto: {
       });
     }
 
+    // Vérification Deny-by-Default A06 & Accord de la boutique
+    const requestedChannel = (['MTN_MOMO', 'MOOV_MONEY', 'CELTIIS_CASH', 'CARD', 'DIRECT_TRANSFER', 'CASH_ON_DELIVERY', 'PICKUP'].includes(dto.paymentChannel) ? dto.paymentChannel : 'MTN_MOMO') as any;
+
+    const platformCorridor = await tx.paymentCorridorRule.findFirst({
+      where: { channel: requestedChannel },
+    });
+    if (platformCorridor && !platformCorridor.isEnabled) {
+      throw new Error(`Le canal de paiement "${requestedChannel}" est suspendu par la plateforme.`);
+    }
+
+    const shopConn = await tx.shopPaymentConnection.findUnique({
+      where: { shopId_channel: { shopId, channel: requestedChannel } },
+    });
+    if (shopConn && !shopConn.isActive) {
+      throw new Error(`Cette boutique n'accepte pas les règlements par ${requestedChannel}.`);
+    }
+
     const orderNumber = `CMD-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const order = await tx.order.create({
@@ -195,7 +214,7 @@ export async function createOrder(dto: {
         totalAmountMinor: grandTotalMinor,
         grossSaleAmountMinor: grandTotalMinor,
         currency: 'XOF',
-        paymentChannel: (['MTN_MOMO', 'MOOV_MONEY', 'CELTIIS_CASH', 'CARD', 'DIRECT_TRANSFER', 'CASH_ON_DELIVERY', 'PICKUP'].includes(dto.paymentChannel) ? dto.paymentChannel : 'MTN_MOMO') as any,
+        paymentChannel: requestedChannel,
         paymentStatus: 'PENDING',
         fulfillmentStatus: 'PENDING',
         deliveryAddress: dto.deliveryAddress,
@@ -219,3 +238,90 @@ export async function createOrder(dto: {
     return mapToRecord(order);
   });
 }
+
+export async function updateOrderStatus(
+  orderId: string,
+  updates: {
+    paymentStatus?: string;
+    fulfillmentStatus?: string;
+  },
+  shopId?: string,
+  userId?: string
+): Promise<OrderRecord> {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId },
+    include: { lines: true, shop: true },
+  });
+
+  if (!order) {
+    throw new Error(`Commande [${orderId}] introuvable`);
+  }
+
+  if (shopId && order.shopId !== shopId) {
+    throw new Error('Action non autorisée pour cette boutique');
+  }
+
+  const data: any = {};
+  let recordCollection = false;
+  if (updates.paymentStatus) {
+    // Legacy alias used by older clients
+    const normalized = updates.paymentStatus === 'SETTLED_TO_MERCHANT' ? 'CONFIRMED' : updates.paymentStatus;
+    data.paymentStatus = normalized;
+    if (normalized === 'CONFIRMED') {
+      data.amountReceivedMinor = order.totalAmountMinor;
+      data.netCollectedMinor = order.totalAmountMinor;
+      data.amountOutstandingMinor = 0;
+      data.verificationSource = order.paymentChannel === 'CASH_ON_DELIVERY' ? 'COD' : 'SELLER_MANUAL';
+      recordCollection = order.paymentStatus !== 'CONFIRMED';
+    }
+  }
+  if (updates.fulfillmentStatus) {
+    data.fulfillmentStatus = updates.fulfillmentStatus;
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.order.update({
+      where: { id: orderId },
+      data,
+      include: {
+        lines: { include: { variant: { include: { product: true } } } },
+        buyer: true,
+        shop: { include: { paymentConnections: true } },
+      },
+    });
+
+    // S44: every confirmed collection is mirrored in the shop cashbook (once)
+    if (recordCollection) {
+      await tx.cashbookEntry.create({
+        data: {
+          shopId: order.shopId,
+          type: 'ENCAISSEMENT',
+          amountMinor: order.totalAmountMinor,
+          currency: order.currency,
+          channel: order.paymentChannel,
+          reference: order.orderNumber,
+          notes: `Encaissement commande ${order.orderNumber}`,
+          entryDate: new Date(),
+        },
+      });
+    }
+
+    return result;
+  });
+
+  return mapToRecord(updated);
+}
+
+export async function getSellerOrders(shopId: string): Promise<OrderRecord[]> {
+  const orders = await prisma.order.findMany({
+    where: { shopId },
+    include: {
+      lines: { include: { variant: { include: { product: true } } } },
+      buyer: true,
+      shop: { include: { paymentConnections: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  return orders.map((o) => mapToRecord(o));
+}
+

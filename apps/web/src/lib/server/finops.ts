@@ -14,9 +14,8 @@ export async function resolveShopId(shopId?: string, userId?: string): Promise<s
     });
     if (userShop) return userShop.id;
   }
-  if (userId || shopId) return null;
-  const firstShop = await prisma.shop.findFirst({ orderBy: { createdAt: 'asc' } });
-  return firstShop ? firstShop.id : null;
+  // Deny-by-default: never fall back to an arbitrary shop for anonymous callers
+  return null;
 }
 
 export async function getDashboardMetrics(shopId?: string, userId?: string) {
@@ -205,18 +204,66 @@ export async function closeDay(dto: any, userId?: string) {
   });
 }
 
-export async function exportFec(shopId?: string, userId?: string) {
+const CHANNEL_ACCOUNT: Record<string, { num: string; lib: string }> = {
+  MTN_MOMO: { num: '512100', lib: 'MTN Mobile Money' },
+  MOOV_MONEY: { num: '512200', lib: 'Moov Money' },
+  CELTIIS_CASH: { num: '512300', lib: 'Celtiis Cash' },
+  CARD: { num: '512400', lib: 'Carte bancaire' },
+  DIRECT_TRANSFER: { num: '512000', lib: 'Banque' },
+  CASH_ON_DELIVERY: { num: '530000', lib: 'Caisse especes' },
+  PICKUP: { num: '530000', lib: 'Caisse especes' },
+};
+
+async function loadExportEntries(shopId?: string, userId?: string) {
   const targetShopId = await resolveShopId(shopId, userId);
+  if (!targetShopId) throw new Error('Boutique introuvable pour cet export');
+  return prisma.cashbookEntry.findMany({
+    where: { shopId: targetShopId },
+    orderBy: { entryDate: 'asc' },
+  });
+}
+
+export async function exportFec(shopId?: string, userId?: string) {
+  const entries = await loadExportEntries(shopId, userId);
   const now = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const filename = `FEC_${now}.txt`;
-  const content = `JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|Debit|Credit\nVT|Ventes|1|${now}|707000|Ventes Marchandises|0|15000\nBQ|Banque|1|${now}|512000|Mobile Money|15000|0\n`;
-  return { filename, content, mimeType: 'text/plain;charset=utf-8' };
+  const header = 'JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|PieceRef|EcritureLib|Debit|Credit';
+  const lines: string[] = [header];
+  entries.forEach((e, idx) => {
+    const num = String(idx + 1);
+    const date = e.entryDate.toISOString().split('T')[0].replace(/-/g, '');
+    const amount = (e.amountMinor / 100).toFixed(2).replace('.', ',');
+    const treasury = CHANNEL_ACCOUNT[e.channel] || { num: '530000', lib: 'Caisse' };
+    const ref = (e.reference || `ECR-${num}`).replace(/\|/g, ' ');
+    const lib = (e.notes || 'Ecriture de caisse').replace(/\|/g, ' ').replace(/\n/g, ' ');
+    if (e.type === 'DECAISSEMENT') {
+      lines.push(`CA|Caisse|${num}|${date}|607000|Achats|${ref}|${lib}|${amount}|0,00`);
+      lines.push(`CA|Caisse|${num}|${date}|${treasury.num}|${treasury.lib}|${ref}|${lib}|0,00|${amount}`);
+    } else {
+      lines.push(`CA|Caisse|${num}|${date}|${treasury.num}|${treasury.lib}|${ref}|${lib}|${amount}|0,00`);
+      lines.push(`CA|Caisse|${num}|${date}|707000|Ventes de marchandises|${ref}|${lib}|0,00|${amount}`);
+    }
+  });
+  return { filename, content: lines.join('\n') + '\n', mimeType: 'text/plain;charset=utf-8', count: entries.length };
 }
 
 export async function exportCsv(shopId?: string, userId?: string) {
-  const targetShopId = await resolveShopId(shopId, userId);
+  const entries = await loadExportEntries(shopId, userId);
   const now = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const filename = `Livre_Caisse_${now}.csv`;
-  const content = `Date,Type,Canal,Reference,MontantMinor,Devise\n${now},ENCAISSEMENT,MTN_MOMO,REF-123,1500000,XOF\n`;
-  return { filename, content, mimeType: 'text/csv;charset=utf-8' };
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const rows = ['Date,Heure,Type,Canal,Reference,Libelle,MontantMinor,Devise'];
+  for (const e of entries) {
+    rows.push([
+      e.entryDate.toISOString().split('T')[0],
+      e.entryDate.toISOString().split('T')[1].slice(0, 5),
+      e.type,
+      e.channel,
+      escape(e.reference || ''),
+      escape(e.notes || ''),
+      String(e.amountMinor),
+      e.currency,
+    ].join(','));
+  }
+  return { filename, content: rows.join('\n') + '\n', mimeType: 'text/csv;charset=utf-8', count: entries.length };
 }

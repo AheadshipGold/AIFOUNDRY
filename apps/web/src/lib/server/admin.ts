@@ -154,7 +154,7 @@ export async function getAuditLogs(limit = 50): Promise<ChainedAuditLogEntry[]> 
     take: limit,
   });
 
-  let previousHash = 'GENESIS_BLOCK_OJAR盤KET_2026';
+  let previousHash = 'GENESIS_BLOCK_OJARKET_2026';
   const chainedLogs: ChainedAuditLogEntry[] = [];
 
   for (const l of logs) {
@@ -193,7 +193,7 @@ export async function verifyAuditChainIntegrity(): Promise<{
     orderBy: { createdAt: 'asc' },
   });
 
-  let previousHash = 'GENESIS_BLOCK_OJAR盤KET_2026';
+  let previousHash = 'GENESIS_BLOCK_OJARKET_2026';
   let isValid = true;
 
   for (const l of logs) {
@@ -205,7 +205,7 @@ export async function verifyAuditChainIntegrity(): Promise<{
   return {
     isValid,
     totalBlocks: logs.length,
-    genesisHash: 'GENESIS_BLOCK_OJAR盤KET_2026',
+    genesisHash: 'GENESIS_BLOCK_OJARKET_2026',
     latestHash: previousHash,
     verifiedAt: new Date().toISOString(),
   };

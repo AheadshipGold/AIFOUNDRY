@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
 import { Icon } from '../../design-system/Icon';
-import { AuthApi, type AuthUser } from '../../services/api';
+import { AuthApi, hasShop, getActiveShop, type AuthUser } from '../../services/api';
 import { clearSession } from '../../components/auth/AuthModal';
 
 interface ProfileScreenProps {
@@ -472,10 +472,10 @@ export default function ProfileScreen({
             </Text>
           </View>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 14 }}>
-            {currentUser?.shops && currentUser.shops.length > 0
+            {hasShop(currentUser) && getActiveShop(currentUser)
               ? (isEn
-                  ? `Manage your store (${currentUser.shops[0].name}), your cashbook, and customer orders.`
-                  : `Gérez votre boutique (${currentUser.shops[0].name}), votre livre de caisse et vos commandes clients.`)
+                  ? `Manage your store (${getActiveShop(currentUser)?.name}), your cashbook, and customer orders.`
+                  : `Gérez votre boutique (${getActiveShop(currentUser)?.name}), votre livre de caisse et vos commandes clients.`)
               : (isEn
                   ? 'Are you a merchant, seller, or retailer? Open your verified store on Ojarket.'
                   : 'Vous êtes commerçant, revendeur ou créateur de marque ? Ouvrez votre boutique vérifiée sur Ojarket.')}
@@ -494,8 +494,8 @@ export default function ProfileScreen({
             }]}
           >
             <Text style={{ color: isDark ? '#D4AF37' : '#ffffff', fontWeight: '700', fontSize: 14 }}>
-              {currentUser?.shops && currentUser.shops.length > 0
-                ? (isEn ? 'Access My Store Space →' : "Accéder à ma Boutique Vendeur →")
+              {hasShop(currentUser) && getActiveShop(currentUser)
+                ? (isEn ? `Access Store Space (${getActiveShop(currentUser)?.name}) →` : `Accéder à ma Boutique (${getActiveShop(currentUser)?.name}) →`)
                 : (isEn ? 'Open a Merchant Store →' : "Ouvrir ma Boutique Vendeur →")}
             </Text>
           </Pressable>

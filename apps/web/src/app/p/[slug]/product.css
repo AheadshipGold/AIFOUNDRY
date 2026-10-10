@@ -1,0 +1,49 @@
+/* Ojarket Product Landing Page Physical Micro-Interactions */
+
+.oj-action-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oj-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13, 74, 56, 0.55) !important;
+  filter: brightness(1.08);
+}
+
+.oj-action-btn:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+.oj-secondary-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oj-secondary-btn:hover {
+  background-color: rgba(212, 180, 131, 0.16) !important;
+  border-color: rgba(212, 180, 131, 0.45) !important;
+  transform: translateY(-2px);
+  color: #F5F7F3 !important;
+}
+
+.oj-secondary-btn:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+.oj-subtle-link:hover {
+  color: #D4B483 !important;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.oj-app-btn:hover {
+  background-color: rgba(212, 180, 131, 0.25) !important;
+  border-color: rgba(212, 180, 131, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+.oj-zoomable-image {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oj-zoomable-image:hover {
+  transform: scale(1.03);
+}

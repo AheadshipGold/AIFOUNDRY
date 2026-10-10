@@ -21,7 +21,7 @@ import AuthModal, { restoreSession, clearSession } from "./src/components/auth/A
 import SellerOnboardingModal from "./src/components/seller/SellerOnboardingModal";
 import ProductDetailModal from "./src/components/product/ProductDetailModal";
 import { startPeriodicSync, stopPeriodicSync } from "./src/services/offlineSync";
-import { type AuthUser, getAuthToken, CatalogApi } from "./src/services/api";
+import { type AuthUser, getAuthToken, CatalogApi, hasShop, getActiveShop, AuthApi } from "./src/services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Universe = "buyer" | "seller";
@@ -175,12 +175,24 @@ const MainNavigator = () => {
     });
   }, []);
 
-  // Restore session on startup
+  // Restore session on startup & rehydrate fresh profile from backend
   useEffect(() => {
-    restoreSession().then((session) => {
+    restoreSession().then(async (session) => {
       if (session) {
         setCurrentUser(session.user);
         startPeriodicSync();
+        try {
+          const fresh = await AuthApi.getMe(session.user?.activeShop?.id);
+          if (fresh) {
+            setCurrentUser(fresh);
+            await AsyncStorage.setItem('ojarket.auth.session', JSON.stringify({
+              token: session.token,
+              user: fresh,
+            }));
+          }
+        } catch (err) {
+          console.warn("[App] Background session rehydration skipped:", err);
+        }
       }
     });
     return () => stopPeriodicSync();
@@ -315,14 +327,26 @@ const MainNavigator = () => {
     return false;
   }, [currentUser]);
 
-  const handleAuthenticated = useCallback((user: AuthUser, _token: string) => {
-    setCurrentUser(user);
+  const handleAuthenticated = useCallback(async (user: AuthUser, _token: string) => {
+    let effectiveUser = user;
+    try {
+      const fresh = await AuthApi.getMe(user?.activeShop?.id);
+      if (fresh) {
+        effectiveUser = fresh;
+        await AsyncStorage.setItem('ojarket.auth.session', JSON.stringify({
+          token: _token,
+          user: fresh,
+        }));
+      }
+    } catch {}
+
+    setCurrentUser(effectiveUser);
     setShowAuthModal(false);
     startPeriodicSync();
 
     // Execute pending action after auth
     if (pendingAction === 'switchToSeller') {
-      if (user.shops && user.shops.length > 0) {
+      if (hasShop(effectiveUser)) {
         navigateTo("seller", "dashboard");
       } else {
         setShowOnboarding(true);
@@ -347,7 +371,7 @@ const MainNavigator = () => {
       requireAuth('switchToSeller');
       return;
     }
-    if (!currentUser.shops || currentUser.shops.length === 0) {
+    if (!hasShop(currentUser)) {
       setShowOnboarding(true);
       return;
     }

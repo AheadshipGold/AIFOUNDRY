@@ -1004,7 +1004,9 @@ body {
 .oj-kpi-value {
   font-size: 32px;
   font-weight: 700;
-  font-family: var(--oj-font-editorial);
+  font-family: var(--oj-font-sans);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.5px;
 }
 
 .oj-kpi-trend {
@@ -2034,3 +2036,398 @@ body {
     overflow-x: auto;
   }
 }
+
+/* ==========================================================================
+   ADMIN CMS VISUAL STUDIO & PLATFORM MANAGEMENT (AGENTS.MD LUXURY STANDARD)
+   ========================================================================== */
+
+.oj-cms-tabs-bar {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--oj-color-border);
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.oj-cms-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--oj-color-border);
+  background: var(--oj-color-surface);
+  color: var(--oj-color-text);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.oj-cms-tab-btn:hover {
+  transform: translateY(-1.5px);
+  border-color: var(--oj-color-action);
+  box-shadow: 0 4px 12px rgba(7, 93, 73, 0.12);
+}
+
+.oj-cms-tab-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.oj-cms-tab-btn.active {
+  background: var(--oj-color-action);
+  color: #FFFFFF;
+  border-color: var(--oj-color-action);
+  box-shadow: 0 4px 14px rgba(7, 93, 73, 0.25);
+}
+
+.oj-cms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.oj-cms-card {
+  background: var(--oj-color-surface);
+  border: 1px solid var(--oj-color-border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.oj-cms-card:hover {
+  transform: translateY(-3px);
+  border-color: #AD8455;
+  box-shadow: 0 10px 24px rgba(173, 132, 85, 0.14);
+}
+
+.oj-cms-card-media {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: var(--oj-color-subtle);
+  overflow: hidden;
+}
+
+.oj-cms-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.oj-cms-card:hover .oj-cms-card-media img {
+  transform: scale(1.04);
+}
+
+.oj-cms-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(10, 18, 16, 0.82);
+  color: #D4B483;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(212, 180, 131, 0.3);
+}
+
+.oj-cms-card-actions-float {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.oj-cms-action-btn-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(10, 18, 16, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(4px);
+}
+
+.oj-cms-action-btn-sm:hover {
+  transform: translateY(-1.5px) scale(1.05);
+  border-color: #AD8455;
+  color: #D4B483;
+}
+
+.oj-cms-action-btn-sm:active {
+  transform: translateY(1px) scale(0.95);
+}
+
+.oj-cms-action-btn-sm.delete:hover {
+  border-color: #E57373;
+  color: #FF6B6B;
+}
+
+.oj-cms-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.oj-cms-card-title {
+  font-family: var(--oj-font-heading, serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--oj-color-text);
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.oj-cms-card-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #AD8455;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 8px;
+}
+
+.oj-cms-card-seller {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--oj-color-muted);
+  margin-bottom: 10px;
+}
+
+.oj-cms-card-desc {
+  font-size: 12px;
+  color: var(--oj-color-muted);
+  line-height: 1.5;
+  margin-bottom: 14px;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.oj-cms-card-footer {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--oj-color-border);
+  padding-top: 12px;
+}
+
+/* Modals */
+.oj-cms-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 18, 16, 0.72);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: ojFadeIn 0.2s ease-out;
+}
+
+@keyframes ojFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.oj-cms-modal {
+  background: var(--oj-color-surface);
+  border: 1px solid var(--oj-color-border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  animation: ojSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ojSlideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.oj-cms-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--oj-color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.oj-cms-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--oj-color-text);
+  font-family: var(--oj-font-heading, serif);
+}
+
+.oj-cms-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.oj-cms-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oj-cms-form-field label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--oj-color-muted);
+}
+
+.oj-cms-form-field input,
+.oj-cms-form-field select,
+.oj-cms-form-field textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--oj-color-border);
+  background: var(--oj-color-bg);
+  color: var(--oj-color-text);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.oj-cms-form-field input:focus,
+.oj-cms-form-field select:focus,
+.oj-cms-form-field textarea:focus {
+  outline: none;
+  border-color: var(--oj-color-action);
+  box-shadow: 0 0 0 3px rgba(7, 93, 73, 0.15);
+}
+
+.oj-cms-image-preview-box {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.oj-cms-thumb-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--oj-color-border);
+  background: var(--oj-color-subtle);
+  flex-shrink: 0;
+}
+
+.oj-cms-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.oj-cms-preset-chip {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--oj-color-border);
+  background: var(--oj-color-subtle);
+  color: var(--oj-color-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.oj-cms-preset-chip:hover {
+  background: rgba(173, 132, 85, 0.15);
+  border-color: #AD8455;
+  color: #AD8455;
+}
+
+.oj-cms-modal-footer {
+  padding: 18px 24px;
+  border-top: 1px solid var(--oj-color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Platform Owner Honour Card */
+.oj-admin-owner-card {
+  background: linear-gradient(135deg, rgba(7, 93, 73, 0.08) 0%, rgba(173, 132, 85, 0.12) 100%);
+  border: 1px solid rgba(173, 132, 85, 0.35);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.oj-admin-owner-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.oj-admin-owner-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #075D49, #AD8455);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(173, 132, 85, 0.3);
+  border: 2px solid #D4B483;
+}
+
+.oj-admin-owner-details h3 {
+  margin: 0 0 4px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--oj-color-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oj-admin-owner-details p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--oj-color-muted);
+}
+

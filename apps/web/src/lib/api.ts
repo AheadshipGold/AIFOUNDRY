@@ -186,6 +186,17 @@ export const AuthApi = {
     return res;
   },
 
+  async quickSellerLogin(): Promise<AuthResponse> {
+    const res = await request<AuthResponse>('/v1/auth/seller-quick-login', {
+      method: 'POST',
+    });
+    if (res.token) {
+      setStoredToken(res.token);
+      setStoredUser(res.user);
+    }
+    return res;
+  },
+
   async getMe(): Promise<AuthUser> {
     const user = await request<AuthUser>('/v1/auth/me');
     setStoredUser(user);

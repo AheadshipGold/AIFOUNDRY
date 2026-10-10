@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useDesign } from "../../design-system/provider";
 import Icon from "../../design-system/Icon";
-import { OrdersApi, FavoritesApi, ReviewsApi, type ProductItem, type AuthUser, type OrderRecord } from "../../services/api";
+import { OrdersApi, FavoritesApi, ReviewsApi, type ProductItem, type AuthUser, type OrderRecord, resolveMediaUrl } from "../../services/api";
 
 const imgLeatherTote = require("../../../assets/products/leather-tote.jpg");
 const imgWatchChrono = require("../../../assets/products/watch-chrono.jpg");
@@ -147,9 +147,19 @@ export default function ProductDetailModal({
   if (!product) return null;
 
   // Resolve product image
-  let mainImage = imgWatchChrono;
-  if (product.image && typeof product.image === "object") {
-    mainImage = product.image;
+  let mainImage: any = imgWatchChrono;
+  if (product.image) {
+    if (typeof product.image === "number") {
+      mainImage = product.image;
+    } else if (typeof product.image === "string") {
+      const uri = resolveMediaUrl(product.image);
+      mainImage = uri ? { uri } : imgWatchChrono;
+    } else if (typeof product.image === "object" && product.image.uri) {
+      const uri = resolveMediaUrl(product.image.uri);
+      mainImage = uri ? { uri } : imgWatchChrono;
+    } else if (typeof product.image === "object") {
+      mainImage = product.image;
+    }
   } else if (product.category === "leather" || product.title?.toLowerCase().includes("cuir") || product.title?.toLowerCase().includes("sac") || product.title?.toLowerCase().includes("cabas")) {
     mainImage = imgLeatherTote;
   } else if (product.category === "home" || product.title?.toLowerCase().includes("fauteuil") || product.title?.toLowerCase().includes("mobilier")) {

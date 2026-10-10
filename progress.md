@@ -5,6 +5,31 @@ Ce fichier trace toutes les avancées, décisions et implémentations réalisée
 
 ---
 
+## [10 Octobre 2026] - Phase : Rendu Médias Mobile & Analyse CMS Vitrines Intemporelles (Agent : Antigravity)
+**Branche :** `AIFOUNDRYlocrep`
+
+**1. Résolution & Rendu des Images sur l'Application Mobile (Expo Android) :**
+- **Diagnostic de l'absence d'images dans « Recommandé pour vous » :** Dans `BuyerHomeScreen.tsx`, les images issues de la base PostgreSQL (`/uploads/...` et `/products/...`) étaient stockées sous forme d'objet `{ uri: prod.image }` sans préfixer le domaine hôte (`http://10.201.5.162:3000`). En React Native, une URI relative sans schéma réseau (`http://`) échoue silencieusement, affichant un cadre noir.
+- **Correctif appliqué :**
+  - Implémentation du résolveur robuste `getProductImageSource` et `resolveImageUrl` dans `BuyerHomeScreen.tsx` et `ProductDetailModal.tsx`.
+  - Gestion sécurisée de tous les formats (chaînes relatives `/uploads/...`, URL complètes `http://...`, objets `{ uri: ... }`, et assets locaux `require`).
+  - Validation stricte `npm run typecheck` : **0 erreur** sur `apps/mobile` et `apps/web`.
+  - Affichage opérationnel confirmé sur l'écran mobile de l'utilisateur (Zaramelo, Buste Royal, fiches détaillées).
+
+**2. Découverte & Diagnostic CMS : « Vitrines Intemporelles » vs « Créations Phares » :**
+- **Constat :** Dans le Studio Page d'Accueil (CMS Admin), deux onglets coexistent :
+  - *Créations Phares (5)* : Articles individuels sélectionnés (Chronomètre, Sac Cabas, etc.).
+  - *Vitrines Intemporelles (3)* : 3 univers thématiques (Haute Horlogerie, Maroquinerie, Haute Joaillerie).
+- **Raison technique de l'absence des Vitrines Intemporelles à l'écran (Web et Mobile) :**
+  - Dans la vitrine Web (`page.tsx`) et sur le Mobile (`BuyerHomeScreen.tsx`), `intemporelIcons` a été codé uniquement comme une roue de secours (*fallback*) :
+    `const heroList = featuredProducts.length > 0 ? featuredProducts : intemporelIcons;`
+  - Comme 5 Créations Phares sont actives (`5 > 0`), le bandeau prend toujours les créations phares. Les 3 Vitrines Intemporelles sont ainsi 100 % masquées et orphelines.
+- **Pistes d'action consignées pour arbitrage ultérieur :**
+  - **Option 1 (Affichage immersif - Standard Luxe) :** Créer une vraie section dédiée « Univers & Vitrines d'Exception » sur le Web et le Mobile (3 grandes bannières éditoriales de prestige positionnées entre le bandeau haut et la grille « Recommandé pour vous ») qui redirigent vers les rayons correspondants (`watches`, `leather`, `fashion`).
+  - **Option 2 (Simplification & Épuration) :** Retirer l'onglet « Vitrines Intemporelles » de la console d'administration pour éviter toute confusion et ne conserver que les fonctionnalités réellement rendues.
+
+---
+
 ## [08 Octobre 2026] - Phase : Déploiement Cloud Global, Vercel Production, Domaine & Stockage R2 (Agent : Antigravity)
 **Branche :** `AIFOUNDRYlocrep`
 

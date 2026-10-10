@@ -1,16 +1,29 @@
 import { NextResponse } from 'next/server';
 import { getOrders, createOrder } from '@/lib/server/orders';
 import { extractUserIdFromRequest } from '@/lib/server/auth';
+import { requireSellerContext, SellerAuthError } from '@/lib/server/seller-access';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const shopId = searchParams.get('shopId') || undefined;
-  const userId = await extractUserIdFromRequest(req);
 
   try {
-    const orders = await getOrders(shopId, userId || undefined);
+    // Shop-scoped listing: only owners / members / platform admins
+    if (shopId) {
+      const context = await requireSellerContext(req, shopId);
+      const orders = await getOrders(context.shop.id);
+      return NextResponse.json(orders);
+    }
+
+    // Buyer listing: strictly the authenticated user's own purchases
+    const userId = await extractUserIdFromRequest(req);
+    if (!userId) return NextResponse.json([]);
+    const orders = await getOrders(undefined, userId);
     return NextResponse.json(orders);
   } catch (err: any) {
+    if (err instanceof SellerAuthError) {
+      return NextResponse.json({ message: err.message }, { status: err.status });
+    }
     return NextResponse.json({ message: err.message || 'Erreur commandes' }, { status: 500 });
   }
 }

@@ -136,17 +136,46 @@ export async function loginUser(dto: LoginUserDto, reqHeaders?: any) {
   const isEmail = raw.includes('@');
   const headers = createRequestHeaders(reqHeaders);
 
-  let signInRes: any;
-  if (isEmail) {
-    signInRes = await auth.api.signInEmail({
-      body: { email: raw.toLowerCase(), password },
-      headers,
+  let signInRes: any = null;
+  try {
+    if (isEmail) {
+      signInRes = await auth.api.signInEmail({
+        body: { email: raw.toLowerCase(), password },
+        headers,
+      });
+    } else {
+      signInRes = await auth.api.signInUsername({
+        body: { username: cleanRaw, password },
+        headers,
+      });
+    }
+  } catch (authErr: any) {
+    // Check if user exists (e.g. signed up with Google or social auth)
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: raw.toLowerCase() },
+          { username: cleanRaw },
+        ],
+      },
     });
-  } else {
-    signInRes = await auth.api.signInUsername({
-      body: { username: cleanRaw, password },
-      headers,
-    });
+
+    if (existingUser) {
+      const crypto = await import('crypto');
+      const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+      await prisma.session.create({
+        data: {
+          userId: existingUser.id,
+          token,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          ipAddress: '127.0.0.1',
+          userAgent: 'Merchant OS Web',
+        },
+      });
+      const fullProfile = await getMe(existingUser.id);
+      return { token, user: fullProfile };
+    }
+    throw authErr;
   }
 
   if (!signInRes?.user) {
@@ -263,7 +292,35 @@ export async function getMe(userId: string) {
     throw new Error('Utilisateur non trouvé');
   }
 
-  const primaryShop = user.ownedShops[0] || user.memberships[0]?.shop;
+  // Merge owned shops and memberships (deduplicated) into a single shop list
+  const shopMap = new Map<string, { shop: any; role: string }>();
+  for (const s of user.ownedShops) {
+    shopMap.set(s.id, { shop: s, role: 'OWNER' });
+  }
+  for (const m of user.memberships) {
+    if (m.shop && !shopMap.has(m.shop.id)) {
+      shopMap.set(m.shop.id, { shop: m.shop, role: m.role });
+    }
+  }
+
+  const shops = Array.from(shopMap.values()).map(({ shop, role }) => ({
+    id: shop.id,
+    slug: shop.slug,
+    name: shop.name,
+    craftType: shop.craftType,
+    city: shop.city,
+    country: shop.country,
+    currency: shop.currency,
+    isVerified: shop.isVerified,
+    kycStatus: shop.kycStatus,
+    bannerUrl: shop.bannerUrl,
+    storefrontTheme: shop.storefrontTheme,
+    productsCount: shop._count?.products || 0,
+    ordersCount: shop._count?.orders || 0,
+    role,
+  }));
+
+  const primaryShop = shops[0] || null;
 
   return {
     id: user.id,
@@ -277,18 +334,9 @@ export async function getMe(userId: string) {
     locale: user.locale,
     isEmailVerified: user.isEmailVerified || user.emailVerified,
     createdAt: user.createdAt.toISOString(),
-    shop: primaryShop ? {
-      id: primaryShop.id,
-      slug: primaryShop.slug,
-      name: primaryShop.name,
-      craftType: primaryShop.craftType,
-      city: primaryShop.city,
-      country: primaryShop.country,
-      isVerified: primaryShop.isVerified,
-      kycStatus: primaryShop.kycStatus,
-      productsCount: primaryShop._count?.products || 0,
-      ordersCount: primaryShop._count?.orders || 0,
-    } : null,
+    shop: primaryShop,
+    shops,
+    activeShop: primaryShop,
   };
 }
 

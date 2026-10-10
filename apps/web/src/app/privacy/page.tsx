@@ -1,111 +1,104 @@
-﻿import React from "react";
+import React from "react";
 import Link from "next/link";
+import { headers } from "next/headers";
 
-export const metadata = {
-  title: "Politique de Confidentialité & Protection des Données — Ojarket",
-  description: "Protection des données personnelles, conformité RGPD, APDP Bénin et sécurité des transactions sur Ojarket.",
-};
+export async function generateMetadata() {
+  const headersList = await headers();
+  const locale = headersList.get("x-ojarket-locale") || "en";
+  const isEn = locale === "en";
+  
+  return {
+    title: isEn ? "Privacy Policy - Ojarket" : "Politique de Confidentialité - Ojarket",
+    description: isEn ? "Privacy policy and data protection for the Ojarket platform." : "Politique de confidentialité et protection des données de la plateforme Ojarket.",
+  };
+}
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const headersList = await headers();
+  const locale = headersList.get("x-ojarket-locale") || "en";
+  const isEn = locale === "en";
+
   return (
     <div style={{
       minHeight: "100vh",
-      backgroundColor: "#0A1210",
-      color: "#F8F6F0",
-      fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      backgroundColor: "var(--oj-color-bg)",
+      color: "var(--oj-color-fg)",
+      fontFamily: "var(--oj-font-sans)",
       padding: "40px 20px 80px",
       lineHeight: "1.7",
     }}>
       <div style={{
         maxWidth: "920px",
         margin: "0 auto",
-        backgroundColor: "#0F1A17",
-        border: "1px solid #1E2D28",
+        backgroundColor: "var(--oj-color-surface)",
+        border: "1px solid var(--oj-color-border)",
         borderRadius: "16px",
         padding: "48px 40px",
-        boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.05)",
       }}>
         <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <Link href="/" style={{
-            color: "#D4B483",
+            color: "var(--oj-color-accent)",
             textDecoration: "none",
-            fontSize: "14px",
-            fontWeight: 600,
-            letterSpacing: "0.5px",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
+            fontWeight: "600",
+            letterSpacing: "2px",
+            textTransform: "uppercase",
+            fontSize: "14px"
           }}>
-            ← Retour à l’accueil
+            ← {isEn ? "Return to Homepage" : "Retour à l'Accueil"}
           </Link>
-          <span style={{ fontSize: "12px", color: "#8A9994", textTransform: "uppercase", letterSpacing: "1px" }}>
-            Dernière mise à jour : Octobre 2026
+          <span style={{ color: "var(--oj-color-muted)", fontSize: "14px", fontFamily: "var(--oj-font-editorial)", fontStyle: "italic" }}>
+            {isEn ? "Last updated: October 2026" : "Dernière mise à jour : Octobre 2026"}
           </span>
         </div>
 
-        <h1 style={{ fontSize: "32px", fontWeight: 700, color: "#F8F6F0", marginBottom: "8px" }}>
-          Politique de Confidentialité & Protection des Données
+        <h1 style={{
+          fontFamily: "var(--oj-font-editorial)",
+          fontSize: "clamp(32px, 5vw, 48px)",
+          fontWeight: "400",
+          color: "var(--oj-color-fg)",
+          marginBottom: "16px",
+          lineHeight: "1.2",
+          letterSpacing: "-0.5px"
+        }}>
+          {isEn ? "Privacy Policy" : "Politique de Confidentialité"}
         </h1>
-        <p style={{ color: "#AD8455", fontSize: "15px", fontWeight: 500, marginBottom: "36px", borderBottom: "1px solid #1E2D28", paddingBottom: "20px" }}>
-          Engagements d’Intégrité Numérique & Respect de la Vie Privée · Ojarket
+        
+        <p style={{ fontSize: "18px", color: "var(--oj-color-muted)", marginBottom: "48px" }}>
+          {isEn 
+            ? "Your privacy and data security are our highest priority." 
+            : "Votre vie privée et la sécurité de vos données sont notre priorité absolue."}
         </p>
 
-        <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>1. Engagement Général & Cadre Réglementaire</h2>
-          <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            La préservation de la confidentialité de vos informations est un pilier fondateur de l’excellence d’Ojarket. Nous nous conformons rigoureusement au Livre V du Code du Numérique en République du Bénin régissant la protection des données personnelles (APDP), ainsi qu’aux standards internationaux de sécurité et de confidentialité (RGPD).
+        <section style={{ marginBottom: "40px" }}>
+          <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", color: "var(--oj-color-accent)", marginBottom: "16px", fontWeight: "400" }}>
+            {isEn ? "1. Data Collection" : "1. Collecte des Données"}
+          </h2>
+          <p style={{ marginBottom: "16px", color: "var(--oj-color-muted)" }}>
+            {isEn
+              ? "We collect only the essential information required to process your orders, secure your transactions, and deliver a personalized luxury experience."
+              : "Nous ne collectons que les informations essentielles requises pour traiter vos commandes, sécuriser vos transactions et offrir une expérience de luxe personnalisée."}
           </p>
         </section>
 
-        <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>2. Données Collectées</h2>
-          <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Nous collectons uniquement les données strictement nécessaires au fonctionnement optimal de nos services d’exception :
-          </p>
-          <ul style={{ color: "#C5D1CD", fontSize: "15px", paddingLeft: "20px" }}>
-            <li style={{ marginBottom: "8px" }}><strong>Identité & Authentification :</strong> Nom, prénom, adresse e-mail, numéro de téléphone sécurisé via Better Auth et chiffrement HMAC-SHA256.</li>
-            <li style={{ marginBottom: "8px" }}><strong>Vérification Marchande (KYC) :</strong> Documents légaux d’identification des artisans pour certifier l’authenticité de la chaîne d’approvisionnement de luxe.</li>
-            <li style={{ marginBottom: "8px" }}><strong>Transactions & Commandes :</strong> Historique chiffré des règlements, adresses de livraison des pièces artisanales et devis sur-mesure (Parcours D02).</li>
-            <li style={{ marginBottom: "8px" }}><strong>Métadonnées d’Audit FinOps :</strong> Horodatages immuables pour garantir l’équilibre des livres de caisse et la prévention absolue de la fraude.</li>
-          </ul>
-        </section>
-
-        <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>3. Utilisation & Finalité des Données</h2>
-          <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Vos données ne sont ni vendues, ni louées, ni cédées à des tiers. Elles sont exclusivement utilisées pour :
-          </p>
-          <ul style={{ color: "#C5D1CD", fontSize: "15px", paddingLeft: "20px" }}>
-            <li style={{ marginBottom: "8px" }}>La livraison sécurisée des créations physiques et l’accès aux droits de téléchargement des créations numériques.</li>
-            <li style={{ marginBottom: "8px" }}>La mise en relation acheteur-créateur pour les projets de confection sur-mesure.</li>
-            <li style={{ marginBottom: "8px" }}>La certification des avis d’achats vérifiés pour maintenir l’intégrité du catalogue.</li>
-          </ul>
-        </section>
-
-        <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>4. Sécurité de l’Infrastructure & Cryptographie</h2>
-          <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Toutes les connexions sont protégées par le chiffrement TLS 1.3 de bout en bout via Cloudflare. La base de données PostgreSQL Serverless (hébergée sur Neon) applique une isolation étanche des données marchandes. Vos sessions sont signées par des clés cryptographiques privées inaccessibles au public.
+        <section style={{ marginBottom: "40px" }}>
+          <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", color: "var(--oj-color-accent)", marginBottom: "16px", fontWeight: "400" }}>
+            {isEn ? "2. Data Protection" : "2. Protection des Données"}
+          </h2>
+          <p style={{ marginBottom: "16px", color: "var(--oj-color-muted)" }}>
+            {isEn
+              ? "Your data is encrypted using industry-standard protocols. We never sell your personal information to third parties."
+              : "Vos données sont chiffrées selon les protocoles standards de l'industrie. Nous ne vendons jamais vos informations personnelles à des tiers."}
           </p>
         </section>
 
-        <section style={{ marginBottom: "32px" }}>
-          <h2 style={{ color: "#D4B483", fontSize: "19px", marginBottom: "12px" }}>5. Vos Droits (Accès, Rectification, Suppression)</h2>
-          <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Conformément aux réglementations sur la protection des données personnelles, vous disposez d’un droit permanent d’accès, de rectification, de portabilité et de suppression de vos données.
-          </p>
-          <p style={{ color: "#C5D1CD", fontSize: "15px" }}>
-            Pour exercer vos droits ou demander la suppression définitive de votre compte, adressez un message à notre Délégué à la Protection des Données (DPO) : <strong>services@ojarket.com</strong>.
-          </p>
-        </section>
+        <hr style={{ border: "none", borderTop: "1px solid var(--oj-color-border)", margin: "48px 0" }} />
 
-        <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #1E2D28", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-          <span style={{ fontSize: "14px", color: "#8A9994" }}>
-            Contact DPO : <strong>services@ojarket.com</strong>
-          </span>
-          <Link href="/terms" style={{ color: "#D4B483", fontSize: "14px", textDecoration: "underline" }}>
-            Consulter les Conditions Générales (CGU / CGV) →
-          </Link>
+        <div style={{ textAlign: "center", color: "var(--oj-color-muted)", fontSize: "14px" }}>
+          <p>{isEn ? "For any privacy-related inquiries, please contact:" : "Pour toute question relative à la confidentialité, veuillez contacter :"}</p>
+          <a href="mailto:services@ojarket.com" style={{ color: "var(--oj-color-accent)", textDecoration: "none", fontWeight: "500", marginTop: "8px", display: "inline-block" }}>
+            services@ojarket.com
+          </a>
         </div>
       </div>
     </div>

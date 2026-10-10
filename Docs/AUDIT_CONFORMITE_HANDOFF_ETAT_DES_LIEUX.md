@@ -128,7 +128,7 @@ eq$ Créances).
 - **Traçabilité des Mutations d'État Commande & Superviseurs :** Changements d'états tracés avec horodatage immuable et métadonnées d'audit complètes (`AdminAuditLog`, `AuditEvent`).
 - **Chaîne d'Empreintes Cryptographiques SHA-256 (Merkle / Blockchain-Style Hash Chaining) :**
   - Chaque événement d'administration (`SHOP_VERIFIED`, `CORRIDOR_ENABLED`, etc.) intègre le hash cryptographique du bloc précédent (`previousHash ${'->'} hash`).
-  - Moteur de vérification formelle d'intégrité (`GET /v1/admin/audit/verify-chain`) prouvant mathématiquement l'absence de toute altération depuis le bloc genèse (`GENESIS_BLOCK_OJAR盤KET_2026`).
+  - Moteur de vérification formelle d'intégrité (`GET /v1/admin/audit/verify-chain`) prouvant mathématiquement l'absence de toute altération depuis le bloc genèse (`GENESIS_BLOCK_OJARKET_2026`).
 - **Rapports d'Audit & Clôtures Périodiques Scellées par HMAC-SHA256 :**
   - Moteur de scellement périodique (`POST /v1/admin/audit/reports/generate`) consolidant les volumes de vente, le nombre de boutiques certifiées, les litiges résolus et l'empreinte racine de la chaîne d'audit.
   - Sceau d'authenticité cryptographique infalsifiable délivré aux propriétaires de la plateforme.
