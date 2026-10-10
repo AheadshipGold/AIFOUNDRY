@@ -16,42 +16,34 @@ export function AuditView() {
   const [auditReports, setAuditReports] = useState<any[]>([]);
   const [generatingReport, setGeneratingReport] = useState(false);
 
-  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([
-    {
-      id: "aud-01",
-      action: "CORRIDOR_VERIFIED",
-      target: "Bénin MTN MoMo Direct",
-      operator: "platform_owner",
-      role: "SUPERADMIN",
-      time: "Aujourd'hui 02:20",
-      ip: "192.168.1.42",
-      status: "SUCCESS",
-    },
-    {
-      id: "aud-02",
-      action: "SHOP_KYC_APPROVED",
-      target: "Maison Laurent & Ganvié",
-      operator: "officier_conformite",
-      role: "COMPLIANCE_ADMIN",
-      time: "Aujourd'hui 14:15",
-      ip: "41.202.207.2",
-      status: "SUCCESS",
-      hash: "e3b0c44298fc1c149afbf4c8996fb924",
-      previousHash: "8b1a9953c4611296a827abf8c47804d7",
-    },
-    {
-      id: "aud-03",
-      action: "ARBITRAGE_LITIGE",
-      target: "Commande OJK-9281",
-      operator: "mediateur_principal",
-      role: "OPERATIONS_ADMIN",
-      time: "Hier 16:40",
-      ip: "10.0.0.8",
-      status: "SUCCESS",
-      hash: "8b1a9953c4611296a827abf8c47804d7",
-      previousHash: "00000000000000000000000000000000",
-    }
-  ]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const { AuthApi } = await import('../../../lib/api');
+        const data = await AuthApi.executeFetch('/v1/admin/audit');
+        const mappedLogs = data.map((log: any) => ({
+          id: log.id,
+          action: log.action,
+          target: `${log.targetResource} (${log.targetId})`,
+          operator: log.admin?.name || 'Système',
+          role: log.admin?.role || 'SYSTEM',
+          time: new Date(log.createdAt).toLocaleString(),
+          ip: log.ipAddress || 'N/A',
+          status: 'SUCCESS',
+          hash: log.id.replace(/-/g, '').substring(0, 32),
+        }));
+        setAuditLogs(mappedLogs);
+      } catch (err) {
+        console.error('Failed to load audit logs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
 
   const handleVerifyChainIntegrity = async () => {
     setVerifyingChain(true);

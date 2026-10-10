@@ -253,6 +253,10 @@ export const AuthApi = {
     clearSession();
     return res;
   },
+
+  async executeFetch(url: string, options?: RequestInit): Promise<any> {
+    return request(url.replace('/api', ''), options);
+  },
 };
 
 export interface OrderRecord {

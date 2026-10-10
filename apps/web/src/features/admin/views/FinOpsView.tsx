@@ -15,6 +15,26 @@ export function FinOpsView() {
     }).format(val).replace("XOF", "FCFA");
   };
 
+  const [recentEntries, setRecentEntries] = React.useState<any[]>([]);
+  const [dayClosures, setDayClosures] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { AuthApi } = await import('../../../lib/api');
+        const data = await AuthApi.executeFetch('/v1/admin/finops');
+        setRecentEntries(data.recentEntries || []);
+        setDayClosures(data.dayClosures || []);
+      } catch (err) {
+        console.error('Failed to load finops data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <div>
       <div className="oj-admin-header-row">
@@ -60,24 +80,27 @@ export function FinOpsView() {
             </tr>
           </thead>
           <tbody>
-            {[
-              { label: "Commande OJK-2026-0891 (Sac Cabas Grand Marché)", ref: "TXN-MTN-89021", channel: "MTN Mobile Money", time: "14:32", status: "Confirmé par PSP", amount: 185000 },
-              { label: "Vente directe comptoir — Porte-carte cuir cognac", ref: "REC-CPT-004", channel: "Espèces", time: "11:15", status: "Confirmé par vendeur", amount: 45000 },
-              { label: "Commande Galerie Royale — Solde à livraison", ref: "CMD-GAL-990", channel: "Virement", time: "09:10", status: "Créance en attente", amount: 120000 },
-            ].map((row, i) => (
+            {recentEntries.map((row, i) => (
               <tr key={i}>
                 <td>
-                  <div style={{ fontWeight: 600 }}>{row.label}</div>
-                  <small style={{ color: "var(--oj-color-muted)" }}>{row.ref}</small>
+                  <div style={{ fontWeight: 600 }}>{row.type === 'ENCAISSEMENT' ? 'Encaissement' : row.type === 'DECAISSEMENT' ? 'Décaissement' : 'Vente à crédit'}</div>
+                  <small style={{ color: "var(--oj-color-muted)" }}>{row.reference}</small>
                 </td>
                 <td>{row.channel}</td>
-                <td style={{ color: "var(--oj-color-muted)" }}>{row.time}</td>
-                <td><span className="oj-status-pill success">{row.status}</span></td>
+                <td style={{ color: "var(--oj-color-muted)" }}>{new Date(row.entryDate).toLocaleTimeString()}</td>
+                <td><span className="oj-status-pill success">{isEn ? "Confirmed" : "Confirmé"}</span></td>
                 <td style={{ textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                  {formatPrice(row.amount)}
+                  {formatPrice(row.amountMinor / 100, row.currency)}
                 </td>
               </tr>
             ))}
+            {recentEntries.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: "var(--oj-color-muted)", padding: "20px" }}>
+                  Aucune entrée récente.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

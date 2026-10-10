@@ -29,56 +29,23 @@ export function CorridorsView() {
     }).format(val).replace("XOF", "FCFA");
   };
 
-  const [corridors, setCorridors] = useState<CorridorRule[]>([
-    {
-      id: "corr-1",
-      country: "Bénin",
-      countryCode: "BJ",
-      channel: "MTN Mobile Money",
-      currency: "XOF",
-      minAmountMinor: 10000,
-      maxAmountMinor: 200000000,
-      contractVerified: true,
-      kycRequired: "Niveau 2",
-      isEnabled: true,
-    },
-    {
-      id: "corr-2",
-      country: "Bénin",
-      countryCode: "BJ",
-      channel: "Moov Money Flooz",
-      currency: "XOF",
-      minAmountMinor: 10000,
-      maxAmountMinor: 100000000,
-      contractVerified: true,
-      kycRequired: "Niveau 2",
-      isEnabled: true,
-    },
-    {
-      id: "corr-3",
-      country: "Côte d'Ivoire",
-      countryCode: "CI",
-      channel: "Wave CI",
-      currency: "XOF",
-      minAmountMinor: 10000,
-      maxAmountMinor: 100000000,
-      contractVerified: false,
-      kycRequired: "Niveau 1",
-      isEnabled: false,
-    },
-    {
-      id: "corr-4",
-      country: "Togo",
-      countryCode: "TG",
-      channel: "TMoney",
-      currency: "XOF",
-      minAmountMinor: 50000,
-      maxAmountMinor: 50000000,
-      contractVerified: true,
-      kycRequired: "Niveau 1",
-      isEnabled: true,
-    },
-  ]);
+  const [corridors, setCorridors] = useState<CorridorRule[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchCorridors = async () => {
+      try {
+        const { AuthApi } = await import('../../../lib/api');
+        const data = await AuthApi.executeFetch('/v1/admin/corridors');
+        setCorridors(data);
+      } catch (err) {
+        console.error('Failed to load corridors:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCorridors();
+  }, []);
 
   const [saasGateways, setSaasGateways] = useState<Record<string, any>>({
     moneroo: {
@@ -111,15 +78,27 @@ export function CorridorsView() {
   const filteredCorridors = corridors.filter((c) => {
     const matchesSearch =
       !corridorSearch ||
-      c.country.toLowerCase().includes(corridorSearch.toLowerCase()) ||
-      c.channel.toLowerCase().includes(corridorSearch.toLowerCase());
+      (c.country || "").toLowerCase().includes(corridorSearch.toLowerCase()) ||
+      (c.channel || "").toLowerCase().includes(corridorSearch.toLowerCase());
     return matchesSearch;
   });
 
-  const toggleCorridor = (id: string) => {
-    setCorridors((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isEnabled: !c.isEnabled } : c))
-    );
+  const toggleCorridor = async (id: string) => {
+    const current = corridors.find((c) => c.id === id);
+    if (!current) return;
+    const nextState = !current.isEnabled;
+    try {
+      const { AuthApi } = await import('../../../lib/api');
+      await AuthApi.executeFetch(`/v1/admin/corridors/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isEnabled: nextState }),
+      });
+      setCorridors((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, isEnabled: nextState } : c))
+      );
+    } catch (err) {
+      console.error('Failed to toggle corridor:', err);
+    }
   };
 
   const handleToggleSaasGateway = async (gatewayId: string) => {

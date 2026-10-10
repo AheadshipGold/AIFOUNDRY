@@ -101,13 +101,13 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 
   // 1. Try active base URL first
   try {
-    return await executeFetch(_activeBaseUrl, 15000);
+    return await executeFetch(_activeBaseUrl, 30000);
   } catch (primaryErr) {
     // 2. Dual failover: If active URL fails, try alternate (LAN if tunnel failed, or tunnel if LAN failed)
     const alternateUrl = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
     if (alternateUrl !== _activeBaseUrl) {
       try {
-        const result = await executeFetch(alternateUrl, 10000);
+        const result = await executeFetch(alternateUrl, 20000);
         _activeBaseUrl = alternateUrl;
         return result;
       } catch {}

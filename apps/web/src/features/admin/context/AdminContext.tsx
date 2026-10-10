@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthApi, getStoredToken, getStoredUser, clearSession, type AuthUser } from "../../../lib/api";
 import { Locale } from "@aifoundry/shared";
 
-type NavTab = "overview" | "shops" | "corridors" | "d02" | "disputes" | "finops" | "audit" | "cms" | "admins";
+type NavTab = "overview" | "shops" | "corridors" | "d02" | "disputes" | "finops" | "audit" | "cms" | "crm" | "admins";
 
 interface AdminContextState {
   locale: Locale;

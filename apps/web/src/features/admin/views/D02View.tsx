@@ -1,10 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAdmin } from "../context/AdminContext";
+import { AuthApi } from "../../../lib/api";
 
 export function D02View() {
   const { isEn } = useAdmin();
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const data = await AuthApi.executeFetch("/api/v1/admin/d02");
+        if (Array.isArray(data)) {
+          setRequests(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch D02 requests:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequests();
+  }, []);
 
   return (
     <div>
@@ -32,20 +51,32 @@ export function D02View() {
             </tr>
           </thead>
           <tbody>
-            {[
-              { title: "Parure de haute joaillerie en bronze ciselé", buyer: "Amina Diop (Cotonou)", cat: "Joaillerie & Bronze", budget: "280 000 FCFA", quotes: 2, status: "MATCHED" },
-              { title: "Table console sculptée en bois d'Iroko massif", buyer: "Marcelle Houngbo (Porto-Novo)", cat: "Mobilier d'Art", budget: "450 000 FCFA", quotes: 1, status: "MATCHED" },
-              { title: "Sac de voyage weekend en cuir pleine fleur patiné", buyer: "Didier Agossa (Parakou)", cat: "Maroquinerie", budget: "190 000 FCFA", quotes: 0, status: "OPEN" },
-            ].map((r, i) => (
-              <tr key={i}>
-                <td style={{ fontWeight: 600 }}>{r.title}</td>
-                <td style={{ color: "var(--oj-color-muted)" }}>{r.buyer}</td>
-                <td><span className="oj-status-pill success">{r.cat}</span></td>
-                <td style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{r.budget}</td>
-                <td><strong>{r.quotes} devis</strong></td>
-                <td><span className="oj-status-pill pending">{r.status}</span></td>
+            {loading ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", padding: "20px" }}>
+                  {isEn ? "Loading..." : "Chargement..."}
+                </td>
               </tr>
-            ))}
+            ) : requests.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", padding: "20px" }}>
+                  {isEn ? "No bespoke requests found." : "Aucune demande sur-mesure trouvée."}
+                </td>
+              </tr>
+            ) : (
+              requests.map((r, i) => (
+                <tr key={r.id || i}>
+                  <td style={{ fontWeight: 600 }}>{r.title}</td>
+                  <td style={{ color: "var(--oj-color-muted)" }}>{r.buyer?.name || "Unknown"}</td>
+                  <td><span className="oj-status-pill success">{r.category}</span></td>
+                  <td style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                    {r.targetBudgetMinor ? `${(r.targetBudgetMinor).toLocaleString()} ${r.currency}` : "N/A"}
+                  </td>
+                  <td><strong>{r.proposals?.length || 0} devis</strong></td>
+                  <td><span className="oj-status-pill pending">{r.status}</span></td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

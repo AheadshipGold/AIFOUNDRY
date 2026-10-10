@@ -8,56 +8,22 @@ import { ShopReview } from "../types";
 export function ShopsView() {
   const { isEn } = useAdmin();
 
-  const [shops, setShops] = useState<ShopReview[]>([
-    {
-      id: "shop-01",
-      name: "Maison Laurent & Ganvié",
-      owner: "Laurent Ganvié",
-      city: "Cotonou",
-      country: "Bénin",
-      craft: "Maroquinerie d'Art",
-      status: "VERIFIED",
-      joinedDate: "12 Sep 2026",
-      salesCount: 142,
-      documentType: "RCCM + Registre du Commerce",
-    },
-    {
-      id: "shop-02",
-      name: "Fonderie Royale d'Abomey",
-      owner: "Dah Kpassè",
-      city: "Abomey",
-      country: "Bénin",
-      craft: "Bronze & Fonderie",
-      status: "VERIFIED",
-      joinedDate: "15 Sep 2026",
-      salesCount: 88,
-      documentType: "Registre de Commerce + RCCM",
-    },
-    {
-      id: "shop-03",
-      name: "Studio Djoliba Horlogerie",
-      owner: "Amadou Touré",
-      city: "Bamako",
-      country: "Mali",
-      craft: "Horlogerie & Montres",
-      status: "PENDING_KYC",
-      joinedDate: "28 Sep 2026",
-      salesCount: 14,
-      documentType: "Passeport + Bail commercial",
-    },
-    {
-      id: "shop-04",
-      name: "Maison Indigo Ouidah",
-      owner: "Safiath Dossou",
-      city: "Ouidah",
-      country: "Bénin",
-      craft: "Mode & Tissage Végétal",
-      status: "SUSPENDED",
-      joinedDate: "05 Oct 2026",
-      salesCount: 2,
-      documentType: "Carte d'Identité uniquement",
-    },
-  ]);
+  const [shops, setShops] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    import("../../../lib/api").then(({ AuthApi }) => {
+      AuthApi.executeFetch("/api/v1/admin/shops")
+        .then((res) => {
+          setShops(res);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setLoading(false);
+        });
+    });
+  }, []);
 
   const [shopSearch, setShopSearch] = useState("");
   const [shopFilter, setShopFilter] = useState<string>("ALL");
@@ -66,16 +32,27 @@ export function ShopsView() {
     const matchesSearch =
       !shopSearch ||
       s.name.toLowerCase().includes(shopSearch.toLowerCase()) ||
-      s.owner.toLowerCase().includes(shopSearch.toLowerCase()) ||
-      s.city.toLowerCase().includes(shopSearch.toLowerCase());
+      (s.ownerName || "").toLowerCase().includes(shopSearch.toLowerCase()) ||
+      (s.city || "").toLowerCase().includes(shopSearch.toLowerCase());
     const matchesStatus = shopFilter === "ALL" || s.status === shopFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const updateShopStatus = (id: string, status: "VERIFIED" | "PENDING_KYC" | "SUSPENDED") => {
-    setShops((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
-    // Todo: call API to update shop status
+  const updateShopStatus = async (id: string, status: "VERIFIED" | "PENDING_KYC" | "SUSPENDED" | "VERIFIED_PRO") => {
+    try {
+      const { AuthApi } = await import("../../../lib/api");
+      await AuthApi.executeFetch(`/api/v1/admin/shops/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status })
+      });
+      setShops((prev) => prev.map((s) => (s.id === id ? { ...s, status: status === 'VERIFIED_PRO' ? 'VERIFIED' : status } : s)));
+    } catch (err) {
+      console.error("Failed to update shop status", err);
+      alert("Failed to update shop status");
+    }
   };
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div>
@@ -137,7 +114,6 @@ export function ShopsView() {
             <tr>
               <th>{isEn ? "Store / Boutique" : "Boutique & Propriétaire"}</th>
               <th>{isEn ? "Activity & Location" : "Activité & Ville"}</th>
-              <th>{isEn ? "Legal Credentials" : "Pièces Justificatives"}</th>
               <th>{isEn ? "Sales" : "Ventes"}</th>
               <th>{isEn ? "Status" : "Statut KYC"}</th>
               <th style={{ textAlign: "right" }}>{isEn ? "Actions" : "Actions de Modération"}</th>
@@ -148,21 +124,16 @@ export function ShopsView() {
               <tr key={s.id}>
                 <td>
                   <div style={{ fontWeight: 700 }}>{s.name}</div>
-                  <small style={{ color: "var(--oj-color-muted)" }}>{s.owner}</small>
+                  <small style={{ color: "var(--oj-color-muted)" }}>{s.ownerName}</small>
                 </td>
                 <td>
-                  <div>{s.craft}</div>
+                  <div>{s.craftType}</div>
                   <small style={{ color: "var(--oj-color-muted)" }}>
                     {s.city}, {s.country}
                   </small>
                 </td>
-                <td>
-                  <span style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AdminIconFileText size={12} /> {s.documentType}</span>
-                  </span>
-                </td>
                 <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-                  {s.salesCount} {isEn ? "orders" : "commandes"}
+                  {s.ordersCount} {isEn ? "orders" : "commandes"}
                 </td>
                 <td>
                   {s.status === "VERIFIED" ? (
@@ -185,7 +156,7 @@ export function ShopsView() {
                       <button
                         className="oj-btn-primary"
                         style={{ height: "30px", padding: "0 10px", fontSize: "11px" }}
-                        onClick={() => updateShopStatus(s.id, "VERIFIED")}
+                        onClick={() => updateShopStatus(s.id, "VERIFIED_PRO")}
                       >
                         {isEn ? "Approve Pro" : "Valider Pro"}
                       </button>

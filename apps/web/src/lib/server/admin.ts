@@ -33,6 +33,7 @@ export interface SealedAuditReport {
 let inMemoryReports: SealedAuditReport[] = [];
 
 export async function getAdminOverview() {
+  const totalUsers = await prisma.user.count();
   const totalShops = await prisma.shop.count();
   const verifiedShops = await prisma.shop.count({ where: { isVerified: true } });
   const totalOrders = await prisma.order.count();
@@ -48,6 +49,7 @@ export async function getAdminOverview() {
 
   return {
     kpis: {
+      totalUsers,
       totalShops,
       verifiedShops,
       pendingKycShops: totalShops - verifiedShops,

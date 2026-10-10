@@ -21,6 +21,7 @@ import {
 import { CmsConfigView } from "../../features/admin/views/CmsConfigView";
 import { FinOpsView } from "../../features/admin/views/FinOpsView";
 import { UsersView } from "../../features/admin/views/UsersView";
+import { CrmView } from "../../features/admin/views/CrmView";
 import { OverviewView } from "../../features/admin/views/OverviewView";
 import { DisputesView } from "../../features/admin/views/DisputesView";
 import { ShopsView } from "../../features/admin/views/ShopsView";
@@ -33,7 +34,7 @@ import { SecurityGateView } from "../../features/admin/views/SecurityGateView";
 function AdminConsoleLayout() {
   const { isEn, locale, setLocale, theme, setTheme, currentUser, authChecked, handleAdminLogout } = useAdmin();
   const [activeNav, setActiveNav] = useState<
-    "overview" | "shops" | "corridors" | "d02" | "disputes" | "finops" | "audit" | "cms" | "admins"
+    "overview" | "shops" | "corridors" | "d02" | "disputes" | "finops" | "audit" | "cms" | "crm" | "admins"
   >("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -247,6 +248,19 @@ function AdminConsoleLayout() {
               </button>
               
               <button
+                className={`oj-admin-nav-item ${activeNav === "crm" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveNav("crm");
+                  setMobileSidebarOpen(false);
+                }}
+              >
+                <span className="oj-admin-nav-icon"><AdminIconUsers size={16} /></span>
+                <span className="oj-admin-nav-label">
+                  {isEn ? "Clients & CRM" : "Clients & Utilisateurs"}
+                </span>
+              </button>
+              
+              <button
                 className={`oj-admin-nav-item ${activeNav === "admins" ? "active" : ""}`}
                 onClick={() => {
                   setActiveNav("admins");
@@ -296,6 +310,7 @@ function AdminConsoleLayout() {
           {activeNav === "finops" && <FinOpsView />}
           {activeNav === "audit" && <AuditView />}
           {activeNav === "cms" && <CmsConfigView />}
+          {activeNav === "crm" && <CrmView />}
           {activeNav === "admins" && <UsersView />}
         </main>
       </div>

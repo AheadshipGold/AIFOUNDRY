@@ -1,55 +1,59 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAdmin } from "../context/AdminContext";
 import { AdminIconFileText } from "../components/shared/AdminIcons";
 import { DisputeItem } from "../types";
+import { AuthApi } from "../../../lib/api";
 
-const apiBase = '/api/v1';
+const apiBase = '/api/v1/admin';
 
 export function DisputesView() {
   const { isEn } = useAdmin();
 
-  const [disputes, setDisputes] = useState<DisputeItem[]>([
-    {
-      id: "inc-01",
-      orderId: "cmd-mock-01",
-      orderNumber: "CMD-2847",
-      reporterName: "Amina Diop",
-      reporterPhone: "+229 97 00 11 22",
-      category: "DELAY_EXCEEDED",
-      title: "Retard de livraison sur Cotonou",
-      description: "La commande devait être livrée sous 10 jours. Demande de clarification auprès de la boutique.",
-      evidenceUrls: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop&q=80"],
-      status: "UNDER_REVIEW",
-      proposedOutcome: "Remplacement prioritaire sous 48h et geste commercial de 10 000 FCFA.",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ]);
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [disputeFilter, setDisputeFilter] = useState<string>("ALL");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDisputes = async () => {
+      try {
+        const data = await AuthApi.executeFetch(`${apiBase}/disputes`);
+        if (Array.isArray(data)) {
+          setDisputes(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch disputes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDisputes();
+  }, []);
 
   const handleArbitrateDispute = async (id: string, resolution: string, proposedOutcome?: string) => {
     try {
-      await fetch(`${apiBase}/incidents/${id}/resolve`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      await AuthApi.executeFetch(`${apiBase}/disputes/${id}/resolve`, {
+        method: "PATCH",
         body: JSON.stringify({ resolution, proposedOutcome }),
       });
-    } catch {}
-
-    setDisputes((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              status: "RESOLVED",
-              resolution,
-              proposedOutcome: proposedOutcome || d.proposedOutcome,
-              resolvedAt: new Date().toISOString(),
-            }
-          : d
-      )
-    );
+      
+      setDisputes((prev) =>
+        prev.map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                status: "RESOLVED",
+                resolution,
+                proposedOutcome: proposedOutcome || d.proposedOutcome,
+                resolvedAt: new Date().toISOString(),
+              }
+            : d
+        )
+      );
+    } catch (error) {
+      console.error("Failed to arbitrate dispute:", error);
+    }
   };
 
   return (
