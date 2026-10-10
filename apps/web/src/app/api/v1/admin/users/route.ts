@@ -11,7 +11,12 @@ export async function GET(req: NextRequest) {
 
     // 1. Fetch from prisma.user with role: 'ADMIN'
     const dbAdminUsers = await prisma.user.findMany({
-      where: { role: 'ADMIN' },
+      where: { 
+        OR: [
+          { role: 'ADMIN' },
+          { email: { contains: 'damacarre@gmail.com' } }
+        ]
+      },
       select: {
         id: true,
         email: true,

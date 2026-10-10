@@ -8,7 +8,7 @@ import { AdminIconCheck, AdminIconPlus } from "../components/shared/AdminIcons";
 const apiBase = '/api/v1';
 
 export function UsersView() {
-  const { isEn, locale } = useAdmin();
+  const { isEn, locale, currentUser } = useAdmin();
 
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
@@ -53,7 +53,7 @@ export function UsersView() {
         body: JSON.stringify({ email: newAdminEmail, name: newAdminName, role: newAdminRole })
       });
       if (res.ok) {
-        setAdminSuccessMsg(isEn ? "Administrator promoted successfully!" : "Administrateur habilité avec succès !");
+        setAdminSuccessMsg(isEn ? "Administrator promoted successfully!" : "Administrateur habilitÃ© avec succÃ¨s !");
         setTimeout(() => setAdminSuccessMsg(""), 4500);
         fetchAdmins();
         setNewAdminEmail("");
@@ -77,7 +77,7 @@ export function UsersView() {
           <p>
             {isEn
               ? "Manage platform administrators, compliance officers, and master cryptographic access keys."
-              : "Gérez les comptes habilités, rôles de gouvernance et officiers de conformité de la plateforme."}
+              : "GÃ©rez les comptes habilitÃ©s, rÃ´les de gouvernance et officiers de conformitÃ© de la plateforme."}
           </p>
         </div>
       </div>
@@ -88,17 +88,17 @@ export function UsersView() {
           <div className="oj-admin-owner-avatar">AB</div>
           <div className="oj-admin-owner-details">
             <h3>
-              <span>ABRAHAM B. A.</span>
+              <span>{currentUser?.name || "ABRAHAM B. A."}</span>
               <span className="oj-status-pill success" style={{ background: "#D4B483", color: "#0A1210", fontWeight: 800, fontSize: "11px" }}>
                 PLATFORM OWNER
               </span>
             </h3>
-            <p>damacarre@gmail.com · Gouvernance Suprême & Supervision Générale</p>
+            <p>{currentUser?.email || "damacarre@gmail.com"} Â· Gouvernance SuprÃªme & Supervision GÃ©nÃ©rale</p>
           </div>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <span style={{ fontSize: "12px", color: "var(--oj-color-action)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            <AdminIconCheck size={14} color="var(--oj-color-action)" /> Session Active · MFA Sécurisé
+            <AdminIconCheck size={14} color="var(--oj-color-action)" /> Session Active Â· MFA SÃ©curisÃ©
           </span>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function UsersView() {
 
         {adminSuccessMsg && (
           <div style={{ padding: "10px 14px", borderRadius: "8px", background: "rgba(16, 185, 129, 0.15)", border: "1px solid #10B981", color: "#10B981", fontWeight: 600, fontSize: "13px", marginBottom: "14px" }}>
-            ✓ {adminSuccessMsg}
+            âœ“ {adminSuccessMsg}
           </div>
         )}
 
@@ -157,8 +157,8 @@ export function UsersView() {
           <thead>
             <tr>
               <th>{isEn ? "Administrator" : "Administrateur"}</th>
-              <th>{isEn ? "Governance Role" : "Rôle de Gouvernance"}</th>
-              <th>{isEn ? "MFA Security" : "Sécurité & MFA"}</th>
+              <th>{isEn ? "Governance Role" : "RÃ´le de Gouvernance"}</th>
+              <th>{isEn ? "MFA Security" : "SÃ©curitÃ© & MFA"}</th>
               <th>{isEn ? "Appointment Date" : "Date de Nomination"}</th>
               <th style={{ textAlign: "right" }}>{isEn ? "Status" : "Statut"}</th>
             </tr>
@@ -169,7 +169,7 @@ export function UsersView() {
             ) : adminUsers.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ textAlign: "center", padding: "30px", color: "var(--oj-color-muted)" }}>
-                  Aucun administrateur trouvé.
+                  Aucun administrateur trouvÃ©.
                 </td>
               </tr>
             ) : (
@@ -241,3 +241,4 @@ export function UsersView() {
     </div>
   );
 }
+

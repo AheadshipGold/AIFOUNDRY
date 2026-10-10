@@ -15,7 +15,13 @@ export function ShopsView() {
     import("../../../lib/api").then(({ AuthApi }) => {
       AuthApi.executeFetch("/api/v1/admin/shops")
         .then((res) => {
-          setShops(res);
+          const mapped = res.map((s: any) => ({
+            ...s,
+            ownerName: s.owner?.name || s.owner?.email || "Inconnu",
+            ordersCount: s._count?.orders || 0,
+            craftType: s.craftType || "Artisanat",
+          }));
+          setShops(mapped);
           setLoading(false);
         })
         .catch((err) => {
