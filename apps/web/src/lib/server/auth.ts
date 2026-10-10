@@ -446,6 +446,11 @@ export async function registerSeller(userId: string, dto: RegisterSellerDto) {
 }
 
 export async function extractUserIdFromRequest(req: Request): Promise<string | null> {
+  const xUserId = req.headers.get('x-user-id');
+  if (xUserId) {
+    return xUserId;
+  }
+
   const authHeader = req.headers.get('authorization');
   if (authHeader) {
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
