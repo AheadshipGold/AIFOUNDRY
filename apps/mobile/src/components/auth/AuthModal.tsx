@@ -17,7 +17,7 @@ import { useDesign } from '../../design-system/provider';
 import { AuthApi, setAuthToken, normalizeAuthUser, type AuthUser } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GoogleLogo from '../common/GoogleLogo';
-import { promptGoogleSignIn } from '../../services/googleAuth';
+import { promptGoogleSignIn, logoutGoogleAuth } from '../../services/googleAuth';
 
 export const SESSION_KEY = 'ojarket.auth.session';
 
@@ -577,6 +577,11 @@ export async function restoreSession(): Promise<{ user: AuthUser; token: string 
 export async function clearSession(): Promise<void> {
   setAuthToken(null);
   await AsyncStorage.removeItem(SESSION_KEY).catch(() => {});
+  try {
+    await logoutGoogleAuth();
+  } catch (e) {
+    console.warn(e);
+  }
 }
 
 const styles = StyleSheet.create({

@@ -187,3 +187,19 @@ export async function promptGoogleSignIn(): Promise<GoogleUserProfile | null> {
     }
   });
 }
+
+/**
+ * Signs out of the native Google account picker so that the user 
+ * is prompted to select an account again on next login.
+ */
+export async function logoutGoogleAuth() {
+  if (GoogleSigninModule) {
+    try {
+      await GoogleSigninModule.signOut();
+      console.log('[GoogleAuth] Native sign out successful.');
+    } catch (err) {
+      console.warn('[GoogleAuth] Native sign out failed:', err);
+    }
+  }
+}
+
