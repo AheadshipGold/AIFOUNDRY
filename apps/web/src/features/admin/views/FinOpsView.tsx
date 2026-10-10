@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { useAdmin } from "../context/AdminContext";
@@ -43,7 +43,7 @@ export function FinOpsView() {
           <p>
             {isEn
               ? "Triad monitoring: Total Gross Sold != Amount Collected != Remaining Receivable. Append-only events."
-              : "Surveillance de la triade : Vendu â‰  EncaissÃ© â‰  Restant. Grand livre immuable non-custodial."}
+              : "Surveillance de la triade : Vendu ≠ Encaissé ≠ Restant. Grand livre immuable non-custodial."}
           </p>
         </div>
       </div>
@@ -51,19 +51,19 @@ export function FinOpsView() {
       {/* Triade summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         <div className="oj-kpi-card" style={{ borderLeft: "4px solid var(--oj-color-action)" }}>
-          <div className="oj-kpi-header"><span>Chiffre d'Affaires EngagÃ© (Vendu)</span></div>
+          <div className="oj-kpi-header"><span>Chiffre d'Affaires Engagé (Vendu)</span></div>
           <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums" }}>{recentEntries.reduce((sum, e) => sum + (e.amountMinor || 0), 0).toLocaleString()} FCFA</strong>
           <small style={{ color: "var(--oj-color-muted)", fontSize: "11px" }}>Total des commandes fermes</small>
         </div>
         <div className="oj-kpi-card" style={{ borderLeft: "4px solid #185F46" }}>
-          <div className="oj-kpi-header"><span>LiquiditÃ©s EncaissÃ©es (Direct MoMo/Comptoir)</span></div>
+          <div className="oj-kpi-header"><span>Liquidités Encaissées (Direct MoMo/Comptoir)</span></div>
           <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums", color: "#185F46" }}>{recentEntries.filter(e => e.type === "CREDIT").reduce((sum, e) => sum + (e.amountMinor || 0), 0).toLocaleString()} FCFA</strong>
-          <small style={{ color: "var(--oj-color-muted)", fontSize: "11px" }}>RelevÃ©s de caisse confirmÃ©s</small>
+          <small style={{ color: "var(--oj-color-muted)", fontSize: "11px" }}>Relevés de caisse confirmés</small>
         </div>
         <div className="oj-kpi-card" style={{ borderLeft: "4px solid #AD8455" }}>
-          <div className="oj-kpi-header"><span>{isEn ? "Pending Client Receivables" : "CrÃ©ances Clients en Attente"}</span></div>
+          <div className="oj-kpi-header"><span>{isEn ? "Pending Client Receivables" : "Créances Clients en Attente"}</span></div>
           <strong className="oj-kpi-value" style={{ fontVariantNumeric: "tabular-nums", color: "#AD8455" }}>{recentEntries.filter(e => e.type === "DEBIT").reduce((sum, e) => sum + (e.amountMinor || 0), 0).toLocaleString()} FCFA</strong>
-          <small style={{ color: "var(--oj-color-muted)", fontSize: "11px" }}>Soldes Ã  percevoir Ã  livraison</small>
+          <small style={{ color: "var(--oj-color-muted)", fontSize: "11px" }}>Soldes à percevoir à livraison</small>
         </div>
       </div>
 
@@ -72,23 +72,23 @@ export function FinOpsView() {
         <table className="oj-admin-table">
           <thead>
             <tr>
-              <th>{isEn ? "Label & Reference" : "LibellÃ© & RÃ©fÃ©rence"}</th>
+              <th>{isEn ? "Label & Reference" : "Libellé & Référence"}</th>
               <th>{isEn ? "Payment Channel" : "Canal de Paiement"}</th>
               <th>{isEn ? "Time" : "Heure"}</th>
               <th>{isEn ? "Audit Status" : "Statut Audit"}</th>
-              <th style={{ textAlign: "right" }}>Montant EncaissÃ©</th>
+              <th style={{ textAlign: "right" }}>Montant Encaissé</th>
             </tr>
           </thead>
           <tbody>
             {recentEntries.map((row, i) => (
               <tr key={i}>
                 <td>
-                  <div style={{ fontWeight: 600 }}>{row.type === 'ENCAISSEMENT' ? 'Encaissement' : row.type === 'DECAISSEMENT' ? 'DÃ©caissement' : 'Vente Ã  crÃ©dit'}</div>
+                  <div style={{ fontWeight: 600 }}>{row.type === 'ENCAISSEMENT' ? 'Encaissement' : row.type === 'DECAISSEMENT' ? 'Décaissement' : 'Vente à crédit'}</div>
                   <small style={{ color: "var(--oj-color-muted)" }}>{row.reference}</small>
                 </td>
                 <td>{row.channel}</td>
                 <td style={{ color: "var(--oj-color-muted)" }}>{new Date(row.entryDate).toLocaleTimeString()}</td>
-                <td><span className="oj-status-pill success">{isEn ? "Confirmed" : "ConfirmÃ©"}</span></td>
+                <td><span className="oj-status-pill success">{isEn ? "Confirmed" : "Confirmé"}</span></td>
                 <td style={{ textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                   {formatPrice(row.amountMinor / 100, row.currency)}
                 </td>
@@ -97,7 +97,7 @@ export function FinOpsView() {
             {recentEntries.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: "center", color: "var(--oj-color-muted)", padding: "20px" }}>
-                  Aucune entrÃ©e rÃ©cente.
+                  Aucune entrée récente.
                 </td>
               </tr>
             )}
@@ -107,4 +107,3 @@ export function FinOpsView() {
     </div>
   );
 }
-

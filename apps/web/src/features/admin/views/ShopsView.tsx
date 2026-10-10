@@ -144,7 +144,7 @@ export function ShopsView() {
                 <td>
                   {s.status === "VERIFIED" ? (
                     <span className="oj-status-pill success">
-                      ✓ {isEn ? "Verified Pro" : "Vérifié Pro"}
+                       {isEn ? "Verified Pro" : "Vérifié Pro"}
                     </span>
                   ) : s.status === "PENDING_KYC" ? (
                     <span className="oj-status-pill pending">
@@ -152,7 +152,7 @@ export function ShopsView() {
                     </span>
                   ) : (
                     <span className="oj-status-pill error">
-                      ✕ {isEn ? "Suspended" : "Suspendu"}
+                       {isEn ? "Suspended" : "Suspendu"}
                     </span>
                   )}
                 </td>
