@@ -16,6 +16,7 @@
     "@aifoundry/shared": "*",
     "@aws-sdk/client-s3": "^3.1142.0",
     "@aws-sdk/s3-request-presigner": "^3.1142.0",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@prisma/client": "^5.14.0",
     "better-auth": "^1.7.6",
     "next": "14.2.3",
