@@ -5,8 +5,8 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Hardcoded to strictly use the .env variable, with automatic local LAN fallback
-const RAW_API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.201.5.162:3000/api';
+// Hardcoded to strictly use the .env variable, with automatic production fallback
+const RAW_API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://www.ojarket.com/api';
 
 // All endpoints below are written as `/v1/...`. The env value may end with
 // `/api` or `/api/v1`: strip a trailing `/v1` so we never call `/api/v1/v1/...`.
