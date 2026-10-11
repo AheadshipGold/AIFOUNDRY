@@ -192,6 +192,74 @@ function IconDiamondSparkle() {
     </svg>
   );
 }
+
+function IconShieldCertificate() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+function IconVaultSecurity() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="12" cy="12" r="4" />
+      <line x1="12" y1="8" x2="12" y2="10" />
+      <line x1="12" y1="14" x2="12" y2="16" />
+      <line x1="8" y1="12" x2="10" y2="12" />
+      <line x1="14" y1="12" x2="16" y2="12" />
+    </svg>
+  );
+}
+
+function IconLuxuryGift() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 12 20 22 4 22 4 12" />
+      <rect x="2" y="7" width="20" height="5" />
+      <line x1="12" y1="22" x2="12" y2="7" />
+      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+    </svg>
+  );
+}
+
+function IconConciergeBell() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 16a6 6 0 0 0-12 0" />
+      <line x1="2" y1="20" x2="22" y2="20" />
+      <circle cx="12" cy="7" r="1.5" />
+      <line x1="12" y1="8.5" x2="12" y2="10" />
+    </svg>
+  );
+}
+
+function getProductMaterial(title: string, category?: string, isEn?: boolean): string {
+  const t = (title || "").toLowerCase();
+  if (t.includes("chronomètre") || t.includes("montre") || t.includes("watch")) {
+    return isEn ? "Acier & Or 18k" : "Acier & Or 18k";
+  }
+  if (t.includes("cabas") || t.includes("sac") || t.includes("bag") || category === "leather") {
+    return isEn ? "Cuir Pleine Fleur" : "Cuir Pleine Fleur";
+  }
+  if (t.includes("fauteuil") || t.includes("armchair") || category === "home") {
+    return isEn ? "Chêne & Lin" : "Chêne Massif & Lin";
+  }
+  if (t.includes("parure") || t.includes("émeraude") || t.includes("bague") || category === "fashion") {
+    return isEn ? "Or 18k & Émeraude" : "Or 18k & Émeraude";
+  }
+  if (t.includes("buste") || t.includes("bronze") || category === "art") {
+    return isEn ? "Bronze Ciselé" : "Bronze d'Art Ciselé";
+  }
+  if (category === "digital") {
+    return isEn ? "Fichier Master" : "Fichier Master";
+  }
+  return isEn ? "Fait Main" : "Façonné Main";
+}
 function IconSun() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -967,6 +1035,35 @@ function MainMarketplaceView() {
         <main className="oj-main-buyer">
           {buyerTab === "home" && (
             <>
+              {/* Prestige Ribbon Haute Facture */}
+              <div 
+                style={{
+                  backgroundColor: isDark ? "rgba(13, 74, 56, 0.45)" : "rgba(212, 180, 131, 0.12)",
+                  borderBottom: "1px solid var(--oj-color-border)",
+                  padding: "9px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  textAlign: "center",
+                  letterSpacing: "1.4px",
+                }}
+              >
+                <span style={{ color: "var(--oj-color-accent)", display: "flex", alignItems: "center" }}><IconDiamondSparkle /></span>
+                <span style={{
+                  fontSize: "10.5px",
+                  fontWeight: 800,
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  color: "var(--oj-color-accent)",
+                }}>
+                  {isEn
+                    ? "HAUTE CREATION · WEST AFRICA · OFFICIAL CURATION BY KINGSTON BIO"
+                    : "MAISON DE CRÉATION · AFRIQUE DE L'OUEST · SÉLECTION OFFICIELLE KINGSTON BIO"}
+                </span>
+                <span style={{ color: "var(--oj-color-accent)", display: "flex", alignItems: "center" }}><IconDiamondSparkle /></span>
+              </div>
+
               {/* Editorial Lead & Mobile Search */}
               <section className="oj-editorial-lead-section">
                 <div className="oj-section" style={{ paddingBottom: 0 }}>
@@ -1200,6 +1297,35 @@ function MainMarketplaceView() {
                       <h3 className="oj-prod-title" onClick={() => setSelectedProduct(p)}>
                         {p.title}
                       </h3>
+                      <div 
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          margin: "2px 0 5px 0",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          backgroundColor: isDark ? "rgba(212, 180, 131, 0.12)" : "rgba(212, 180, 131, 0.18)",
+                          border: "1px solid rgba(212, 180, 131, 0.35)",
+                          maxWidth: "100%",
+                        }}
+                      >
+                        <span style={{ color: "var(--oj-color-accent)", display: "flex", alignItems: "center" }}><IconDiamondSparkle /></span>
+                        <span 
+                          style={{
+                            fontSize: "9.5px",
+                            fontWeight: 700,
+                            letterSpacing: "0.7px",
+                            color: "var(--oj-color-accent)",
+                            textTransform: "uppercase",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {getProductMaterial(p.title, p.category, isEn)}
+                        </span>
+                      </div>
                       <p className="oj-prod-subtitle">{p.subtitle}</p>
                       <div className="oj-prod-footer">
                         <div>
@@ -1308,31 +1434,252 @@ function MainMarketplaceView() {
             </div>
           </section>
 
-          {/* D02 Banner */}
-          <section className="oj-section">
-            <div className="oj-demand-banner">
-              <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
-                {isEn ? "CUSTOM ORDERS & QUOTES" : "DEVIS & COMMANDES SPÉCIFIQUES"}
+          {/* Section: Ateliers d'Art & Maîtres Artisans */}
+          <section className="oj-section" style={{ marginTop: "16px" }}>
+            <div className="oj-section-header">
+              <div>
+                <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)", fontSize: "10.5px" }}>
+                  {isEn ? "HERITAGE & CRAFTSMANSHIP" : "SAVOIR-FAIRE MAÎTRE · ATELIERS D'EXCEPTION"}
+                </span>
+                <h2 className="oj-section-title" style={{ marginTop: "2px" }}>
+                  {isEn ? "Master Art Studios" : "Les Ateliers d'Art Certifiés"}
+                </h2>
+              </div>
+              <span style={{ fontSize: "11px", color: "var(--oj-color-muted)", fontStyle: "italic" }}>
+                {isEn ? "Handcrafted in Benin & West Africa" : "Façonné à la main au Bénin"}
               </span>
-              <h2 className="oj-demand-title">
-                {isEn ? "Looking for a specific product or bulk order?" : "Vous cherchez un produit spécifique ou sur-mesure ?"}
-              </h2>
-              <p className="oj-demand-subtitle">
-                {isEn
-                  ? "Describe your need. Verified partner stores will submit tailored proposals with clear timelines."
-                  : "Décrivez votre besoin. Les boutiques et vendeurs partenaires vous soumettront directement leurs propositions personnalisées avec délais et devis clairs."}
-              </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "16px" }}>
-                <button 
-                  className="oj-btn-primary" 
-                  onClick={() => {
-                    setBuyerTab("need");
-                    setNeedSubTab("create");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                >
-                  {t.d02.bannerCta} →
-                </button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+              <div style={{
+                backgroundColor: isDark ? "rgba(17, 28, 26, 0.85)" : "#FFFFFF",
+                borderRadius: "var(--oj-radius-card)",
+                padding: "20px",
+                border: "1px solid var(--oj-color-border)",
+                boxShadow: "var(--oj-shadow-sm)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--oj-color-accent)", letterSpacing: "1px", textTransform: "uppercase" }}>
+                      FONDERIE D'ART ROYALE
+                    </span>
+                    <span style={{ fontSize: "10px", color: "var(--oj-color-muted)", padding: "2px 6px", borderRadius: "4px", backgroundColor: "var(--oj-color-subtle)" }}>
+                      Ouidah
+                    </span>
+                  </div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "16px", margin: "0 0 6px 0", color: "var(--oj-color-text)" }}>
+                    {isEn ? "Lost-Wax Bronze Sculpture" : "Ciselure & Fonte au Bronze"}
+                  </h3>
+                  <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", lineHeight: 1.5, margin: 0 }}>
+                    {isEn ? "Over 48 hours of meticulous manual sculpting per bust, using ancient Kingdom traditions." : "Plus de 48 heures de travail manuel minutieux par œuvre, selon les traditions royales séculaires."}
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", borderTop: "1px solid var(--oj-color-border)", paddingTop: "10px" }}>
+                  <span style={{ color: "var(--oj-color-accent)", display: "flex" }}><IconDiamondSparkle /></span>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--oj-color-accent)", letterSpacing: "0.5px" }}>
+                    {isEn ? "MASTER PIECE SEAL · VERIFIED" : "SCEAU DE MAÎTRE · PIÈCE UNIQUE"}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{
+                backgroundColor: isDark ? "rgba(17, 28, 26, 0.85)" : "#FFFFFF",
+                borderRadius: "var(--oj-radius-card)",
+                padding: "20px",
+                border: "1px solid var(--oj-color-border)",
+                boxShadow: "var(--oj-shadow-sm)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--oj-color-accent)", letterSpacing: "1px", textTransform: "uppercase" }}>
+                      ATELIER MAROQUINERIE GANHI
+                    </span>
+                    <span style={{ fontSize: "10px", color: "var(--oj-color-muted)", padding: "2px 6px", borderRadius: "4px", backgroundColor: "var(--oj-color-subtle)" }}>
+                      Cotonou
+                    </span>
+                  </div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "16px", margin: "0 0 6px 0", color: "var(--oj-color-text)" }}>
+                    {isEn ? "Full-Grain Saddle Stitching" : "Maroquinerie & Piqûre Sellier"}
+                  </h3>
+                  <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", lineHeight: 1.5, margin: 0 }}>
+                    {isEn ? "Vegetable-tanned full-grain leather, hand-stitched with waxed linen thread for lifetime durability." : "Cuirs pleine fleur à tannage végétal, cousus à la main au fil de lin ciré pour une longévité d'exception."}
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", borderTop: "1px solid var(--oj-color-border)", paddingTop: "10px" }}>
+                  <span style={{ color: "var(--oj-color-accent)", display: "flex" }}><IconDiamondSparkle /></span>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--oj-color-accent)", letterSpacing: "0.5px" }}>
+                    {isEn ? "CERTIFIED SADDLER · HANDMADE" : "ARTISAN SELLIER · 100% MAIN"}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{
+                backgroundColor: isDark ? "rgba(17, 28, 26, 0.85)" : "#FFFFFF",
+                borderRadius: "var(--oj-radius-card)",
+                padding: "20px",
+                border: "1px solid var(--oj-color-border)",
+                boxShadow: "var(--oj-shadow-sm)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--oj-color-accent)", letterSpacing: "1px", textTransform: "uppercase" }}>
+                      HAUTE HORLOGERIE KINGSTON
+                    </span>
+                    <span style={{ fontSize: "10px", color: "var(--oj-color-muted)", padding: "2px 6px", borderRadius: "4px", backgroundColor: "var(--oj-color-subtle)" }}>
+                      Cotonou & Paris
+                    </span>
+                  </div>
+                  <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "16px", margin: "0 0 6px 0", color: "var(--oj-color-text)" }}>
+                    {isEn ? "Chronometry & Fine Gems" : "Haute Joaillerie & Garde-Temps"}
+                  </h3>
+                  <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", lineHeight: 1.5, margin: 0 }}>
+                    {isEn ? "Gem-setting under microscope and mechanical precision calibration certified by master watchmakers." : "Sertissage haute joaillerie sous loupe binoculaire et calibres horlogers d'exception certifiés."}
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", borderTop: "1px solid var(--oj-color-border)", paddingTop: "10px" }}>
+                  <span style={{ color: "var(--oj-color-accent)", display: "flex" }}><IconDiamondSparkle /></span>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--oj-color-accent)", letterSpacing: "0.5px" }}>
+                    {isEn ? "CERTIFIED CHRONOMETER · 18K GOLD" : "CALIBRE CERTIFIÉ · OR 18K"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* D02 Banner: Salon Privé & Commandes Sur-Mesure */}
+          <section className="oj-section" style={{ marginTop: "24px" }}>
+            <div 
+              style={{
+                backgroundColor: "#022B22",
+                borderRadius: "var(--oj-radius-section)",
+                padding: "36px 32px",
+                border: "1.5px solid rgba(212, 180, 131, 0.4)",
+                boxShadow: "0 12px 36px rgba(2, 43, 34, 0.4)",
+                textAlign: "center",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ position: "relative", zIndex: 2, maxWidth: "720px", margin: "0 auto" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 12px", borderRadius: "20px", backgroundColor: "rgba(212, 180, 131, 0.15)", border: "1px solid rgba(212, 180, 131, 0.35)", marginBottom: "14px" }}>
+                  <IconDiamondSparkle />
+                  <span style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "1.2px", color: "var(--oj-color-accent)", textTransform: "uppercase" }}>
+                    {isEn ? "BESPOKE LOUNGE · D02 PRIVATE SERVICE" : "SALON PRIVÉ & CRÉATIONS SUR-MESURE · SERVICE D02"}
+                  </span>
+                  <IconDiamondSparkle />
+                </div>
+                <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "28px", color: "#FFFFFF", margin: "0 0 12px 0", lineHeight: 1.25 }}>
+                  {isEn ? "Dreaming of a creation that exists nowhere else?" : "Vous rêvez d'une création qui n'existe nulle part ailleurs ?"}
+                </h2>
+                <p style={{ fontSize: "14px", color: "rgba(255, 255, 255, 0.85)", lineHeight: 1.6, margin: "0 auto 22px auto", maxWidth: "600px" }}>
+                  {isEn
+                    ? "Commission a bespoke piece from master artisans. Tell us your vision: receive tailored quotes, material recommendations, and clear workshop timelines."
+                    : "Confiez votre vision à nos maîtres d'art. Joaillerie sur-mesure, maroquinerie monogrammée ou mobilier d'exception : recevez des devis certifiés et des calendriers d'atelier précis."}
+                </p>
+                <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+                  <button 
+                    className="oj-btn-primary" 
+                    onClick={() => {
+                      setBuyerTab("need");
+                      setNeedSubTab("create");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={{
+                      padding: "14px 28px",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      backgroundColor: "var(--oj-color-accent)",
+                      color: "#022B22",
+                      border: "none",
+                      boxShadow: "0 4px 16px rgba(212, 180, 131, 0.3)",
+                    }}
+                  >
+                    {isEn ? "Open a Bespoke Request →" : "Ouvrir un projet sur-mesure →"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Bandeau de Réassurance & Sceaux d'Honneur (4 Piliers) */}
+          <section className="oj-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
+            <div 
+              style={{
+                backgroundColor: isDark ? "rgba(17, 28, 26, 0.6)" : "rgba(255, 255, 255, 0.8)",
+                borderRadius: "var(--oj-radius-card)",
+                padding: "24px 20px",
+                border: "1px solid var(--oj-color-border)",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: "20px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                <span style={{ color: "var(--oj-color-accent)", flexShrink: 0, marginTop: "2px" }}>
+                  <IconShieldCertificate />
+                </span>
+                <div>
+                  <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
+                    {isEn ? "Numbered Certificate" : "Certificat d'Authenticité"}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
+                    {isEn ? "Every piece includes an official physical certificate of origin." : "Chaque création est livrée avec son certificat d'origine officiel scellé."}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                <span style={{ color: "var(--oj-color-accent)", flexShrink: 0, marginTop: "2px" }}>
+                  <IconVaultSecurity />
+                </span>
+                <div>
+                  <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
+                    {isEn ? "Protected Settlement" : "Caisse Sécurisée & MoMo"}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
+                    {isEn ? "Funds held in escrow balance until physical handover inspection." : "Règlement Mobile Money sécurisé en livre de caisse certifié."}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                <span style={{ color: "var(--oj-color-accent)", flexShrink: 0, marginTop: "2px" }}>
+                  <IconLuxuryGift />
+                </span>
+                <div>
+                  <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
+                    {isEn ? "Prestige Case Handover" : "Livraison en Écrin Scellé"}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
+                    {isEn ? "White-glove presentation packaging in Cotonou and main cities." : "Écrin d'art soigné et remise en mains propres sécurisée à Cotonou."}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                <span style={{ color: "var(--oj-color-accent)", flexShrink: 0, marginTop: "2px" }}>
+                  <IconConciergeBell />
+                </span>
+                <div>
+                  <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
+                    {isEn ? "Private Concierge 7d/7" : "Conciergerie Privée 7j/7"}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
+                    {isEn ? "Direct dedicated WhatsApp advisory for inquiries and orders." : "Ligne directe d'assistance et accompagnement personnalisé."}
+                  </p>
+                </div>
               </div>
             </div>
           </section>

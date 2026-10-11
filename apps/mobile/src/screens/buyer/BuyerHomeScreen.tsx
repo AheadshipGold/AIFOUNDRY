@@ -78,6 +78,29 @@ function mapApiProduct(prod: ProductItem): Product & { variants?: any[]; priceMi
   };
 }
 
+function getProductMaterial(title: string, category?: string, isEn?: boolean): string {
+  const t = (title || "").toLowerCase();
+  if (t.includes("chronomètre") || t.includes("montre") || t.includes("watch")) {
+    return isEn ? "Acier & Or 18k" : "Acier & Or 18k";
+  }
+  if (t.includes("cabas") || t.includes("sac") || t.includes("bag") || category === "leather") {
+    return isEn ? "Cuir Pleine Fleur" : "Cuir Pleine Fleur";
+  }
+  if (t.includes("fauteuil") || t.includes("armchair") || category === "home") {
+    return isEn ? "Chêne & Lin" : "Chêne Massif & Lin";
+  }
+  if (t.includes("parure") || t.includes("émeraude") || t.includes("bague") || category === "fashion") {
+    return isEn ? "Or 18k & Émeraude" : "Or 18k & Émeraude";
+  }
+  if (t.includes("buste") || t.includes("bronze") || category === "art") {
+    return isEn ? "Bronze Ciselé" : "Bronze d'Art Ciselé";
+  }
+  if (category === "digital") {
+    return isEn ? "Fichier Master" : "Fichier Master";
+  }
+  return isEn ? "Fait Main" : "Façonné Main";
+}
+
 export default function BuyerHomeScreen({
   onSelectProduct,
   onOpenNeed,
@@ -353,6 +376,38 @@ export default function BuyerHomeScreen({
           />
         }
       >
+        {/* Prestige Ribbon Haute Facture */}
+        <View
+          style={{
+            backgroundColor: isDark ? "rgba(13, 74, 56, 0.45)" : "rgba(212, 180, 131, 0.15)",
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            paddingVertical: 7,
+            paddingHorizontal: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+          <Text
+            style={{
+              fontSize: 9.5,
+              fontWeight: "800",
+              letterSpacing: 1.2,
+              color: colors.accent,
+              textTransform: "uppercase",
+              textAlign: "center",
+            }}
+          >
+            {isEn
+              ? "HAUTE CREATION · OFFICIAL SELECTION"
+              : "MAISON DE CRÉATION · SÉLECTION OFFICIELLE"}
+          </Text>
+          <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+        </View>
+
         {/* ==================== EDITORIAL HERO TITLE ==================== */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
           <Text
@@ -770,12 +825,44 @@ export default function BuyerHomeScreen({
                             fontSize: 14,
                             fontWeight: "700",
                             color: colors.text,
-                            marginBottom: 6,
+                            marginBottom: 4,
                           }}
                           numberOfLines={1}
                         >
                           {prod.title}
                         </Text>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                            backgroundColor: isDark ? "rgba(212, 180, 131, 0.12)" : "rgba(212, 180, 131, 0.18)",
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 4,
+                            borderWidth: 1,
+                            borderColor: "rgba(212, 180, 131, 0.35)",
+                            alignSelf: "flex-start",
+                            maxWidth: "100%",
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Icon name="sparkle" size={8} color={colors.accent} weight="fill" />
+                          <Text
+                            style={{
+                              fontSize: 8.5,
+                              fontWeight: "700",
+                              color: colors.accent,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.4,
+                              flexShrink: 1,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {getProductMaterial(prod.title, prod.category, isEn)}
+                          </Text>
+                        </View>
 
                         {/* Footer: Price + Solid Cart CTA */}
                         <View
@@ -946,12 +1033,44 @@ export default function BuyerHomeScreen({
                             fontSize: 14,
                             fontWeight: "700",
                             color: colors.text,
-                            marginBottom: 6,
+                            marginBottom: 4,
                           }}
                           numberOfLines={1}
                         >
                           {prod.title}
                         </Text>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                            backgroundColor: isDark ? "rgba(212, 180, 131, 0.12)" : "rgba(212, 180, 131, 0.18)",
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 4,
+                            borderWidth: 1,
+                            borderColor: "rgba(212, 180, 131, 0.35)",
+                            alignSelf: "flex-start",
+                            maxWidth: "100%",
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Icon name="sparkle" size={8} color={colors.accent} weight="fill" />
+                          <Text
+                            style={{
+                              fontSize: 8.5,
+                              fontWeight: "700",
+                              color: colors.accent,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.4,
+                              flexShrink: 1,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {getProductMaterial(prod.title, prod.category, isEn)}
+                          </Text>
+                        </View>
 
                         {/* Footer: Price + Solid Cart CTA */}
                         <View
@@ -1157,76 +1276,314 @@ export default function BuyerHomeScreen({
           </ScrollView>
         </View>
 
-        {/* ==================== COMMERCIAL PRODUCT REQUEST PROMPT ==================== */}
-        <View style={{ paddingHorizontal: 20 }}>
+        {/* ==================== ATELIERS D'ART & MAÎTRES ARTISANS ==================== */}
+        <View style={{ marginBottom: 28 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              paddingHorizontal: 20,
+              marginBottom: 12,
+            }}
+          >
+            <View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "800",
+                  letterSpacing: 1.2,
+                  color: colors.accent,
+                  textTransform: "uppercase",
+                  marginBottom: 2,
+                }}
+              >
+                {isEn ? "HERITAGE & CRAFTSMANSHIP" : "SAVOIR-FAIRE MAÎTRE"}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
+                  fontSize: 19,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                {isEn ? "Master Art Studios" : "Ateliers d'Art Certifiés"}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 11, color: colors.muted, fontStyle: "italic" }}>
+              {isEn ? "Benin & West Africa" : "Façonné au Bénin"}
+            </Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+          >
+            {/* Atelier 1 */}
+            <View
+              style={{
+                width: 270,
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 16,
+                justifyContent: "space-between",
+              }}
+            >
+              <View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={{ fontSize: 9.5, fontWeight: "800", color: colors.accent, letterSpacing: 0.8, textTransform: "uppercase" }}>
+                    FONDERIE ROYALE D'ART
+                  </Text>
+                  <View style={{ backgroundColor: colors.canvas, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ fontSize: 9, color: colors.muted }}>Ouidah</Text>
+                  </View>
+                </View>
+                <Text style={{ fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontSize: 15, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                  {isEn ? "Lost-Wax Bronze Casting" : "Ciselure & Fonte au Bronze"}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 16 }}>
+                  {isEn ? "48h of manual sculpting per bust, following ancestral royal kingdom techniques." : "Plus de 48h de travail manuel par œuvre, selon les traditions royales séculaires."}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, marginTop: 12 }}>
+                <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                <Text style={{ fontSize: 9.5, fontWeight: "700", color: colors.accent, letterSpacing: 0.5 }}>
+                  {isEn ? "MASTER PIECE SEAL · VERIFIED" : "SCEAU DE MAÎTRE · PIÈCE UNIQUE"}
+                </Text>
+              </View>
+            </View>
+
+            {/* Atelier 2 */}
+            <View
+              style={{
+                width: 270,
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 16,
+                justifyContent: "space-between",
+              }}
+            >
+              <View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={{ fontSize: 9.5, fontWeight: "800", color: colors.accent, letterSpacing: 0.8, textTransform: "uppercase" }}>
+                    ATELIER MAROQUINERIE GANHI
+                  </Text>
+                  <View style={{ backgroundColor: colors.canvas, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ fontSize: 9, color: colors.muted }}>Cotonou</Text>
+                  </View>
+                </View>
+                <Text style={{ fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontSize: 15, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                  {isEn ? "Full-Grain Saddle Stitching" : "Maroquinerie & Piqûre Sellier"}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 16 }}>
+                  {isEn ? "Vegetable-tanned full-grain leather, hand-stitched with waxed linen thread." : "Cuirs pleine fleur tannage végétal, cousus main au fil de lin ciré pour l'éternité."}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, marginTop: 12 }}>
+                <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                <Text style={{ fontSize: 9.5, fontWeight: "700", color: colors.accent, letterSpacing: 0.5 }}>
+                  {isEn ? "CERTIFIED SADDLER · HANDMADE" : "ARTISAN SELLIER · 100% MAIN"}
+                </Text>
+              </View>
+            </View>
+
+            {/* Atelier 3 */}
+            <View
+              style={{
+                width: 270,
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 16,
+                justifyContent: "space-between",
+              }}
+            >
+              <View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={{ fontSize: 9.5, fontWeight: "800", color: colors.accent, letterSpacing: 0.8, textTransform: "uppercase" }}>
+                    HAUTE HORLOGERIE KINGSTON
+                  </Text>
+                  <View style={{ backgroundColor: colors.canvas, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ fontSize: 9, color: colors.muted }}>Cotonou</Text>
+                  </View>
+                </View>
+                <Text style={{ fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontSize: 15, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                  {isEn ? "Chronometry & Fine Gems" : "Haute Joaillerie & Garde-Temps"}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 16 }}>
+                  {isEn ? "Gem-setting under microscope and precision calibration by master watchmakers." : "Sertissage haute joaillerie sous microscope et calibres horlogers certifiés."}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, marginTop: 12 }}>
+                <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+                <Text style={{ fontSize: 9.5, fontWeight: "700", color: colors.accent, letterSpacing: 0.5 }}>
+                  {isEn ? "CERTIFIED CHRONOMETER · 18K GOLD" : "CALIBRE CERTIFIÉ · OR 18K"}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* ==================== COMMERCIAL PRODUCT REQUEST (BESPOKE LOUNGE D02) ==================== */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
           <View
             style={{
               backgroundColor: "#022B22",
-              borderRadius: 20,
-              padding: 22,
+              borderRadius: 22,
+              padding: 24,
               alignItems: "center",
-              borderWidth: 1,
+              borderWidth: 1.5,
               borderColor: "rgba(212, 180, 131, 0.4)",
+              shadowColor: "#022B22",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.35,
+              shadowRadius: 14,
+              elevation: 4,
             }}
           >
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "800",
-                letterSpacing: 1.2,
-                color: colors.accent,
-                textTransform: "uppercase",
-                marginBottom: 6,
-              }}
-            >
-              {isEn ? "MERCHANT & STORE NETWORK" : "RÉSEAU DE COMMERÇANTS & BOUTIQUES"}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(212, 180, 131, 0.15)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.35)", marginBottom: 12 }}>
+              <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+              <Text
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: "800",
+                  letterSpacing: 1.1,
+                  color: colors.accent,
+                  textTransform: "uppercase",
+                }}
+              >
+                {isEn ? "BESPOKE LOUNGE · PRIVATE SERVICE" : "SALON PRIVÉ & CRÉATIONS SUR-MESURE"}
+              </Text>
+              <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
+            </View>
 
             <Text
               style={{
                 fontFamily: Platform.OS === "android" ? "serif" : "Georgia",
-                fontSize: 18,
-                lineHeight: 22,
+                fontSize: 20,
+                lineHeight: 25,
                 color: "#FFFFFF",
                 fontWeight: "700",
                 textAlign: "center",
-                marginBottom: 6,
+                marginBottom: 8,
               }}
             >
               {isEn
-                ? "Looking for a specific product?"
-                : "Vous cherchez un produit spécifique ?"}
+                ? "Dreaming of a creation that exists nowhere else?"
+                : "Vous rêvez d'une création qui n'existe nulle part ailleurs ?"}
             </Text>
 
             <Text
               style={{
-                fontSize: 12,
-                color: "rgba(255, 255, 255, 0.82)",
+                fontSize: 12.5,
+                color: "rgba(255, 255, 255, 0.85)",
                 textAlign: "center",
-                lineHeight: 17,
-                marginBottom: 16,
+                lineHeight: 18,
+                marginBottom: 18,
               }}
             >
               {isEn
-                ? "Describe what you are looking for. Verified merchants and stores will provide direct offers."
-                : "Décrivez votre recherche de produit. Les commerçants et boutiques vérifiés vous soumettront directement leurs offres et devis."}
+                ? "Commission bespoke pieces from verified master artisans. Receive tailored quotes and clear workshop timelines."
+                : "Confiez votre vision à nos maîtres d'art. Joaillerie sur-mesure, maroquinerie monogrammée ou mobilier d'exception : devis et délais d'atelier certifiés."}
             </Text>
 
             <Pressable
               onPress={onOpenNeed}
               style={({ pressed }) => [{
-                backgroundColor: colors.action,
-                paddingHorizontal: 20,
-                paddingVertical: 11,
+                backgroundColor: colors.accent,
+                paddingHorizontal: 22,
+                paddingVertical: 12,
                 borderRadius: 24,
                 opacity: pressed ? 0.85 : 1,
                 transform: [{ scale: pressed ? 0.96 : 1 }],
+                shadowColor: "#D4B483",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 3,
               }]}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>
-                {isEn ? "Post product request →" : "Publier une demande de produit →"}
+              <Text style={{ color: "#022B22", fontSize: 13, fontWeight: "800" }}>
+                {isEn ? "Open a Bespoke Request →" : "Ouvrir un projet sur-mesure →"}
               </Text>
             </Pressable>
+          </View>
+        </View>
+
+        {/* ==================== 4 ELITE TRUST SEALS (RÉASSURANCE LUXE) ==================== */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 18,
+              gap: 16,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(212, 180, 131, 0.15)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.35)" }}>
+                <Icon name="shield" size={18} color={colors.accent} weight="duotone" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 2 }}>
+                  {isEn ? "Numbered Certificate" : "Certificat d'Authenticité"}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 15 }}>
+                  {isEn ? "Every piece includes an official physical certificate of origin." : "Chaque création est livrée avec son certificat d'origine officiel scellé."}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(212, 180, 131, 0.15)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.35)" }}>
+                <Icon name="wallet" size={18} color={colors.accent} weight="duotone" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 2 }}>
+                  {isEn ? "Protected Settlement" : "Caisse Sécurisée & MoMo"}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 15 }}>
+                  {isEn ? "Funds held in escrow balance until physical handover inspection." : "Règlement Mobile Money sécurisé en livre de caisse certifié."}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(212, 180, 131, 0.15)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.35)" }}>
+                <Icon name="package" size={18} color={colors.accent} weight="duotone" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 2 }}>
+                  {isEn ? "Prestige Case Handover" : "Livraison en Écrin Scellé"}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 15 }}>
+                  {isEn ? "White-glove presentation packaging in Cotonou and main cities." : "Écrin d'art soigné et remise en mains propres sécurisée à Cotonou."}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(212, 180, 131, 0.15)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.35)" }}>
+                <Icon name="chat" size={18} color={colors.accent} weight="duotone" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text, marginBottom: 2 }}>
+                  {isEn ? "Private Concierge 7d/7" : "Conciergerie Privée 7j/7"}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 15 }}>
+                  {isEn ? "Direct dedicated WhatsApp advisory for inquiries and orders." : "Ligne directe d'assistance et accompagnement personnalisé."}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       </ScrollView>
