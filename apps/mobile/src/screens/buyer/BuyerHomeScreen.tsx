@@ -54,7 +54,7 @@ const resolveImageUrl = (url?: string | null) => {
   return `${origin}${url.startsWith('/') ? url : '/' + url}`;
 };
 
-function mapApiProduct(prod: ProductItem): Product {
+function mapApiProduct(prod: ProductItem): Product & { variants?: any[]; priceMinor?: number; artisanShop?: any; rawProduct?: any } {
   const isDigital = (prod.category || "").toLowerCase().includes("digital");
   const rawImage = prod.image || (prod as any).images?.[0] || null;
   return {
@@ -63,6 +63,7 @@ function mapApiProduct(prod: ProductItem): Product {
     subtitle: prod.description || "",
     seller: prod.artisanShop?.name || "Boutique Partenaire",
     price: Math.round(prod.priceMinor / 100),
+    priceMinor: prod.priceMinor,
     currency: "FCFA",
     rating: (prod as any).rating !== undefined ? (prod as any).rating : null,
     reviews: (prod as any).reviewsCount !== undefined ? (prod as any).reviewsCount : 0,
@@ -70,6 +71,9 @@ function mapApiProduct(prod: ProductItem): Product {
     category: prod.category || "other",
     isDigital: !!isDigital,
     format: isDigital ? "PDF Vectoriel (14.5 Mo)" : undefined,
+    variants: prod.variants || [],
+    artisanShop: prod.artisanShop,
+    rawProduct: prod,
   };
 }
 

@@ -471,7 +471,19 @@ const MainNavigator = () => {
         case "purchases":
           return <PurchasesScreen 
             onBack={goBack} 
-            onContactSupport={() => {}} 
+            onContactSupport={() => {
+              const phone = "+22997000000";
+              const msg = encodeURIComponent(
+                isEn
+                  ? "Hello Ojarket Concierge, I need assistance regarding my orders and purchases."
+                  : "Bonjour la Conciergerie Ojarket, j'ai besoin d'une assistance concernant mes achats et commandes."
+              );
+              Linking.openURL(`https://wa.me/22997000000?text=${msg}`).catch(() => {
+                Linking.openURL(`tel:${phone}`).catch(() => {
+                  ToastAndroid.show("Conciergerie : +229 97 00 00 00", ToastAndroid.LONG);
+                });
+              });
+            }} 
             onOpenNeed={handleOpenNeed}
           />;
         case "profile":

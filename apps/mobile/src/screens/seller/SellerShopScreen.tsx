@@ -15,6 +15,7 @@ import {
   Share,
   Image,
   Switch,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -957,14 +958,17 @@ export default function SellerShopScreen({
         animationType="slide"
         onRequestClose={() => setShowAddModal(false)}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+        >
           <View
             style={{
               backgroundColor: colors.surface,
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
               padding: 20,
-              maxHeight: '90%',
+              maxHeight: '92%',
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -976,7 +980,13 @@ export default function SellerShopScreen({
               </Pressable>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              automaticallyAdjustKeyboardInsets={true}
+              contentContainerStyle={{ gap: 14, paddingBottom: 24 }}
+            >
               {/* Photo Picker */}
               <View>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text, marginBottom: 6 }}>
@@ -1155,7 +1165,7 @@ export default function SellerShopScreen({
               </Pressable>
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ==================== SUBSCRIPTIONS MODAL ==================== */}

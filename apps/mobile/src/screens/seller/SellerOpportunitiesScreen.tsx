@@ -106,41 +106,10 @@ export default function SellerOpportunitiesScreen({
       );
       setSelectedReq(null);
       await fetchRequests();
-    } catch {
-      // Local optimistic update if offline
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.id === selectedReq.id
-            ? {
-                ...r,
-                status: "MATCHED",
-                proposals: [
-                  ...(r.proposals || []),
-                  {
-                    id: `prop-${Date.now()}`,
-                    requestId: r.id,
-                    shopId: "shop-01",
-                    shopName: "Boutique Excellence Bénin",
-                    artisanCity: "Cotonou",
-                    priceMinor: priceNum * 100,
-                    advancePaymentRequiredMinor: advNum * 100,
-                    currency: "XOF",
-                    productionDays: daysNum,
-                    notes: quoteNotes,
-                    status: "PENDING",
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              }
-            : r
-        )
-      );
-      setSelectedReq(null);
+    } catch (err: any) {
       Alert.alert(
-        isEn ? "Quote Transmitted (Offline Mode)!" : "Devis transmis (Mode Démo) !",
-        isEn
-          ? "The buyer has received your proposal."
-          : "Le client a reçu votre devis structuré."
+        isEn ? "Error" : "Erreur",
+        err?.message || (isEn ? "Failed to transmit proposal to buyer." : "Échec de transmission du devis au client.")
       );
     } finally {
       setSubmitting(false);

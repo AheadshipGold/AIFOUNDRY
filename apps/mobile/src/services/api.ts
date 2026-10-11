@@ -556,23 +556,50 @@ export const SellerApi = {
   /** Uploads a local image (file:// URI) and returns its public URL */
   async uploadImage(localUri: string, mimeType?: string | null): Promise<string> {
     const token = await getValidAuthToken();
+    let explicitUserId: string | undefined;
+    try {
+      const raw = await AsyncStorage.getItem('ojarket.auth.session');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.user?.id) explicitUserId = parsed.user.id;
+      }
+    } catch {}
+
     const ext = (localUri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
     const type = mimeType || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
     const form = new FormData();
     form.append('file', { uri: localUri, name: `product.${ext === 'jpeg' ? 'jpg' : ext}`, type } as any);
-    const res = await fetch(`${API_BASE_URL}/v1/seller/uploads`, {
-      method: 'POST',
-      headers: {
-        'Bypass-Tunnel-Reminder': 'true',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: form,
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || !json?.url) {
-      throw new Error(json?.message || 'Échec du téléversement de la photo');
+
+    const uploadHeaders: Record<string, string> = {
+      'Bypass-Tunnel-Reminder': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(explicitUserId ? { 'x-user-id': explicitUserId } : {}),
+    };
+
+    const doUpload = async (base: string) => {
+      const res = await fetch(`${base}/v1/seller/uploads`, {
+        method: 'POST',
+        headers: uploadHeaders,
+        body: form,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.url) {
+        throw new Error(json?.message || `Erreur de téléversement (${res.status})`);
+      }
+      return resolveMediaUrl(json.url) || json.url;
+    };
+
+    try {
+      return await doUpload(_activeBaseUrl);
+    } catch (primaryErr) {
+      const alt = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
+      if (alt !== _activeBaseUrl) {
+        try {
+          return await doUpload(alt);
+        } catch {}
+      }
+      throw primaryErr;
     }
-    return resolveMediaUrl(json.url) || json.url;
   },
 
   async getCashbook(): Promise<CashbookData> {

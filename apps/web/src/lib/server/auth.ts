@@ -368,16 +368,29 @@ export async function updateProfile(userId: string, dto: UpdateProfileDto) {
 
 export async function changePassword(userId: string, dto: ChangePasswordDto, reqHeaders?: any) {
   const headers = createRequestHeaders(reqHeaders);
-  const result = await auth.api.changePassword({
-    body: {
-      currentPassword: dto.oldPassword || '',
-      newPassword: dto.newPassword,
-      revokeOtherSessions: true,
-    },
-    headers,
-  });
-
-  return { success: true, message: 'Mot de passe mis à jour avec succès via Better Auth' };
+  try {
+    await auth.api.changePassword({
+      body: {
+        currentPassword: dto.oldPassword || '',
+        newPassword: dto.newPassword,
+        revokeOtherSessions: false,
+      },
+      headers,
+    });
+    return { success: true, message: 'Mot de passe mis à jour avec succès' };
+  } catch (err: any) {
+    try {
+      await auth.api.setPassword({
+        body: {
+          newPassword: dto.newPassword,
+        },
+        headers,
+      });
+      return { success: true, message: 'Mot de passe défini avec succès' };
+    } catch {
+      throw new Error(err.message || 'Ancien mot de passe incorrect ou session expirée');
+    }
+  }
 }
 
 export async function registerSeller(userId: string, dto: RegisterSellerDto) {

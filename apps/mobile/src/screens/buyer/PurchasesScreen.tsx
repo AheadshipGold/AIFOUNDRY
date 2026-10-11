@@ -147,12 +147,10 @@ export default function PurchasesScreen({
           : `Votre commande ${res.orderNumber} auprès de ${shopName} a été générée. L'acompte de ${amountFcfa.toLocaleString()} FCFA est prêt pour le règlement MoMo.`
       );
       await fetchData();
-    } catch {
+    } catch (err: any) {
       Alert.alert(
-        isEn ? 'Quote Accepted (Offline Mode)' : 'Devis validé (Mode Démo)',
-        isEn
-          ? `Order confirmed with ${shopName}. You can track progress in your Orders tab.`
-          : `Commande confirmée avec ${shopName}. Retrouvez l'avancement dans l'onglet Commandes.`
+        isEn ? 'Acceptance Failed' : 'Échec de validation',
+        err?.message || (isEn ? 'Could not accept proposal' : 'Impossible de valider ce devis pour le moment.')
       );
     } finally {
       setAcceptingId(null);
@@ -210,12 +208,10 @@ export default function PurchasesScreen({
       setReportingOrder(null);
       setIncidentTitle('');
       setIncidentDesc('');
-    } catch {
+    } catch (err: any) {
       Alert.alert(
-        isEn ? 'Incident Registered (Demo)' : 'Signalement enregistré (Démo)',
-        isEn
-          ? 'Your ticket is recorded for arbitration.'
-          : 'Votre dossier a été enregistré pour médiation.'
+        isEn ? 'Incident Reporting Failed' : 'Échec du signalement',
+        err?.message || (isEn ? 'Your ticket could not be transmitted for arbitration.' : 'Votre dossier n\'a pas pu être transmis pour le moment.')
       );
       setReportingOrder(null);
     } finally {
@@ -247,7 +243,7 @@ export default function PurchasesScreen({
             <View
               style={{
                 backgroundColor:
-                  order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID'
+                  order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                     ? 'rgba(16, 185, 129, 0.15)'
                     : 'rgba(245, 158, 11, 0.15)',
                 paddingHorizontal: 8,
@@ -260,12 +256,12 @@ export default function PurchasesScreen({
                   fontSize: 11,
                   fontWeight: '700',
                   color:
-                    order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID'
+                    order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                       ? '#10B981'
                       : '#F59E0B',
                 }}
               >
-                {order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID'
+                {order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                   ? isEn ? 'PAID' : 'RÉGLÉ'
                   : isEn ? 'PENDING' : 'EN ATTENTE'}
               </Text>

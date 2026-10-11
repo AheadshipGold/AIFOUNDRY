@@ -95,16 +95,18 @@ export default function RequestNeedScreen({
 
   const handleAiAssist = async () => {
     if (!description.trim()) {
-      setDescription(
+      Alert.alert(
+        isEn ? "Describe Your Creation" : "Décrivez Votre Souhait",
         isEn
-          ? "Custom cognac leather travel bag with solid brushed brass fittings and reinforced corners."
-          : "Sac de voyage sur-mesure en cuir pleine fleur cognac, finitions laiton brossé et coutures renforcées."
+          ? "Please type a few words describing the bespoke piece you desire, then tap AI Concierge to structure your specifications."
+          : "Veuillez d'abord saisir quelques mots sur la création souhaitée (ex: bague en or massif, sac cabas en cuir, fauteuil en teck), puis appuyez sur l'assistant."
       );
+      return;
     }
 
     setIsAiStructuring(true);
     try {
-      const promptToAnalyze = description.trim() || "Sac de voyage sur-mesure en cuir cognac avec bouclerie laiton";
+      const promptToAnalyze = description.trim();
       const result = await RequestsApi.analyzeWithAi(promptToAnalyze);
       if (result) {
         setAiAnalysis(result);
@@ -114,14 +116,14 @@ export default function RequestNeedScreen({
         if (result.priceEstimateFCFA) {
           setBudget(`${result.priceEstimateFCFA.toLocaleString('fr-FR')} FCFA`);
         }
-        const enriched = `${promptToAnalyze}\n\n[Spécifications Techniques IA]\n• Matériaux : ${result.materials.join(', ')}\n• Titre : ${result.refinedTitle}\n• Estimation : ${result.deliveryEstimate || `${result.estimatedDays} jours`}`;
+        const enriched = `${promptToAnalyze}\n\n[Cahier des Charges IA]\n• Pièce : ${result.refinedTitle}\n• Matériaux nobles : ${result.materials.join(', ')}\n• Délais d'atelier : ${result.deliveryEstimate || `${result.estimatedDays} jours`}\n• Boutiques expertes : ${result.targetBoutiques.join(', ')}`;
         setDescription(enriched);
       }
-    } catch (err) {
-      console.warn("AI analysis fallback", err);
-      const fallbackPrompt = description.trim() || "Création artisanale de luxe sur-mesure";
-      setDescription(
-        `${fallbackPrompt}\n\n[Spécification structurée]\n• Matériaux de qualité certifiée\n• Confection soignée boutique agréée\n• Délai estimé : 7 à 10 jours ouvrés`
+    } catch (err: any) {
+      console.warn("AI analysis error", err);
+      Alert.alert(
+        isEn ? "AI Concierge" : "Concierge IA",
+        err?.message || (isEn ? "Could not structure request. Please refine your text." : "Impossible de structurer votre demande pour le moment. Veuillez vérifier votre texte.")
       );
     } finally {
       setIsAiStructuring(false);
@@ -161,13 +163,10 @@ export default function RequestNeedScreen({
         [{ text: "OK", onPress: onSubmitted }]
       );
     } catch (err: any) {
-      console.warn("Failed to submit request", err);
+      console.error("Failed to submit request", err);
       Alert.alert(
-        isEn ? "Submission Note" : "Transmission",
-        isEn
-          ? "Your request has been recorded. Verified stores will be notified."
-          : "Votre demande a été enregistrée avec succès auprès de nos boutiques partenaires.",
-        [{ text: "OK", onPress: onSubmitted }]
+        isEn ? "Error" : "Erreur de transmission",
+        err?.message || (isEn ? "Could not submit your request. Please check your network and try again." : "Impossible d'enregistrer la demande. Veuillez réessayer.")
       );
     } finally {
       setIsSubmitting(false);

@@ -70,6 +70,7 @@ export default function ProductDetailModal({
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [waitingForAuthCheckout, setWaitingForAuthCheckout] = useState(false);
 
   React.useEffect(() => {
     const showSub = Keyboard.addListener(
@@ -94,8 +95,12 @@ export default function ProductDetailModal({
     if (currentUser) {
       if (currentUser.name) setBuyerName(currentUser.name);
       if (currentUser.phone) setBuyerPhone(currentUser.phone);
+      if (waitingForAuthCheckout) {
+        setWaitingForAuthCheckout(false);
+        setView("checkout");
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, waitingForAuthCheckout]);
 
   // Sync wishlist / favorite from DB
   React.useEffect(() => {
@@ -208,6 +213,7 @@ export default function ProductDetailModal({
 
   const handleStartCheckout = () => {
     if (!currentUser) {
+      setWaitingForAuthCheckout(true);
       onRequireAuth();
       return;
     }
@@ -227,6 +233,11 @@ export default function ProductDetailModal({
 
     setSubmitting(true);
     try {
+      // Use real variant ID if present, otherwise product.id which our backend now resolves seamlessly
+      const targetVariantId = (selectedVariant && selectedVariant.id && !selectedVariant.id.startsWith("var-"))
+        ? selectedVariant.id
+        : product.id;
+
       const order = await OrdersApi.create({
         buyerName: buyerName.trim(),
         buyerPhone: buyerPhone.trim(),
@@ -234,7 +245,7 @@ export default function ProductDetailModal({
         paymentChannel,
         items: [
           {
-            variantId: selectedVariant.id,
+            variantId: targetVariantId,
             quantity,
           },
         ],
@@ -244,39 +255,11 @@ export default function ProductDetailModal({
       setView("success");
       onOrderCompleted(order);
     } catch (err: any) {
-      console.warn("Order creation fallback", err);
-      const fallbackOrder: OrderRecord = {
-        id: `ord_${Date.now()}`,
-        orderNumber: `OJK-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        buyerName,
-        buyerPhone,
-        deliveryAddress,
-        totalAmountMinor: rawPrice * quantity * 100,
-        currency: "XOF",
-        paymentChannel,
-        paymentStatus: paymentChannel === "CASH_ON_DELIVERY" ? "PENDING" : "SETTLED_TO_MERCHANT",
-        fulfillmentStatus: "PREPARING",
-        lines: [
-          {
-            variantId: selectedVariant.id,
-            itemTitle: product.title,
-            sku: selectedVariant.sku || "SKU-01",
-            quantity,
-            unitPriceMinor: rawPrice * 100,
-            totalMinor: rawPrice * quantity * 100,
-          },
-        ],
-        paymentInstructions: {
-          merchantAccount: "+229 90 00 00 03",
-          merchantName: product.artisanShop?.name || sellerName,
-          ussdCode: paymentChannel === "MTN_MOMO" ? "*880#" : "*155#",
-          reference: `OJK-${Date.now().toString().slice(-4)}`,
-        },
-        createdAt: new Date().toISOString(),
-      };
-      setCreatedOrder(fallbackOrder);
-      setView("success");
-      onOrderCompleted(fallbackOrder);
+      console.error("Order creation error:", err);
+      Alert.alert(
+        isEn ? "Order Error" : "Erreur Commande",
+        err?.message || (isEn ? "Could not process order. Please try again." : "Impossible d'enregistrer la commande. Veuillez vérifier vos informations.")
+      );
     } finally {
       setSubmitting(false);
     }

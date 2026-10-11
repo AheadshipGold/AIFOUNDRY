@@ -8,7 +8,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Session invalide' }, { status: 401 });
     }
     const body = await req.json();
-    const result = await changePassword(userId, body);
+    const result = await changePassword(userId, body, req.headers);
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json({ message: err.message || 'Erreur lors du changement de mot de passe' }, { status: 400 });

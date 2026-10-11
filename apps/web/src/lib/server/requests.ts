@@ -46,10 +46,12 @@ export async function createPurchaseRequest(dto: {
   buyerId?: string;
   buyerName?: string;
   buyerPhone?: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
+  rawPrompt?: string;
   category?: string;
   targetBudgetMinor?: number;
+  budgetMinor?: number;
   aiStructuredData?: any;
 }) {
   let buyerId = dto.buyerId;
@@ -66,13 +68,17 @@ export async function createPurchaseRequest(dto: {
     buyerId = user.id;
   }
 
+  const effectiveDescription = dto.description || dto.rawPrompt || 'Demande de confection artisanale personnalisée';
+  const effectiveTitle = dto.title || (effectiveDescription.length > 50 ? effectiveDescription.substring(0, 47) + '...' : effectiveDescription);
+  const effectiveBudget = dto.targetBudgetMinor || dto.budgetMinor || 5000000;
+
   const req = await prisma.purchaseRequest.create({
     data: {
       buyerId,
-      title: dto.title,
-      description: dto.description,
+      title: effectiveTitle,
+      description: effectiveDescription,
       category: dto.category || 'leather',
-      targetBudgetMinor: dto.targetBudgetMinor || 5000000,
+      targetBudgetMinor: effectiveBudget,
       currency: 'XOF',
       status: 'OPEN',
       aiStructuredData: dto.aiStructuredData || null,

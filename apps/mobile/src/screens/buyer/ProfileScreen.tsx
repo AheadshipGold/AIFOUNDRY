@@ -160,8 +160,8 @@ export default function ProfileScreen({
         isEn ? 'Profile Updated' : 'Profil Mis à Jour',
         isEn ? 'Your personal details have been saved successfully.' : 'Vos informations ont été enregistrées avec succès.'
       );
-    } catch {
-      setEditError(isEn ? 'Failed to update profile' : 'Impossible de mettre à jour le profil');
+    } catch (err: any) {
+      setEditError(err?.message || (isEn ? 'Failed to update profile' : 'Impossible de mettre à jour le profil'));
     } finally {
       setSaving(false);
     }
@@ -190,8 +190,8 @@ export default function ProfileScreen({
         isEn ? 'Security' : 'Sécurité',
         isEn ? 'Your password has been changed successfully.' : 'Votre mot de passe a été modifié avec succès.'
       );
-    } catch {
-      setPasswordError(isEn ? 'Error updating password' : 'Erreur lors du changement de mot de passe');
+    } catch (err: any) {
+      setPasswordError(err?.message || (isEn ? 'Error updating password' : 'Erreur lors du changement de mot de passe'));
     } finally {
       setSavingPassword(false);
     }
@@ -760,53 +760,45 @@ export default function ProfileScreen({
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* 6. DANGER ZONE: ACCOUNT DELETION                              */}
+        {/* 6. ADVANCED PRIVACY & DATA SETTINGS                           */}
         {/* ------------------------------------------------------------- */}
         {currentUser && (
           <View
             style={{
-              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.06)' : '#FEF2F2',
-              borderRadius: 16,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: isDark ? 'rgba(239, 68, 68, 0.22)' : '#FECACA',
-              marginTop: 14,
+              paddingTop: 16,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              alignItems: 'center',
+              marginTop: 18,
               marginBottom: 10,
             }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <Icon name="warning" size={16} color="#DC2626" />
-              <Text style={{ fontSize: 13, fontWeight: '800', color: '#DC2626', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {isEn ? 'Data Privacy & Account Deletion' : 'Confidentialité & Suppression du Compte'}
-              </Text>
-            </View>
-            <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18, marginBottom: 12 }}>
-              {isEn
-                ? 'Permanently delete your account, active requests, order history, and personal data.'
-                : 'Supprimez définitivement votre profil, vos demandes de devis sur-mesure et vos données personnelles.'}
-            </Text>
             <TouchableOpacity
               onPress={() => {
-                setDeleteConfirmText('');
-                setDeleteError('');
-                setShowDeleteModal(true);
+                Alert.alert(
+                  isEn ? 'Data Privacy & Deletion' : 'Confidentialité & Données Personnelles',
+                  isEn
+                    ? 'Do you wish to access the permanent account deletion request?'
+                    : 'Souhaitez-vous accéder à la procédure de suppression définitive de votre compte et de vos données ?',
+                  [
+                    { text: isEn ? 'Cancel' : 'Annuler', style: 'cancel' },
+                    {
+                      text: isEn ? 'Continue' : 'Continuer',
+                      style: 'destructive',
+                      onPress: () => {
+                        setDeleteConfirmText('');
+                        setDeleteError('');
+                        setShowDeleteModal(true);
+                      },
+                    },
+                  ]
+                );
               }}
-              style={{
-                backgroundColor: isDark ? 'rgba(220, 38, 38, 0.2)' : '#FEE2E2',
-                borderWidth: 1,
-                borderColor: '#DC2626',
-                paddingVertical: 11,
-                borderRadius: 10,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={{ paddingVertical: 8, paddingHorizontal: 12 }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Icon name="trash" size={14} color="#DC2626" />
-                <Text style={{ color: '#DC2626', fontWeight: '800', fontSize: 13 }}>
-                  {isEn ? 'Delete My Account' : 'Supprimer Définitivement Mon Compte'}
-                </Text>
-              </View>
+              <Text style={{ fontSize: 11, color: colors.muted, textDecorationLine: 'underline', letterSpacing: 0.3 }}>
+                {isEn ? 'Privacy settings & Delete account' : 'Paramètres de confidentialité & Supprimer mon compte'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
