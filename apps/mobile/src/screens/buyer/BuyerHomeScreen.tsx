@@ -213,7 +213,9 @@ export default function BuyerHomeScreen({
     { id: "digital", label: isEn ? "Digital" : "Numérique", image: require("../../../assets/products/digital-patterns.jpg"), isAll: false, icon: "download" },
   ];
 
-  const sourceList = products.length > 0 ? products : (cms?.featuredProducts || []);
+  const sourceList = (cms?.featuredProducts && cms.featuredProducts.length > 0)
+    ? cms.featuredProducts
+    : products;
   const filtered = sourceList.filter((p: any) => {
     const matchesCat = activeCat === "all" || p.category === activeCat;
     const matchesSearch = search.trim() === "" || (p.title || "").toLowerCase().includes(search.toLowerCase()) || (p.seller?.name || p.seller || "").toLowerCase().includes(search.toLowerCase());
