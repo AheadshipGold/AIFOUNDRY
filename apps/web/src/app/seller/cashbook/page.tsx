@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getStoredToken } from "@/lib/api";
+import { getStoredToken, getStoredUser } from "@/lib/api";
 
 interface CashbookEntryItem {
   id: string;
@@ -58,7 +58,11 @@ export default function StandaloneCashbookPage() {
 
   const loadCashbook = () => {
     const token = getStoredToken();
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const storedUser = getStoredUser();
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
+    };
 
     fetch("/api/v1/seller/cashbook", { headers })
       .then((r) => (r.ok ? r.json() : null))

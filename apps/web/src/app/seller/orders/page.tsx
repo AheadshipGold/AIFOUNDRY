@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getStoredToken } from "@/lib/api";
+import { getStoredToken, getStoredUser } from "@/lib/api";
 import { sellerTranslations, SellerLocale } from "@/lib/seller-i18n";
 
 interface OrderRecord {
@@ -27,7 +27,7 @@ export default function SellerOrdersPage() {
   const [locale, setLocale] = useState<SellerLocale>("fr");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"ALL" | "PREPARING" | "SHIPPED" | "DELIVERED">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "DECLARED" | "PENDING_PAYMENT" | "PREPARING" | "SHIPPED" | "DELIVERED">("ALL");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,7 +42,11 @@ export default function SellerOrdersPage() {
   const fetchOrders = () => {
     setLoading(true);
     const token = getStoredToken();
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const storedUser = getStoredUser();
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
+    };
 
     fetch("/api/v1/seller/orders", { headers })
       .then((r) => (r.ok ? r.json() : null))
@@ -63,6 +67,7 @@ export default function SellerOrdersPage() {
   const handleUpdateStatus = async (orderId: string, nextStatus: "PREPARING" | "SHIPPED" | "DELIVERED") => {
     setActionLoading(orderId);
     const token = getStoredToken();
+    const storedUser = getStoredUser();
 
     try {
       const res = await fetch(`/api/v1/orders/${orderId}/status`, {
@@ -70,12 +75,14 @@ export default function SellerOrdersPage() {
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
         },
         body: JSON.stringify({ fulfillmentStatus: nextStatus }),
       });
 
       if (!res.ok) {
-        throw new Error("Erreur de mise à jour du statut");
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.message || "Erreur de mise à jour du statut");
       }
 
       setOrders((prev) =>
@@ -88,6 +95,50 @@ export default function SellerOrdersPage() {
     }
   };
 
+  const handleConfirmPayment = async (orderId: string) => {
+    setActionLoading(orderId);
+    const token = getStoredToken();
+    const storedUser = getStoredUser();
+
+    try {
+      const res = await fetch(`/api/v1/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
+        },
+        body: JSON.stringify({ paymentStatus: "CONFIRMED" }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.message || "Erreur de validation de l'encaissement");
+      }
+
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: "CONFIRMED" } : o))
+      );
+    } catch (err: any) {
+      alert(err.message || "Impossible de valider l'encaissement");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleContactBuyerWhatsApp = (ord: OrderRecord) => {
+    const rawPhone = ord.buyerPhone || "";
+    let clean = rawPhone.replace(/[^\d+]/g, "");
+    if (!clean.startsWith("+") && clean.length >= 8) {
+      clean = clean.length === 8 ? `+229${clean}` : `+${clean}`;
+    }
+    const amountStr = formatPrice(ord.totalAmountMinor);
+    const msg = encodeURIComponent(
+      `Bonjour ${ord.buyerName}, nous faisons suite à votre commande #${ord.orderNumber} d'un montant de ${amountStr} sur notre boutique Kingston Bio. Avez-vous besoin d'assistance pour finaliser ou vérifier votre règlement ?`
+    );
+    window.open(`https://wa.me/${clean.replace("+", "")}?text=${msg}`, "_blank");
+  };
+
   const t = sellerTranslations[locale];
 
   const formatPrice = (minor: number) => {
@@ -96,29 +147,42 @@ export default function SellerOrdersPage() {
 
   const filteredOrders = orders.filter((o) => {
     if (filter === "ALL") return true;
-    if (filter === "PREPARING") return o.fulfillmentStatus === "PENDING" || o.fulfillmentStatus === "PREPARING";
+    if (filter === "DECLARED") return o.paymentStatus === "DECLARED";
+    if (filter === "PENDING_PAYMENT") return o.paymentStatus === "PENDING";
+    if (filter === "PREPARING") {
+      return (
+        o.fulfillmentStatus === "PREPARING" ||
+        (o.fulfillmentStatus === "PENDING" &&
+          (o.paymentStatus === "CONFIRMED" || o.paymentStatus === "SETTLED_TO_MERCHANT"))
+      );
+    }
     return o.fulfillmentStatus === filter;
   });
+
+  const declaredCount = orders.filter((o) => o.paymentStatus === "DECLARED").length;
+  const pendingPaymentCount = orders.filter((o) => o.paymentStatus === "PENDING").length;
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontFamily: "var(--oj-font-editorial, serif)", fontSize: "28px", color: "#F8F6F0", margin: "0 0 6px 0" }}>
             {t.nav.orders}
           </h1>
           <p style={{ color: "rgba(248, 246, 240, 0.65)", fontSize: "14px", margin: 0 }}>
-            Suivi des encaissements certifiés et exécution physique des livraisons.
+            Suivi des encaissements certifiés, relances clients et exécution physique des livraisons.
           </p>
         </div>
 
         {/* Filter Tabs */}
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {[
-            { id: "ALL", label: "Toutes les commandes" },
-            { id: "PREPARING", label: "À préparer / expédier" },
-            { id: "SHIPPED", label: "En cours d'acheminement" },
+            { id: "ALL", label: `Toutes (${orders.length})` },
+            { id: "DECLARED", label: `Preuves reçues (${declaredCount})` },
+            { id: "PENDING_PAYMENT", label: `En attente (${pendingPaymentCount})` },
+            { id: "PREPARING", label: "À expédier" },
+            { id: "SHIPPED", label: "En cours" },
             { id: "DELIVERED", label: "Livrées" },
           ].map((tab) => (
             <button
@@ -128,11 +192,17 @@ export default function SellerOrdersPage() {
                 padding: "8px 14px",
                 borderRadius: "6px",
                 border: filter === tab.id ? "1px solid #D4B483" : "1px solid rgba(255, 255, 255, 0.08)",
-                backgroundColor: filter === tab.id ? "rgba(173, 132, 85, 0.2)" : "rgba(0, 0, 0, 0.2)",
-                color: filter === tab.id ? "#D4B483" : "rgba(248, 246, 240, 0.7)",
-                fontSize: "12.5px",
-                fontWeight: 500,
+                backgroundColor:
+                  filter === tab.id
+                    ? "rgba(173, 132, 85, 0.2)"
+                    : tab.id === "DECLARED" && declaredCount > 0
+                    ? "rgba(212, 180, 131, 0.12)"
+                    : "rgba(0, 0, 0, 0.2)",
+                color: filter === tab.id ? "#D4B483" : tab.id === "DECLARED" && declaredCount > 0 ? "#E0C38C" : "rgba(248, 246, 240, 0.7)",
+                fontSize: "12px",
+                fontWeight: 600,
                 cursor: "pointer",
+                transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
               }}
             >
               {tab.label}
@@ -210,11 +280,24 @@ export default function SellerOrdersPage() {
                         borderRadius: "4px",
                         fontSize: "11px",
                         fontWeight: 600,
-                        backgroundColor: isSettled ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 193, 7, 0.15)",
-                        color: isSettled ? "#10B981" : "#FFC107",
+                        backgroundColor: isSettled
+                          ? "rgba(16, 185, 129, 0.15)"
+                          : ord.paymentStatus === "DECLARED"
+                          ? "rgba(212, 180, 131, 0.2)"
+                          : "rgba(255, 193, 7, 0.15)",
+                        color: isSettled
+                          ? "#10B981"
+                          : ord.paymentStatus === "DECLARED"
+                          ? "#E0C38C"
+                          : "#FFC107",
+                        border: ord.paymentStatus === "DECLARED" ? "1px solid rgba(212, 180, 131, 0.5)" : "none",
                       }}
                     >
-                      {isSettled ? "Payé & Encaissé" : "Paiement en attente"}
+                      {isSettled
+                        ? "✓ Payé & Encaissé"
+                        : ord.paymentStatus === "DECLARED"
+                        ? "⚡ Preuve déclarée (À encaisser)"
+                        : "Paiement en attente"}
                     </span>
                     <span
                       style={{
@@ -261,15 +344,52 @@ export default function SellerOrdersPage() {
                   )}
                 </div>
 
-                {/* Right: Amount & Fulfillment Controls */}
+                {/* Right: Amount & Action Controls */}
                 <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "#F8F6F0", fontVariantNumeric: "tabular-nums" }}>
                     {formatPrice(ord.totalAmountMinor)}
                   </div>
 
+                  {/* Payment & Relance Controls */}
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {!isSettled && (
+                      <button
+                        onClick={() => handleConfirmPayment(ord.id)}
+                        disabled={actionLoading === ord.id}
+                        className="seller-action-btn"
+                        style={{
+                          padding: "6px 14px",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          background: "linear-gradient(135deg, #075D49 0%, #10B981 100%)",
+                          borderColor: "rgba(16, 185, 129, 0.5)",
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        ✓ Valider l'encaissement
+                      </button>
+                    )}
+
+                    {ord.buyerPhone && (
+                      <button
+                        onClick={() => handleContactBuyerWhatsApp(ord)}
+                        className="seller-action-btn"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "12px",
+                          background: "rgba(37, 211, 102, 0.15)",
+                          borderColor: "rgba(37, 211, 102, 0.4)",
+                          color: "#25D366",
+                        }}
+                      >
+                        💬 Relancer client
+                      </button>
+                    )}
+                  </div>
+
                   {/* Status Progression Buttons */}
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    {fulfillment === "PENDING" && (
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {fulfillment === "PENDING" && isSettled && (
                       <button
                         onClick={() => handleUpdateStatus(ord.id, "PREPARING")}
                         disabled={actionLoading === ord.id}
@@ -279,7 +399,7 @@ export default function SellerOrdersPage() {
                       </button>
                     )}
 
-                    {(fulfillment === "PENDING" || fulfillment === "PREPARING") && (
+                    {(fulfillment === "PENDING" || fulfillment === "PREPARING") && isSettled && (
                       <button
                         onClick={() => handleUpdateStatus(ord.id, "SHIPPED")}
                         disabled={actionLoading === ord.id}

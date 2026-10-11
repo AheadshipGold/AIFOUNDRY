@@ -233,10 +233,11 @@ export default function ProductDetailModal({
 
     setSubmitting(true);
     try {
-      // Use real variant ID if present, otherwise product.id which our backend now resolves seamlessly
       const targetVariantId = (selectedVariant && selectedVariant.id && !selectedVariant.id.startsWith("var-"))
         ? selectedVariant.id
         : product.id;
+
+      const resolvedUnitPriceMinor = selectedVariant?.priceMinor || Math.round((product.price || 0) * 100);
 
       const order = await OrdersApi.create({
         buyerName: buyerName.trim(),
@@ -246,7 +247,9 @@ export default function ProductDetailModal({
         items: [
           {
             variantId: targetVariantId,
+            productId: product.id,
             quantity,
+            unitPriceMinor: resolvedUnitPriceMinor,
           },
         ],
       });

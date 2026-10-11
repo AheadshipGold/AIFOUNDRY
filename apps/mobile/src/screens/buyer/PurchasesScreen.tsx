@@ -10,6 +10,9 @@ import {
   Modal,
   TextInput,
   StatusBar,
+  Linking,
+  KeyboardAvoidingView,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
@@ -101,6 +104,76 @@ export default function PurchasesScreen({
   const [incidentDesc, setIncidentDesc] = useState('');
   const [incidentSubmitting, setIncidentSubmitting] = useState(false);
 
+  // Payment proof modal state
+  const [proofOrder, setProofOrder] = useState<OrderRecord | null>(null);
+  const [transactionRef, setTransactionRef] = useState('');
+  const [proofNotes, setProofNotes] = useState('');
+  const [submittingProof, setSubmittingProof] = useState(false);
+
+  const handleContactShop = (order: OrderRecord) => {
+    const rawPhone = order.paymentInstructions?.merchantAccount || "+22997000000";
+    const shopName = order.paymentInstructions?.merchantName || "Kingston Bio";
+    const cleanPhone = rawPhone.replace(/[^\d+]/g, '');
+    const phoneDigits = cleanPhone.replace(/[^\d]/g, '');
+    const phoneForWa = phoneDigits.startsWith('229') ? phoneDigits : `229${phoneDigits.slice(-8)}`;
+    const msg = encodeURIComponent(
+      isEn
+        ? `Hello ${shopName}, I am contacting you regarding my Ojarket order #${order.orderNumber || order.id}.`
+        : `Bonjour ${shopName}, je vous contacte concernant ma commande Ojarket #${order.orderNumber || order.id}.`
+    );
+    const waUrl = `https://wa.me/${phoneForWa}?text=${msg}`;
+    const telUrl = `tel:${cleanPhone}`;
+
+    Linking.openURL(waUrl).catch(() => {
+      Linking.openURL(telUrl).catch(() => {
+        Alert.alert(
+          isEn ? "Store Contact" : "Contact Boutique",
+          `${shopName} : ${rawPhone}`
+        );
+      });
+    });
+  };
+
+  const handleDeclarePayment = async () => {
+    if (!proofOrder) return;
+    if (!transactionRef.trim()) {
+      Alert.alert(
+        isEn ? "Reference Required" : "Référence Requise",
+        isEn
+          ? "Please enter your Mobile Money transaction ID or SMS reference."
+          : "Veuillez entrer la référence de votre transaction Mobile Money (reçue par SMS)."
+      );
+      return;
+    }
+
+    setSubmittingProof(true);
+    try {
+      await OrdersApi.declarePayment(proofOrder.id, {
+        transactionRef: transactionRef.trim(),
+        notes: proofNotes.trim() || undefined,
+      });
+
+      Alert.alert(
+        isEn ? "Payment Proof Transmitted!" : "Preuve Transmise !",
+        isEn
+          ? "Your payment proof has been forwarded to the boutique. The merchant will confirm receipt."
+          : "Votre preuve de règlement a été transmise à la boutique. Le commerçant va valider l'encaissement."
+      );
+
+      setProofOrder(null);
+      setTransactionRef('');
+      setProofNotes('');
+      await fetchData();
+    } catch (err: any) {
+      Alert.alert(
+        isEn ? "Error" : "Erreur",
+        err?.message || (isEn ? "Could not submit payment proof" : "Impossible d'enregistrer la déclaration pour le moment.")
+      );
+    } finally {
+      setSubmittingProof(false);
+    }
+  };
+
   const headerFont = Platform.OS === 'android' ? 'serif' : 'Georgia';
 
   const fetchData = async () => {
@@ -121,6 +194,14 @@ export default function PurchasesScreen({
     } finally {
       setLoading(false);
     }
+  };
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -245,6 +326,8 @@ export default function PurchasesScreen({
                 backgroundColor:
                   order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                     ? 'rgba(16, 185, 129, 0.15)'
+                    : order.paymentStatus === 'DECLARED'
+                    ? 'rgba(196, 154, 69, 0.15)'
                     : 'rgba(245, 158, 11, 0.15)',
                 paddingHorizontal: 8,
                 paddingVertical: 2,
@@ -258,11 +341,15 @@ export default function PurchasesScreen({
                   color:
                     order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                       ? '#10B981'
+                      : order.paymentStatus === 'DECLARED'
+                      ? '#C49A45'
                       : '#F59E0B',
                 }}
               >
                 {order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                   ? isEn ? 'PAID' : 'RÉGLÉ'
+                  : order.paymentStatus === 'DECLARED'
+                  ? isEn ? 'DECLARED' : 'DÉCLARÉ'
                   : isEn ? 'PENDING' : 'EN ATTENTE'}
               </Text>
             </View>
@@ -298,8 +385,10 @@ export default function PurchasesScreen({
                   ? 'Moov Money (*155#)'
                   : order.paymentChannel || 'Mobile Money'}
                 {' · '}
-                {order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID'
+                {order.paymentStatus === 'SETTLED_TO_MERCHANT' || order.paymentStatus === 'PAID' || order.paymentStatus === 'CONFIRMED'
                   ? isEn ? 'Encaissé marchand' : 'Encaissé marchand (100%)'
+                  : order.paymentStatus === 'DECLARED'
+                  ? isEn ? 'Preuve déclarée' : 'Preuve déclarée · En attente encaissement'
                   : isEn ? 'Acompte en attente' : 'Acompte en attente'}
               </Text>
             </View>
@@ -322,14 +411,7 @@ export default function PurchasesScreen({
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable
-            onPress={() =>
-              showAlert(
-                isEn ? 'Payment Proof' : 'Preuve de paiement',
-                isEn
-                  ? `Order: #${order.orderNumber || order.id}\nAmount: ${amountStr}\nChannel: ${order.paymentChannel}\nStatus: ${order.paymentStatus}`
-                  : `Commande : #${order.orderNumber || order.id}\nMontant : ${amountStr}\nCanal : ${order.paymentChannel}\nStatut : ${order.paymentStatus}`
-              )
-            }
+            onPress={() => setProofOrder(order)}
             style={{
               flex: 1,
               paddingVertical: 10,
@@ -345,12 +427,7 @@ export default function PurchasesScreen({
             </Text>
           </Pressable>
           <Pressable
-            onPress={() =>
-              showAlert(
-                isEn ? 'Contact Store' : "Contacter la boutique",
-                isEn ? 'Messaging channel open with the merchant.' : "Canal de messagerie ouvert avec le commerçant."
-              )
-            }
+            onPress={() => handleContactShop(order)}
             style={{
               flex: 1,
               paddingVertical: 10,
@@ -786,6 +863,14 @@ export default function PurchasesScreen({
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {loading ? (
           <ActivityIndicator size="large" color={colors.action} style={{ marginTop: 40 }} />
@@ -1011,6 +1096,197 @@ export default function PurchasesScreen({
               </Pressable>
             </View>
           </View>
+        </Modal>
+      )}
+
+      {/* Payment Proof / Settlement Modal */}
+      {proofOrder && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setProofOrder(null)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          >
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderTopLeftRadius: 24,
+                  borderTopRightRadius: 24,
+                  padding: 24,
+                  maxHeight: '90%',
+                }}
+              >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontFamily: headerFont, fontSize: 18, fontWeight: '700', color: colors.text }}>
+                  {isEn ? 'Proof of Payment' : 'Preuve de Règlement'}
+                </Text>
+                <Pressable onPress={() => setProofOrder(null)}>
+                  <Text style={{ fontSize: 18, color: colors.text, padding: 4 }}>✕</Text>
+                </Pressable>
+              </View>
+
+              {proofOrder.paymentStatus === 'CONFIRMED' || proofOrder.paymentStatus === 'SETTLED_TO_MERCHANT' || proofOrder.paymentStatus === 'PAID' ? (
+                /* Certified Settled Receipt */
+                <View style={{ gap: 14 }}>
+                  <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#10B981', alignItems: 'center', gap: 6 }}>
+                    <Icon name="check-circle" size={28} color="#10B981" />
+                    <Text style={{ color: '#10B981', fontWeight: '800', fontSize: 14, letterSpacing: 0.5 }}>
+                      {isEn ? 'PAYMENT CERTIFIED & SETTLED' : 'RÈGLEMENT CERTIFIÉ & CONFIRMÉ'}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, textAlign: 'center' }}>
+                      {isEn ? 'Funds verified and posted in the boutique ledger.' : 'Fonds vérifiés et enregistrés dans le livre de caisse de la boutique.'}
+                    </Text>
+                  </View>
+
+                  <View style={{ backgroundColor: colors.canvas, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>{isEn ? 'Order Number' : 'N° Commande'}</Text>
+                      <Text style={{ color: colors.text, fontWeight: '700', fontSize: 13 }}>#{proofOrder.orderNumber || proofOrder.id}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>{isEn ? 'Total Settled' : 'Montant Réglé'}</Text>
+                      <Text style={{ color: colors.action, fontWeight: '800', fontSize: 14 }}>
+                        {(proofOrder.totalAmountMinor / 100).toLocaleString('fr-FR')} FCFA
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>{isEn ? 'Payment Channel' : 'Canal'}</Text>
+                      <Text style={{ color: colors.text, fontWeight: '600', fontSize: 12 }}>{proofOrder.paymentChannel}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>{isEn ? 'Buyer' : 'Acheteur'}</Text>
+                      <Text style={{ color: colors.text, fontWeight: '600', fontSize: 12 }}>{proofOrder.buyerName}</Text>
+                    </View>
+                  </View>
+
+                  <Pressable
+                    onPress={() => setProofOrder(null)}
+                    style={{
+                      backgroundColor: colors.action,
+                      paddingVertical: 12,
+                      borderRadius: 10,
+                      alignItems: 'center',
+                      marginTop: 8,
+                    }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
+                      {isEn ? 'Close Receipt' : 'Fermer le reçu'}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : (
+                /* Unconfirmed: Declaration Form */
+                <View style={{ gap: 14 }}>
+                  {/* Settlement Instructions */}
+                  <View style={{ backgroundColor: colors.canvas, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 6 }}>
+                    <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                      {isEn ? 'TRANSFER INSTRUCTIONS' : 'INSTRUCTIONS DE RÈGLEMENT DIRECT'}
+                    </Text>
+                    <Text style={{ color: colors.text, fontSize: 13, lineHeight: 18 }}>
+                      {isEn ? 'Please send ' : 'Veuillez envoyer '}
+                      <Text style={{ fontWeight: '800', color: colors.action }}>
+                        {(proofOrder.totalAmountMinor / 100).toLocaleString('fr-FR')} FCFA
+                      </Text>
+                      {isEn ? ' to the boutique account:' : ' sur le compte marchand boutique :'}
+                    </Text>
+                    <View style={{ backgroundColor: colors.surface, padding: 10, borderRadius: 8, marginTop: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View>
+                        <Text style={{ color: colors.muted, fontSize: 11 }}>
+                          {proofOrder.paymentInstructions?.merchantName || 'Kingston Bio'} ({proofOrder.paymentChannel})
+                        </Text>
+                        <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16, letterSpacing: 0.5 }}>
+                          {proofOrder.paymentInstructions?.merchantAccount || '+229 97 00 00 00'}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => handleContactShop(proofOrder)}
+                        style={{ backgroundColor: 'rgba(173, 132, 85, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }}
+                      >
+                        <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 11 }}>
+                          {isEn ? 'WhatsApp' : 'WhatsApp'}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+
+                  {/* Transaction Ref Input */}
+                  <View>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text, marginBottom: 6 }}>
+                      {isEn ? 'Transaction ID / Reference *' : 'Référence de transaction MoMo / Virement *'}
+                    </Text>
+                    <TextInput
+                      value={transactionRef}
+                      onChangeText={setTransactionRef}
+                      placeholder={isEn ? 'e.g. TXN-880-928491' : 'Ex: TXN-880-928491 ou ID SMS MTN/Moov'}
+                      placeholderTextColor={colors.muted}
+                      style={{
+                        backgroundColor: colors.canvas,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        padding: 12,
+                        fontSize: 14,
+                        color: colors.text,
+                      }}
+                    />
+                  </View>
+
+                  {/* Optional Notes */}
+                  <View>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text, marginBottom: 6 }}>
+                      {isEn ? 'Optional Note' : 'Précisions complémentaires (facultatif)'}
+                    </Text>
+                    <TextInput
+                      value={proofNotes}
+                      onChangeText={setProofNotes}
+                      placeholder={isEn ? 'Sender phone number or time...' : 'Numéro émetteur ou heure du transfert...'}
+                      placeholderTextColor={colors.muted}
+                      style={{
+                        backgroundColor: colors.canvas,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        padding: 10,
+                        fontSize: 13,
+                        color: colors.text,
+                      }}
+                    />
+                  </View>
+
+                  {/* Submit Button */}
+                  <Pressable
+                    disabled={submittingProof}
+                    onPress={handleDeclarePayment}
+                    style={{
+                      backgroundColor: colors.action,
+                      paddingVertical: 12,
+                      borderRadius: 10,
+                      alignItems: 'center',
+                      marginTop: 4,
+                    }}
+                  >
+                    {submittingProof ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
+                        {isEn ? 'Submit Proof to Store →' : 'Transmettre ma preuve de règlement →'}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              )}
+            </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </Modal>
       )}
     </View>

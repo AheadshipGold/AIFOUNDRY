@@ -69,6 +69,41 @@ export function UsersView() {
     }
   };
 
+  const handleRevokeAdmin = async (u: any) => {
+    const isOwner = u.role === "PLATFORM_OWNER" || u.email?.toLowerCase().includes("damacarre");
+    if (isOwner) {
+      alert(isEn ? "Cannot revoke Platform Owner" : "Impossible de destituer le propriétaire souverain de la plateforme.");
+      return;
+    }
+
+    const confirmMsg = isEn
+      ? `Are you sure you want to destitute administrator ${u.name || u.email}? They will be demoted to buyer.`
+      : `Confirmez-vous la destitution de l'administrateur ${u.name || u.email} ? Il sera rétrogradé au rang d'utilisateur simple.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/v1/admin/users?email=${encodeURIComponent(u.email)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getStoredToken()}`,
+        },
+      });
+
+      if (res.ok) {
+        setAdminSuccessMsg(isEn ? "Administrator revoked successfully!" : `L'administrateur ${u.email} a été destitué avec succès.`);
+        setTimeout(() => setAdminSuccessMsg(""), 4500);
+        fetchAdmins();
+      } else {
+        const err = await res.json().catch(() => null);
+        alert(err?.error || (isEn ? "Error revoking admin" : "Erreur lors de la destitution"));
+      }
+    } catch (e) {
+      console.error(e);
+      alert(isEn ? "Error revoking admin" : "Erreur de connexion");
+    }
+  };
+
   return (
     <div>
       <div className="oj-admin-header-row">
@@ -160,15 +195,16 @@ export function UsersView() {
               <th>{isEn ? "Governance Role" : "Rôle de Gouvernance"}</th>
               <th>{isEn ? "MFA Security" : "Sécurité & MFA"}</th>
               <th>{isEn ? "Appointment Date" : "Date de Nomination"}</th>
-              <th style={{ textAlign: "right" }}>{isEn ? "Status" : "Statut"}</th>
+              <th>{isEn ? "Status" : "Statut"}</th>
+              <th style={{ textAlign: "right" }}>{isEn ? "Actions" : "Actions"}</th>
             </tr>
           </thead>
           <tbody>
             {adminLoading ? (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: "30px", color: "var(--oj-color-muted)" }}>Chargement des administrateurs...</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "30px", color: "var(--oj-color-muted)" }}>Chargement des administrateurs...</td></tr>
             ) : adminUsers.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: "30px", color: "var(--oj-color-muted)" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: "30px", color: "var(--oj-color-muted)" }}>
                   Aucun administrateur trouvé.
                 </td>
               </tr>
@@ -226,10 +262,34 @@ export function UsersView() {
                     <td style={{ fontSize: "12px", color: "var(--oj-color-muted)" }}>
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR") : "Actif"}
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td>
                       <span className="oj-status-pill success">
                         ACTIF
                       </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {isOwner ? (
+                        <span style={{ fontSize: "11.5px", color: "#D4B483", fontWeight: 700 }}>
+                          Souverain
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleRevokeAdmin(u)}
+                          style={{
+                            padding: "5px 12px",
+                            borderRadius: "6px",
+                            background: "rgba(239, 68, 68, 0.12)",
+                            border: "1px solid rgba(239, 68, 68, 0.4)",
+                            color: "#EF4444",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                          }}
+                        >
+                          {isEn ? "Revoke Access" : "Destituer"}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

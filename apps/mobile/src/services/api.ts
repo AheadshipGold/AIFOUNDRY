@@ -347,7 +347,7 @@ export const OrdersApi = {
     buyerPhone: string;
     deliveryAddress: string;
     paymentChannel: string;
-    items: Array<{ variantId: string; quantity: number }>;
+    items: Array<{ variantId: string; quantity: number; unitPriceMinor?: number; productId?: string }>;
   }): Promise<OrderRecord> {
     return request<OrderRecord>('/v1/orders', {
       method: 'POST',
@@ -363,6 +363,17 @@ export const OrdersApi = {
     return request<OrderRecord>(`/v1/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
+      headers: authHeaders(),
+    });
+  },
+
+  async declarePayment(
+    id: string,
+    data: { transactionRef: string; notes?: string; proofUrl?: string }
+  ): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/v1/orders/${id}/declare-payment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
       headers: authHeaders(),
     });
   },

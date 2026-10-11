@@ -46,10 +46,23 @@ function mapToRecord(o: any): OrderRecord {
     image: l.variant?.product?.images?.[0] || undefined,
   }));
 
-  const mtnConn = o.shop?.paymentConnections?.find((c: any) => c.channel === 'MTN_MOMO');
-  const merchantAccount = mtnConn?.merchantPhone || '+229 97 00 00 00';
+  const matchingConn = o.shop?.paymentConnections?.find(
+    (c: any) => c.channel === o.paymentChannel && c.isActive
+  );
+  const fallbackConn = o.shop?.paymentConnections?.find((c: any) => c.isActive);
+  const merchantAccount =
+    matchingConn?.merchantPhone ||
+    fallbackConn?.merchantPhone ||
+    o.shop?.owner?.phone ||
+    '+229 01 97 44 71 16';
   const totalInUnits = o.grossSaleAmountMinor / 100;
-  const ussdCode = `*400*1*1*${merchantAccount.replace(/[^0-9]/g, '')}*${totalInUnits}#`;
+  const rawNum = merchantAccount.replace(/[^0-9]/g, '');
+  let ussdCode = `*400*1*1*${rawNum}*${totalInUnits}#`;
+  if (o.paymentChannel === 'MOOV_MONEY') {
+    ussdCode = `*155*1*1*${rawNum}*${totalInUnits}#`;
+  } else if (o.paymentChannel === 'CELTIIS_CASH') {
+    ussdCode = `*880*41*${rawNum}*${totalInUnits}#`;
+  }
 
   return {
     id: o.id,
@@ -90,7 +103,7 @@ export async function getOrders(shopId?: string, userId?: string): Promise<Order
     include: {
       lines: { include: { variant: { include: { product: true } } } },
       buyer: true,
-      shop: { include: { paymentConnections: true } },
+      shop: { include: { paymentConnections: true, owner: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -104,7 +117,7 @@ export async function getOrderById(id: string): Promise<OrderRecord> {
     include: {
       lines: { include: { variant: true } },
       buyer: true,
-      shop: { include: { paymentConnections: true } },
+      shop: { include: { paymentConnections: true, owner: true } },
     },
   });
 
@@ -280,11 +293,14 @@ export async function createOrder(dto: {
       include: {
         lines: { include: { variant: true } },
         buyer: true,
-        shop: { include: { paymentConnections: true } },
+        shop: { include: { paymentConnections: true, owner: true } },
       },
     });
 
     return mapToRecord(order);
+  }, {
+    maxWait: 20000,
+    timeout: 35000,
   });
 }
 
@@ -298,7 +314,9 @@ export async function updateOrderStatus(
   userId?: string
 ): Promise<OrderRecord> {
   const order = await prisma.order.findFirst({
-    where: { id: orderId },
+    where: {
+      OR: [{ id: orderId }, { orderNumber: orderId }],
+    },
     include: { lines: true, shop: true },
   });
 
@@ -330,12 +348,12 @@ export async function updateOrderStatus(
 
   const updated = await prisma.$transaction(async (tx) => {
     const result = await tx.order.update({
-      where: { id: orderId },
+      where: { id: order.id },
       data,
       include: {
         lines: { include: { variant: { include: { product: true } } } },
         buyer: true,
-        shop: { include: { paymentConnections: true } },
+        shop: { include: { paymentConnections: true, owner: true } },
       },
     });
 
@@ -356,6 +374,9 @@ export async function updateOrderStatus(
     }
 
     return result;
+  }, {
+    maxWait: 15000,
+    timeout: 25000,
   });
 
   return mapToRecord(updated);
@@ -367,7 +388,7 @@ export async function getSellerOrders(shopId: string): Promise<OrderRecord[]> {
     include: {
       lines: { include: { variant: { include: { product: true } } } },
       buyer: true,
-      shop: { include: { paymentConnections: true } },
+      shop: { include: { paymentConnections: true, owner: true } },
     },
     orderBy: { createdAt: 'desc' },
   });

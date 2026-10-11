@@ -8,6 +8,7 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
@@ -75,31 +76,40 @@ export default function SellerDashboardScreen({
     || (currentUser?.shops && currentUser.shops[0]?.kycStatus)
     || "PENDING";
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [ov, ord] = await Promise.all([
-          SellerApi.getOverview().catch(() => null),
-          SellerApi.getOrders().catch(() => []),
-        ]);
-        setOverview(ov);
-        setOrders(ord || []);
+  const [refreshing, setRefreshing] = useState(false);
 
-        try {
-          const me = await AuthApi.getMe();
-          if (me.activeShop) {
-            setActiveShop(me.activeShop);
-          } else if (me.shops && me.shops.length > 0) {
-            setActiveShop(me.shops[0]);
-          }
-        } catch {}
-      } catch (err) {
-        console.warn("Failed to load seller overview", err);
-      } finally {
-        setLoading(false);
-      }
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [ov, ord] = await Promise.all([
+        SellerApi.getOverview().catch(() => null),
+        SellerApi.getOrders().catch(() => []),
+      ]);
+      setOverview(ov);
+      setOrders(ord || []);
+
+      try {
+        const me = await AuthApi.getMe();
+        if (me.activeShop) {
+          setActiveShop(me.activeShop);
+        } else if (me.shops && me.shops.length > 0) {
+          setActiveShop(me.shops[0]);
+        }
+      } catch {}
+    } catch (err) {
+      console.warn("Failed to load seller overview", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
     loadData();
   }, [currentUser]);
 
@@ -222,6 +232,14 @@ export default function SellerDashboardScreen({
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {/* ==================== GREETING HEADER ==================== */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>

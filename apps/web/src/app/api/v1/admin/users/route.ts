@@ -150,3 +150,55 @@ async function handlePromote(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await getAuthUserFromRequest(req);
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const targetEmail = searchParams.get('email')?.trim().toLowerCase() || '';
+    const targetId = searchParams.get('id')?.trim() || '';
+
+    if (!targetEmail && !targetId) {
+      return NextResponse.json({ error: 'Email ou ID requis' }, { status: 400 });
+    }
+
+    if (targetEmail.includes('damacarre') || targetId === user.id || (targetEmail && targetEmail === user.email?.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Action interdite : vous ne pouvez pas destituer le propriétaire souverain de la plateforme.' },
+        { status: 403 }
+      );
+    }
+
+    // 1. Revert user in User table to BUYER
+    if (targetEmail) {
+      await prisma.user.updateMany({
+        where: { email: targetEmail },
+        data: { role: 'BUYER' },
+      });
+      await prisma.adminUser.deleteMany({
+        where: { email: targetEmail },
+      });
+    }
+
+    if (targetId) {
+      await prisma.user.updateMany({
+        where: { id: targetId },
+        data: { role: 'BUYER' },
+      });
+      await prisma.adminUser.deleteMany({
+        where: { id: targetId },
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Administrateur destitué avec succès.',
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
+}

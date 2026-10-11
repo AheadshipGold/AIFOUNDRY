@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getStoredToken } from "@/lib/api";
+import { getStoredToken, getStoredUser } from "@/lib/api";
 import { sellerTranslations, SellerLocale } from "@/lib/seller-i18n";
 
 export default function SellerTodayPage() {
@@ -25,13 +25,17 @@ export default function SellerTodayPage() {
     } catch {}
 
     const token = getStoredToken();
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const storedUser = getStoredUser();
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
+    };
 
     Promise.all([
       fetch("/api/v1/seller/shop", { headers }).then((r) => (r.ok ? r.json() : null)),
       fetch("/api/v1/seller/dashboard", { headers }).then((r) => (r.ok ? r.json() : null)),
       fetch("/api/v1/seller/cashbook", { headers }).then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/v1/orders", { headers }).then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/v1/seller/orders", { headers }).then((r) => (r.ok ? r.json() : null)),
     ])
       .then(([shopRes, dashRes, cashbookRes, ordersRes]) => {
         if (shopRes?.shop) {
@@ -40,12 +44,39 @@ export default function SellerTodayPage() {
 
         const taskList: Array<{ text: string; link: string; action: string; type: string }> = [];
 
-        // Check paid orders pending preparation
-        const orders = Array.isArray(ordersRes) ? ordersRes : [];
-        const pendingOrders = orders.filter((o: any) => o.fulfillmentStatus === "PREPARING" || o.fulfillmentStatus === "PENDING");
-        if (pendingOrders.length > 0) {
+        const orders = ordersRes?.orders || (Array.isArray(ordersRes) ? ordersRes : []);
+
+        // 1. Check declared payments needing confirmation
+        const declaredOrders = orders.filter((o: any) => o.paymentStatus === "DECLARED");
+        if (declaredOrders.length > 0) {
           taskList.push({
-            text: `${pendingOrders.length} commande(s) en attente d'expédition`,
+            text: `${declaredOrders.length} preuve(s) de règlement déclarée(s) par vos clients à certifier`,
+            link: "/seller/orders",
+            action: "Valider l'encaissement",
+            type: "urgent",
+          });
+        }
+
+        // 2. Check pending payments to follow up
+        const pendingPaymentOrders = orders.filter((o: any) => o.paymentStatus === "PENDING");
+        if (pendingPaymentOrders.length > 0) {
+          taskList.push({
+            text: `${pendingPaymentOrders.length} commande(s) en attente de paiement — relancez vos clients`,
+            link: "/seller/orders",
+            action: "Suivre et relancer",
+            type: "notice",
+          });
+        }
+
+        // 3. Check paid orders pending preparation
+        const paidPreparingOrders = orders.filter(
+          (o: any) =>
+            (o.paymentStatus === "CONFIRMED" || o.paymentStatus === "SETTLED_TO_MERCHANT") &&
+            (o.fulfillmentStatus === "PREPARING" || o.fulfillmentStatus === "PENDING")
+        );
+        if (paidPreparingOrders.length > 0) {
+          taskList.push({
+            text: `${paidPreparingOrders.length} commande(s) encaissée(s) en attente d'expédition`,
             link: "/seller/orders",
             action: "Traiter les commandes",
             type: "urgent",

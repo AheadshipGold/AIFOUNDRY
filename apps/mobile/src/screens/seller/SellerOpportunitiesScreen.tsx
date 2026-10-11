@@ -12,6 +12,7 @@ import {
   StatusBar,
   Keyboard,
   KeyboardAvoidingView,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
@@ -75,6 +76,14 @@ export default function SellerOpportunitiesScreen({
     } finally {
       setLoading(false);
     }
+  };
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchRequests();
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -177,6 +186,14 @@ export default function SellerOpportunitiesScreen({
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {/* Intro banner */}
         <View

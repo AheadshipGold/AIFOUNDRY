@@ -91,6 +91,87 @@ export async function updateLandingConfig(data: any, userId: string) {
     throw new Error('Accès refusé');
   }
 
+  // Bidirectional Synchronization: Ensure all CMS featured products exist in the store catalog
+  if (data?.featuredProducts && Array.isArray(data.featuredProducts)) {
+    for (const p of data.featuredProducts) {
+      if (!p || !p.id || !p.title) continue;
+
+      const targetShopId = p.seller?.id || 'd2e05cf4-d782-4fe4-9cd6-a6dd73f2db73';
+      const priceMinor = Math.round((Number(p.price) || 0) * 100);
+
+      try {
+        const existingProduct = await prisma.product.findUnique({
+          where: { id: p.id },
+          include: { variants: true },
+        });
+
+        if (existingProduct) {
+          await prisma.product.update({
+            where: { id: p.id },
+            data: {
+              title: p.title,
+              description: p.description || '',
+              category: p.category || 'artisanat',
+              images: p.image ? [p.image] : existingProduct.images,
+              shopId: targetShopId,
+            },
+          });
+
+          if (existingProduct.variants && existingProduct.variants.length > 0) {
+            await prisma.offerVariant.update({
+              where: { id: existingProduct.variants[0].id },
+              data: {
+                name: p.title,
+                priceMinor: priceMinor > 0 ? priceMinor : existingProduct.variants[0].priceMinor,
+                currency: 'XOF',
+                isAvailable: true,
+              },
+            });
+          } else {
+            await prisma.offerVariant.create({
+              data: {
+                productId: p.id,
+                sku: `SKU-${p.id.slice(0, 8).toUpperCase()}`,
+                name: p.title,
+                priceMinor: priceMinor,
+                currency: 'XOF',
+                stockOnHand: 10,
+                stockReserved: 0,
+                isAvailable: true,
+              },
+            });
+          }
+        } else {
+          await prisma.product.create({
+            data: {
+              id: p.id,
+              shopId: targetShopId,
+              title: p.title,
+              description: p.description || '',
+              category: p.category || 'artisanat',
+              images: p.image ? [p.image] : [],
+              isPublished: true,
+              originCity: p.originCity || 'Cotonou',
+              variants: {
+                create: {
+                  sku: `SKU-${p.id.slice(0, 8).toUpperCase()}`,
+                  name: p.title,
+                  priceMinor: priceMinor,
+                  currency: 'XOF',
+                  stockOnHand: 10,
+                  stockReserved: 0,
+                  isAvailable: true,
+                },
+              },
+            },
+          });
+        }
+      } catch (syncErr) {
+        console.warn(`Could not sync CMS product [${p.id}] with store catalog:`, syncErr);
+      }
+    }
+  }
+
   const config = await prisma.platformConfig.upsert({
     where: { id: 'cms_main' },
     update: { data },

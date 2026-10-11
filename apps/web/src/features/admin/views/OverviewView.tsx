@@ -29,7 +29,7 @@ export function OverviewView() {
   const verifiedShopsCount = data?.verifiedShops || 0;
   const pendingKycsCount = data?.pendingKycShops || 0;
   const activeCorridorsCount = data?.activeCorridors || 0;
-  const totalVolume = data?.totalVolumeMinor || 0;
+  const totalVolume = Math.round((data?.totalVolumeMinor || 0) / 100);
   const totalUsers = data?.totalUsers || 0;
 
   return (

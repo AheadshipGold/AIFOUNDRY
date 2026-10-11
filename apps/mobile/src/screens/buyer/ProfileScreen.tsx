@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Keyboard,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../design-system/provider';
@@ -48,6 +49,22 @@ export default function ProfileScreen({
   const isDark = mode === 'dark';
 
   const headingFont = Platform.OS === 'android' ? 'serif' : 'Georgia';
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const user = await AuthApi.getMe();
+      if (user && onUpdateProfile) {
+        onUpdateProfile(user);
+      }
+    } catch (err) {
+      console.warn('Failed to refresh user profile', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Keyboard height tracker for fluid modal scrolling
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -318,6 +335,14 @@ export default function ProfileScreen({
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {/* ------------------------------------------------------------- */}
         {/* 1. IDENTITY OR GUEST HERO CARD                                */}

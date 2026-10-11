@@ -64,7 +64,10 @@ export default function SellerLayout({
     const storedUser = getStoredUser();
     setUser(storedUser);
 
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
+    };
 
     fetch("/api/v1/seller/shop", { headers })
       .then((res) => {
@@ -109,7 +112,10 @@ export default function SellerLayout({
     setLoading(true);
 
     const token = getStoredToken();
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(authUser?.id ? { "x-user-id": authUser.id } : {}),
+    };
 
     try {
       const res = await fetch("/api/v1/seller/shop", { headers });

@@ -16,6 +16,7 @@ import {
   Image,
   Switch,
   KeyboardAvoidingView,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -94,11 +95,21 @@ export default function SellerShopScreen({
     loadAllShopData();
   }, [currentUser, activeShop?.id]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const loadAllShopData = async () => {
-    fetchProducts();
-    fetchPaymentConnections();
-    fetchShopDetails();
-    fetchSubscriptionData();
+    await Promise.all([
+      fetchProducts(),
+      fetchPaymentConnections(),
+      fetchShopDetails(),
+      fetchSubscriptionData(),
+    ]);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadAllShopData();
+    setRefreshing(false);
   };
 
   const fetchShopDetails = async () => {
@@ -445,7 +456,18 @@ export default function SellerShopScreen({
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
+      >
         {/* ==================== STORE IDENTITY CARD ==================== */}
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.eyebrow, { color: colors.muted }]}>

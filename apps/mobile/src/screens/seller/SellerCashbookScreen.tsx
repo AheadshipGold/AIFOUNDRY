@@ -12,6 +12,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Share,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
@@ -66,6 +67,14 @@ export default function SellerCashbookScreen({
       hideSub.remove();
     };
   }, []);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadCashbook();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     loadCashbook();
@@ -280,6 +289,14 @@ export default function SellerCashbookScreen({
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {loading ? (
           <View style={{ padding: 40, alignItems: "center" }}>

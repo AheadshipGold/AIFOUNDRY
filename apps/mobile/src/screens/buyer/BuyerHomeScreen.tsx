@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
@@ -139,6 +140,33 @@ export default function BuyerHomeScreen({
     return isDark ? iconBrandDark : iconBrandLight;
   };
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const query = search.trim() ? search : undefined;
+      const category = activeCat !== "all" ? activeCat : undefined;
+      const [apiProds, cmsRes, favRes] = await Promise.all([
+        CatalogApi.getProducts(query, category).catch(() => []),
+        CmsApi.getLandingConfig().catch(() => null),
+        FavoritesApi.getMyIds().catch(() => []),
+      ]);
+      if (cmsRes?.data) setCms(cmsRes.data);
+      if (Array.isArray(favRes)) {
+        const map: Record<string, boolean> = {};
+        favRes.forEach((id: string) => { map[id] = true; });
+        setFavorites(map);
+      }
+      const mappedApi = (apiProds || []).map(mapApiProduct);
+      setProducts(mappedApi);
+    } catch (err) {
+      console.warn("Pull to refresh error", err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -146,10 +174,10 @@ export default function BuyerHomeScreen({
         const query = search.trim() ? search : undefined;
         const category = activeCat !== "all" ? activeCat : undefined;
         const [apiProds, cmsRes] = await Promise.all([
-        CatalogApi.getProducts(query, category).catch(() => []),
-        CmsApi.getLandingConfig().catch(() => null)
-      ]);
-      if (cmsRes?.data) setCms(cmsRes.data);
+          CatalogApi.getProducts(query, category).catch(() => []),
+          CmsApi.getLandingConfig().catch(() => null)
+        ]);
+        if (cmsRes?.data) setCms(cmsRes.data);
         const mappedApi = (apiProds || []).map(mapApiProduct);
         setProducts(mappedApi);
       } catch (err) {
@@ -314,6 +342,14 @@ export default function BuyerHomeScreen({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {/* ==================== EDITORIAL HERO TITLE ==================== */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>

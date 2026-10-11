@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getStoredToken } from "@/lib/api";
+import { getStoredToken, getStoredUser } from "@/lib/api";
 import { sellerTranslations, SellerLocale } from "@/lib/seller-i18n";
 
 interface ProductItem {
@@ -42,7 +42,11 @@ export default function SellerCatalogPage() {
   const fetchProducts = () => {
     setLoading(true);
     const token = getStoredToken();
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const storedUser = getStoredUser();
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(storedUser?.id ? { "x-user-id": storedUser.id } : {}),
+    };
 
     fetch("/api/v1/seller/products", { headers })
       .then((res) => (res.ok ? res.json() : null))

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Linking,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../design-system/provider";
@@ -36,6 +37,14 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     loadOrders();
@@ -91,14 +100,47 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
     });
   };
 
+  const handleWhatsAppBuyer = (order: OrderRecord) => {
+    const raw = order.buyerPhone || "";
+    let clean = raw.replace(/[^\d+]/g, "");
+    if (!clean.startsWith("+") && clean.length >= 8) {
+      clean = clean.length === 8 ? `+229${clean}` : `+${clean}`;
+    }
+    const amountStr = `${Math.round(order.totalAmountMinor / 100).toLocaleString("fr-FR")} FCFA`;
+    const msg = encodeURIComponent(
+      `Bonjour ${order.buyerName}, nous faisons suite à votre commande #${order.orderNumber} d'un montant de ${amountStr} sur notre boutique. Avez-vous besoin d'assistance pour finaliser ou vérifier votre règlement ?`
+    );
+    Linking.openURL(`https://wa.me/${clean.replace("+", "")}?text=${msg}`).catch(() => {
+      Alert.alert(
+        isEn ? "WhatsApp Error" : "Erreur WhatsApp",
+        isEn ? "Could not open WhatsApp" : "Impossible d'ouvrir WhatsApp"
+      );
+    });
+  };
+
   const displayOrders = orders;
 
   const filters = [
     { id: "all", labelFr: `Toutes (${displayOrders.length})`, labelEn: `All (${displayOrders.length})` },
     {
-      id: "active",
-      labelFr: `En cours (${displayOrders.filter((o) => o.fulfillmentStatus !== "DELIVERED").length})`,
-      labelEn: `Active (${displayOrders.filter((o) => o.fulfillmentStatus !== "DELIVERED").length})`,
+      id: "declared",
+      labelFr: `Preuves (${displayOrders.filter((o) => o.paymentStatus === "DECLARED").length})`,
+      labelEn: `Proofs (${displayOrders.filter((o) => o.paymentStatus === "DECLARED").length})`,
+    },
+    {
+      id: "pending",
+      labelFr: `En attente (${displayOrders.filter((o) => o.paymentStatus === "PENDING").length})`,
+      labelEn: `Pending (${displayOrders.filter((o) => o.paymentStatus === "PENDING").length})`,
+    },
+    {
+      id: "preparing",
+      labelFr: `À expédier (${displayOrders.filter((o) => o.fulfillmentStatus === "PREPARING").length})`,
+      labelEn: `Preparing (${displayOrders.filter((o) => o.fulfillmentStatus === "PREPARING").length})`,
+    },
+    {
+      id: "shipped",
+      labelFr: `En cours (${displayOrders.filter((o) => o.fulfillmentStatus === "SHIPPED").length})`,
+      labelEn: `Shipped (${displayOrders.filter((o) => o.fulfillmentStatus === "SHIPPED").length})`,
     },
     {
       id: "delivered",
@@ -109,7 +151,10 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
 
   const filteredOrders = displayOrders.filter((o) => {
     if (activeFilter === "all") return true;
-    if (activeFilter === "active") return o.fulfillmentStatus !== "DELIVERED";
+    if (activeFilter === "declared") return o.paymentStatus === "DECLARED";
+    if (activeFilter === "pending") return o.paymentStatus === "PENDING";
+    if (activeFilter === "preparing") return o.fulfillmentStatus === "PREPARING";
+    if (activeFilter === "shipped") return o.fulfillmentStatus === "SHIPPED";
     if (activeFilter === "delivered") return o.fulfillmentStatus === "DELIVERED";
     return true;
   });
@@ -215,6 +260,14 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 18, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.action || "#10B981"}
+            colors={[colors.action || "#10B981", colors.accent || "#D4B483"]}
+          />
+        }
       >
         {loading ? (
           <View style={{ padding: 40, alignItems: "center" }}>
@@ -285,7 +338,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
               const isShipped = order.fulfillmentStatus === "SHIPPED";
               const isDelivered = order.fulfillmentStatus === "DELIVERED";
               const isPending = order.fulfillmentStatus === "PENDING" || !order.fulfillmentStatus;
-              const isSettled = order.paymentStatus === "SETTLED_TO_MERCHANT";
+              const isSettled = order.paymentStatus === "CONFIRMED" || order.paymentStatus === "SETTLED_TO_MERCHANT" || order.paymentStatus === "PAID";
               const isUpdating = updatingId === order.id;
 
               return (
@@ -319,33 +372,76 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                     />
 
                     <View style={{ flex: 1, justifyContent: "center" }}>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
                         <Text style={{ fontSize: 14, fontWeight: "800", color: colors.text }}>
                           #{order.orderNumber}
                         </Text>
-                        <View
-                          style={{
-                            backgroundColor: isDelivered ? colors.successBg : (isShipped ? "#E0E7FF" : isPreparing ? "#FEF3C7" : colors.subtle),
-                            paddingHorizontal: 8,
-                            paddingVertical: 3,
-                            borderRadius: 8,
-                          }}
-                        >
-                          <Text
+                        <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
+                          {/* Payment Badge */}
+                          <View
                             style={{
-                              fontSize: 10,
-                              fontWeight: "800",
-                              color: isDelivered ? colors.action : (isShipped ? "#4338CA" : isPreparing ? "#D97706" : colors.text),
+                              backgroundColor: isSettled
+                                ? "rgba(16, 185, 129, 0.15)"
+                                : order.paymentStatus === "DECLARED"
+                                ? "rgba(212, 180, 131, 0.2)"
+                                : "rgba(255, 193, 7, 0.15)",
+                              borderWidth: order.paymentStatus === "DECLARED" ? 1 : 0,
+                              borderColor: "rgba(212, 180, 131, 0.5)",
+                              paddingHorizontal: 7,
+                              paddingVertical: 2.5,
+                              borderRadius: 6,
                             }}
                           >
-                            {isDelivered
-                              ? (isEn ? "Delivered" : "Livrée")
-                              : isShipped
-                              ? (isEn ? "Shipped" : "Expédiée")
-                              : isPreparing
-                              ? (isEn ? "Preparing" : "En préparation")
-                              : (isEn ? "Awaiting" : "En attente")}
-                          </Text>
+                            <Text
+                              style={{
+                                fontSize: 9.5,
+                                fontWeight: "800",
+                                color: isSettled
+                                  ? "#10B981"
+                                  : order.paymentStatus === "DECLARED"
+                                  ? "#D4B483"
+                                  : "#D97706",
+                              }}
+                            >
+                              {isSettled
+                                ? "✓ Payé & Encaissé"
+                                : order.paymentStatus === "DECLARED"
+                                ? "⚡ Preuve déclarée"
+                                : "Paiement en attente"}
+                            </Text>
+                          </View>
+
+                          {/* Logistics Badge */}
+                          <View
+                            style={{
+                              backgroundColor: isDelivered
+                                ? "rgba(16, 185, 129, 0.15)"
+                                : isShipped
+                                ? "rgba(33, 150, 243, 0.15)"
+                                : "rgba(173, 132, 85, 0.15)",
+                              paddingHorizontal: 7,
+                              paddingVertical: 2.5,
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 9.5,
+                                fontWeight: "800",
+                                color: isDelivered
+                                  ? "#10B981"
+                                  : isShipped
+                                  ? "#64B5F6"
+                                  : "#D4B483",
+                              }}
+                            >
+                              {isDelivered
+                                ? (isEn ? "Delivered" : "Livré")
+                                : isShipped
+                                ? (isEn ? "Shipped" : "Expédié")
+                                : (isEn ? "Workshop prep" : "En préparation atelier")}
+                            </Text>
+                          </View>
                         </View>
                       </View>
 
@@ -355,7 +451,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                       </Text>
 
                       {order.buyerPhone ? (
-                        <View style={{ flexDirection: "row", marginTop: 4 }}>
+                        <View style={{ flexDirection: "row", gap: 6, marginTop: 4 }}>
                           <Pressable
                             onPress={() => handleCallBuyer(order.buyerPhone)}
                             style={({ pressed }) => [{
@@ -374,6 +470,27 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                             <Icon name="phone" size={11} color={colors.action} />
                             <Text style={{ fontSize: 10, fontWeight: "700", color: colors.action }}>
                               {order.buyerPhone}
+                            </Text>
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => handleWhatsAppBuyer(order)}
+                            style={({ pressed }) => [{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                              backgroundColor: "rgba(37, 211, 102, 0.12)",
+                              paddingHorizontal: 8,
+                              paddingVertical: 3,
+                              borderRadius: 6,
+                              borderWidth: 1,
+                              borderColor: "rgba(37, 211, 102, 0.35)",
+                              opacity: pressed ? 0.7 : 1,
+                            }]}
+                          >
+                            <Icon name="chat-circle-dots" size={11} color="#25D366" />
+                            <Text style={{ fontSize: 10, fontWeight: "700", color: "#25D366" }}>
+                              WhatsApp
                             </Text>
                           </Pressable>
                         </View>
@@ -421,18 +538,22 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                       </Text>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 }}>
                         <Icon
-                          name={isSettled ? "check-circle" : "clock"}
+                          name={isSettled ? "check-circle" : order.paymentStatus === "DECLARED" ? "sparkle" : "clock"}
                           size={11}
-                          color={isSettled ? colors.action : "#D97706"}
+                          color={isSettled ? colors.action : order.paymentStatus === "DECLARED" ? colors.accent : "#D97706"}
                         />
                         <Text
                           style={{
                             fontSize: 10,
                             fontWeight: "700",
-                            color: isSettled ? colors.action : "#D97706",
+                            color: isSettled ? colors.action : order.paymentStatus === "DECLARED" ? colors.accent : "#D97706",
                           }}
                         >
-                          {isSettled ? (isEn ? "Paid & Settled" : "Encaissé en caisse") : (isEn ? "Payment Pending" : "En attente d'encaissement")}
+                          {isSettled
+                            ? (isEn ? "Paid & Settled" : "Payé & Encaissé")
+                            : order.paymentStatus === "DECLARED"
+                            ? (isEn ? "Proof Declared by Buyer (To Settle)" : "Preuve déclarée (À encaisser)")
+                            : (isEn ? "Payment Pending" : "En attente d'encaissement")}
                         </Text>
                       </View>
                     </View>
@@ -450,7 +571,38 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                       </View>
                     ) : (
                       <>
-                        {isPending && (
+                        {/* 1. Primary Action: Validate payment if unpaid */}
+                        {!isSettled && (
+                          <Pressable
+                            style={({ pressed }) => [{
+                              backgroundColor: colors.action,
+                              paddingVertical: 12,
+                              borderRadius: 20,
+                              alignItems: "center",
+                              flexDirection: "row",
+                              justifyContent: "center",
+                              gap: 6,
+                              opacity: pressed ? 0.85 : 1,
+                              transform: [{ scale: pressed ? 0.97 : 1 }],
+                              shadowColor: colors.action,
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.25,
+                              shadowRadius: 4,
+                              elevation: 2,
+                            }]}
+                            onPress={() => updateOrderStatus(order.id, { paymentStatus: "CONFIRMED" })}
+                          >
+                            <Icon name="check" size={14} color="#FFFFFF" weight="bold" />
+                            <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 13 }}>
+                              {order.paymentStatus === "DECLARED"
+                                ? (isEn ? "✓ Validate Proof & Settle" : "✓ Valider la preuve & Encaisser")
+                                : (isEn ? "✓ Validate Collection" : "✓ Valider l'encaissement")}
+                            </Text>
+                          </Pressable>
+                        )}
+
+                        {/* 2. Logistics progression: when paid & settled */}
+                        {isSettled && isPending && (
                           <Pressable
                             style={({ pressed }) => [{
                               backgroundColor: colors.action,
@@ -463,15 +615,17 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                             onPress={() => updateOrderStatus(order.id, { fulfillmentStatus: "PREPARING" })}
                           >
                             <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 12 }}>
-                              {isEn ? "Start Preparation →" : "Démarrer la préparation →"}
+                              {isEn ? "Start Workshop Prep →" : "Passer en préparation →"}
                             </Text>
                           </Pressable>
                         )}
 
-                        {isPreparing && (
+                        {isSettled && (isPending || isPreparing) && (
                           <Pressable
                             style={({ pressed }) => [{
-                              backgroundColor: colors.action,
+                              backgroundColor: isPreparing ? "#2563EB" : colors.canvas,
+                              borderWidth: isPreparing ? 0 : 1,
+                              borderColor: colors.border,
                               paddingVertical: 11,
                               borderRadius: 20,
                               alignItems: "center",
@@ -480,13 +634,13 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                             }]}
                             onPress={() => updateOrderStatus(order.id, { fulfillmentStatus: "SHIPPED" })}
                           >
-                            <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 12 }}>
-                              {isEn ? "Mark as Shipped →" : "Expédier la commande →"}
+                            <Text style={{ color: isPreparing ? "#FFFFFF" : colors.text, fontWeight: "800", fontSize: 12 }}>
+                              {isEn ? "Ship Order →" : "Expédier la commande →"}
                             </Text>
                           </Pressable>
                         )}
 
-                        {isShipped && (
+                        {isSettled && isShipped && (
                           <Pressable
                             style={({ pressed }) => [{
                               backgroundColor: colors.canvas,
@@ -501,31 +655,7 @@ export default function SellerOrdersScreen({ currentUser, onBack }: SellerOrders
                             onPress={() => updateOrderStatus(order.id, { fulfillmentStatus: "DELIVERED" })}
                           >
                             <Text style={{ color: colors.action, fontWeight: "800", fontSize: 12 }}>
-                              {isEn ? "Mark as Delivered ✓" : "Confirmer la livraison client ✓"}
-                            </Text>
-                          </Pressable>
-                        )}
-
-                        {!isSettled && (
-                          <Pressable
-                            style={({ pressed }) => [{
-                              backgroundColor: colors.canvas,
-                              borderWidth: 1,
-                              borderColor: colors.accent,
-                              paddingVertical: 8,
-                              borderRadius: 16,
-                              alignItems: "center",
-                              flexDirection: "row",
-                              justifyContent: "center",
-                              gap: 6,
-                              opacity: pressed ? 0.85 : 1,
-                              transform: [{ scale: pressed ? 0.98 : 1 }],
-                            }]}
-                            onPress={() => updateOrderStatus(order.id, { paymentStatus: "SETTLED_TO_MERCHANT" })}
-                          >
-                            <Icon name="check" size={13} color={colors.accent} />
-                            <Text style={{ color: colors.accent, fontWeight: "700", fontSize: 11 }}>
-                              {isEn ? "Confirm Payment Received" : "Encaisser en Livre de Caisse"}
+                              {isEn ? "Confirm Delivery ✓" : "Confirmer la livraison client ✓"}
                             </Text>
                           </Pressable>
                         )}
