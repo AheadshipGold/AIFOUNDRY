@@ -362,7 +362,7 @@ export default function ProductDetailModal({
               <Pressable
                 onPress={async () => {
                   try {
-                    const productUrl = `https://ojarket.com/p/${product.id}`;
+                    const productUrl = `https://www.ojarket.com/p/${product.id}`;
                     await Share.share({
                       title: product.title,
                       message: `${product.title} (${formattedPrice} FCFA) chez ${sellerName} sur Ojarket — Marketplace de Luxe : ${productUrl}`,

@@ -55,7 +55,7 @@ export class MonerooAdapter {
         last_name: 'Ojarket',
         phone: customerPhone || undefined,
       },
-      return_url: returnUrl || 'https://ojarket.com/seller/subscription?status=success',
+      return_url: returnUrl || 'https://www.ojarket.com/seller/subscription?status=success',
       metadata: { shopId, planTier, billingInterval: billingInterval || 'MONTHLY', referenceId },
     };
 

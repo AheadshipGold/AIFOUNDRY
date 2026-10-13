@@ -446,7 +446,7 @@ export default function SellerShopScreen({
     try {
       const shopSlug = shopDetails?.slug || activeShop?.slug || activeShop?.id || 'boutique';
       const shopName = shopDetails?.name || activeShop?.name || 'Ma Boutique';
-      const url = `https://ojarket.com/shop/${shopSlug}`;
+      const url = `https://www.ojarket.com/shop/${shopSlug}`;
       await Share.share({
         title: `${shopName} sur Ojarket`,
         message: isEn
@@ -461,7 +461,7 @@ export default function SellerShopScreen({
 
   const handleShareProduct = async (product: any) => {
     try {
-      const url = `https://ojarket.com/p/${product.id}`;
+      const url = `https://www.ojarket.com/p/${product.id}`;
       const priceFormatted = Math.round(product.priceMinor / 100).toLocaleString('fr-FR');
       const shopName = shopDetails?.name || activeShop?.name || 'Ma Boutique';
       await Share.share({

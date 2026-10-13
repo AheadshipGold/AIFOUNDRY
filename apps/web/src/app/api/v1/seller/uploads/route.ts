@@ -55,26 +55,69 @@ export async function POST(req: Request) {
       );
     }
 
-    // If R2 credentials are fully configured in environment
-    const r2Account = process.env.R2_ACCOUNT_ID;
-    const r2AccessKey = process.env.R2_ACCESS_KEY_ID;
-    const r2SecretKey = process.env.R2_SECRET_ACCESS_KEY;
-    const r2Bucket = process.env.R2_BUCKET_NAME;
+    // R2 / S3 Configuration resolution with root monorepo fallback
+    let r2Account = process.env.R2_ACCOUNT_ID;
+    let r2AccessKey = process.env.R2_ACCESS_KEY_ID;
+    let r2SecretKey = process.env.R2_SECRET_ACCESS_KEY;
+    let r2Bucket = process.env.R2_BUCKET_NAME || 'ojarket-media';
+    let r2Endpoint = process.env.R2_ENDPOINT;
 
-    if (r2Account && r2AccessKey && r2SecretKey && r2Bucket) {
+    if (!r2AccessKey) {
+      const candidates = [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), '../../.env'),
+        path.resolve(process.cwd(), '../.env'),
+        'c:/S_S/AI_F/AIFOUNFRYAPP/.env',
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          try {
+            const content = fs.readFileSync(c, 'utf8');
+            for (const line of content.split('\n')) {
+              const parts = line.trim().split('=');
+              if (parts.length >= 2) {
+                const k = parts[0].trim();
+                const v = parts.slice(1).join('=').trim().replace(/^"|"$/g, '');
+                if (k === 'R2_ACCOUNT_ID' && !r2Account) r2Account = v;
+                if (k === 'R2_ACCESS_KEY_ID' && !r2AccessKey) r2AccessKey = v;
+                if (k === 'R2_SECRET_ACCESS_KEY' && !r2SecretKey) r2SecretKey = v;
+                if (k === 'R2_BUCKET_NAME' && v) r2Bucket = v;
+                if (k === 'R2_ENDPOINT' && !r2Endpoint) r2Endpoint = v;
+              }
+            }
+            if (r2AccessKey) break;
+          } catch {}
+        }
+      }
+    }
+
+    if (!r2Endpoint && r2Account) {
+      r2Endpoint = `https://${r2Account}.r2.cloudflarestorage.com`;
+    }
+
+    const extension = mimeType.split('/')[1] || 'jpg';
+    const filename = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${extension}`;
+    const key = `products/${filename}`;
+
+    // Always maintain local copy in public/uploads for local development
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filePath = path.join(uploadDir, filename);
+    fs.writeFileSync(filePath, buffer);
+
+    if (r2Endpoint && r2AccessKey && r2SecretKey && r2Bucket) {
       try {
         const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
         const s3 = new S3Client({
           region: 'auto',
-          endpoint: `https://${r2Account}.r2.cloudflarestorage.com`,
+          endpoint: r2Endpoint,
           credentials: {
             accessKeyId: r2AccessKey,
             secretAccessKey: r2SecretKey,
           },
         });
-
-        const extension = mimeType.split('/')[1] || 'jpg';
-        const key = `products/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${extension}`;
 
         await s3.send(
           new PutObjectCommand({
@@ -85,8 +128,7 @@ export async function POST(req: Request) {
           })
         );
 
-        const publicDomain = process.env.R2_PUBLIC_DOMAIN || `https://${r2Bucket}.r2.dev`;
-        const url = `${publicDomain.replace(/\/$/, '')}/${key}`;
+        const url = `/api/v1/media/${key}`;
 
         return NextResponse.json({
           success: true,
@@ -98,17 +140,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback: save locally in public/uploads for development
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const ext = originalName.split('.').pop() || 'jpg';
-    const filename = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const filePath = path.join(uploadDir, filename);
-
-    fs.writeFileSync(filePath, buffer);
+    // If R2 was not used or failed, return local storage URL
     const url = `/uploads/${filename}`;
 
     return NextResponse.json({

@@ -67,7 +67,8 @@ export async function verifyAndGenerateDownloadUrl(userId: string, entitlementId
   const signaturePayload = `${entitlementId}|${updated.asset.id}|${expiresTimestamp}`;
   const signature = crypto.createHmac('sha256', process.env.JWT_SECRET || 'ojarket_secret').update(signaturePayload).digest('hex');
 
-  const signedUrl = `https://ojarket.com/api/v1/digital/file?entitlementId=${entitlementId}&expires=${expiresTimestamp}&sig=${signature}`;
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ojarket.com';
+  const signedUrl = `${appBaseUrl}/api/v1/digital/file?entitlementId=${entitlementId}&expires=${expiresTimestamp}&sig=${signature}`;
 
   return {
     title: updated.asset.title,

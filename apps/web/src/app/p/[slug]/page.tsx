@@ -41,11 +41,11 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     ? `${product.description.slice(0, 150)}... Garanti par ${shopName}${shopLocation} sur Ojarket.`
     : `Découvrez "${product.title}" au prix de ${formattedPrice} ${product.currency}, disponible auprès de ${shopName} sur Ojarket.`;
 
-  let image = product.image || 'https://ojarket.com/reference-assets/market-tote.png';
+  let image = product.image || 'https://www.ojarket.com/reference-assets/market-tote.png';
   if (image.startsWith('/')) {
-    image = `https://ojarket.com${image}`;
+    image = `https://www.ojarket.com${image}`;
   }
-  const canonicalUrl = `https://ojarket.com/p/${slug}`;
+  const canonicalUrl = `https://www.ojarket.com/p/${slug}`;
 
   return {
     title,
@@ -295,7 +295,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
                   formattedPrice={formattedPrice}
                   currency={product.currency}
                   shopName={shopName}
-                  productUrl={`https://ojarket.com/p/${slug}`}
+                  productUrl={`https://www.ojarket.com/p/${slug}`}
                 />
 
                 {shopSlug && (

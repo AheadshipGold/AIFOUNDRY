@@ -77,11 +77,11 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
     : `Découvrez la boutique officielle ${shop.name} (${location}) sur Ojarket. Produits de luxe et créations sur-mesure garantis.`;
 
   const firstProductImage = shop.products && shop.products.length > 0 ? (shop.products[0].images?.[0] || shop.products[0].image) : null;
-  let bannerImage = shop.bannerUrl || firstProductImage || 'https://ojarket.com/reference-assets/market-tote.png';
+  let bannerImage = shop.bannerUrl || firstProductImage || '/brand/cover_luxury_pattern.jpg';
   if (bannerImage.startsWith('/')) {
-    bannerImage = `https://ojarket.com${bannerImage}`;
+    bannerImage = `https://www.ojarket.com${bannerImage}`;
   }
-  const canonicalUrl = `https://ojarket.com/shop/${shop.slug || slug}`;
+  const canonicalUrl = `https://www.ojarket.com/shop/${shop.slug || slug}`;
 
   return {
     title,
@@ -161,7 +161,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const displayLocation = `${city}${country ? `, ${country}` : ''}`;
   const initialLetter = name ? name.charAt(0).toUpperCase() : 'M';
   const formattedCraft = formatCraftType(craftType);
-  const shareUrl = `https://ojarket.com/shop/${shop.slug || slug}`;
+  const shareUrl = `https://www.ojarket.com/shop/${shop.slug || slug}`;
 
   // Nettoyage et formatage international du numéro pour WhatsApp direct (aucun numéro factice en dur)
   const cleanPhone = phone ? phone.replace(/[^\d]/g, '') : null;

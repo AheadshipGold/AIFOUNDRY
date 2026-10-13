@@ -24,11 +24,18 @@ let _activeBaseUrl = API_BASE_URL;
 /** Public origin of the web platform (used to resolve relative upload URLs). */
 export const API_ORIGIN = _activeBaseUrl.replace(/\/api$/, '');
 
-/** Resolves a possibly relative media URL (e.g. `/uploads/x.jpg`) to an absolute one. */
+/** Resolves a possibly relative media URL (e.g. `/uploads/x.jpg` or `/api/v1/media/...`) to an absolute one, with auto-repair of legacy media paths. */
 export function resolveMediaUrl(url?: string | null): string | null {
   if (!url) return null;
-  if (/^(https?:|data:|file:)/i.test(url)) return url;
   const origin = _activeBaseUrl.replace(/\/api$/, '');
+
+  // Auto-repair any double-domain or unresolvable legacy media URLs
+  if (url.includes('media.ojarket.com/')) {
+    const pathPart = url.split('media.ojarket.com/')[1];
+    return `${origin}/api/v1/media/${pathPart}`;
+  }
+
+  if (/^(https?:|data:|file:)/i.test(url)) return url;
   return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 

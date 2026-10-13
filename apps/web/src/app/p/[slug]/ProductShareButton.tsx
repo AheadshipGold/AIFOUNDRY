@@ -22,7 +22,7 @@ export default function ProductShareButton({
   const getFullUrl = () => {
     if (productUrl) return productUrl;
     if (typeof window !== 'undefined') return window.location.href;
-    return 'https://ojarket.com';
+    return 'https://www.ojarket.com';
   };
 
   const handleShare = async () => {

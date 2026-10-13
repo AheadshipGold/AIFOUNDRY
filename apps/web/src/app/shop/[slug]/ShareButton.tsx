@@ -11,7 +11,7 @@ export default function ShareButton({ shopName = 'Boutique Ojarket', shopUrl }: 
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const url = shopUrl || (typeof window !== 'undefined' ? window.location.href : 'https://ojarket.com');
+    const url = shopUrl || (typeof window !== 'undefined' ? window.location.href : 'https://www.ojarket.com');
     const shareData = {
       title: `${shopName} sur Ojarket`,
       text: `Découvrez la boutique officielle "${shopName}" sur Ojarket — Marketplace E-Commerce & Pièces d'Exception : ${url}`,
@@ -39,23 +39,8 @@ export default function ShareButton({ shopName = 'Boutique Ojarket', shopUrl }: 
   return (
     <button 
       onClick={handleShare} 
-      className="share-btn" 
+      className="storefront-share-btn share-btn" 
       aria-label="Partager la boutique"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '6px 14px',
-        backgroundColor: '#075D49',
-        color: '#FFFFFF',
-        border: 'none',
-        borderRadius: '20px',
-        cursor: 'pointer',
-        fontSize: '12px',
-        fontWeight: 700,
-        boxShadow: '0 2px 8px rgba(7,93,73,0.2)',
-        transition: 'all 0.2s ease',
-      }}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -81,7 +66,7 @@ export default function ShareButton({ shopName = 'Boutique Ojarket', shopUrl }: 
           </>
         )}
       </svg>
-      {copied ? 'Lien Copié !' : 'Partager Boutique'}
+      <span className="share-btn-text">{copied ? 'Copié !' : 'Partager'}</span>
     </button>
   );
 }
