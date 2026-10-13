@@ -62,8 +62,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
         {
           url: image,
           secureUrl: image,
-          width: 800,
-          height: 800,
+          width: 1200,
+          height: 896,
           type: image.endsWith('.png') ? 'image/png' : image.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
           alt: product.title,
         },
@@ -166,7 +166,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
       </header>
 
       {/* Editorial Breadcrumbs */}
-      <div style={{ maxWidth: 1200, margin: '24px auto 0', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1200, margin: '20px auto 0', padding: '0 24px' }}>
         <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'rgba(245, 247, 243, 0.5)' }}>
           <Link href="/" style={{ color: 'rgba(245, 247, 243, 0.65)', textDecoration: 'none' }}>
             Accueil
@@ -189,22 +189,21 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
       </div>
 
       {/* Hero Showcase */}
-      <main style={{ maxWidth: 1200, margin: '24px auto 60px', padding: '0 24px' }}>
-        <div style={{ backgroundColor: '#111C1A', borderRadius: 20, overflow: 'hidden', border: '1px solid #233834', boxShadow: '0 20px 40px -15px rgba(0,0,0,0.6)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))' }}>
+      <main className="oj-product-main">
+        <div className="oj-product-card">
+          <div className="oj-product-grid">
             {/* Visual Section */}
-            <div style={{ backgroundColor: '#0D1A17', padding: '40px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 460, position: 'relative' }}>
+            <div className="oj-product-visual-pane">
               {product.image ? (
-                <div style={{ width: '100%', maxHeight: '440px', overflow: 'hidden', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="oj-product-image-wrapper">
                   <img
                     src={product.image}
                     alt={product.title}
-                    style={{ width: '100%', height: '100%', maxHeight: '440px', objectFit: 'contain', transition: 'transform 0.4s ease' }}
-                    className="oj-zoomable-image"
+                    className="oj-product-image oj-zoomable-image"
                   />
                 </div>
               ) : (
-                <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4B483" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', marginBottom: '12px' }}>
                     <polygon points="12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.5 5.5 21 7 14 2 9.3 9 8.5 12 2" />
                   </svg>
@@ -216,7 +215,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
             </div>
 
             {/* Information Section */}
-            <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div className="oj-product-info-pane">
               <div>
                 {/* Category & Verified Jewel Badge */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -233,7 +232,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
                   )}
                 </div>
 
-                <h1 style={{ fontSize: '28px', fontFamily: 'var(--oj-font-editorial, serif)', fontWeight: 600, margin: '0 0 12px 0', lineHeight: 1.3, color: '#F5F7F3' }}>
+                <h1 className="oj-product-title">
                   {product.title}
                 </h1>
 
@@ -249,7 +248,7 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
                 </p>
 
                 {/* Price Block */}
-                <div style={{ padding: '20px 24px', backgroundColor: '#0D1A17', borderRadius: '12px', border: '1px solid #233834', marginBottom: 28 }}>
+                <div className="oj-product-price-box">
                   <div style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(245, 247, 243, 0.55)', marginBottom: 4 }}>
                     Prix Officiel Garanti
                   </div>
