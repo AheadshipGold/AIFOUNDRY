@@ -402,8 +402,8 @@ export default function BuyerHomeScreen({
             }}
           >
             {isEn
-              ? "HAUTE CREATION · OFFICIAL SELECTION"
-              : "MAISON DE CRÉATION · SÉLECTION OFFICIELLE"}
+              ? "ONLINE MARKETPLACE · VERIFIED STORES · SECURE SHOPPING"
+              : "MARKETPLACE EN LIGNE · BOUTIQUES VÉRIFIÉES · COMMANDES SÉCURISÉES"}
           </Text>
           <Icon name="sparkle" size={9} color={colors.accent} weight="fill" />
         </View>
@@ -420,12 +420,12 @@ export default function BuyerHomeScreen({
               marginBottom: 4,
             }}
           >
-            {isEn ? "Discover the Marketplace" : "Découvrez la marketplace"}
+            {isEn ? "Buy & Sell" : "Achetez & Vendez"}
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
             {isEn
-              ? "Unique products and commercial selections from verified merchants."
-              : "Des produits de qualité et sélections exclusives proposés par nos commerçants vérifiés."}
+              ? "Verified stores and direct ordering."
+              : "Boutiques certifiées et commandes directes."}
           </Text>
         </View>
 
@@ -576,20 +576,20 @@ export default function BuyerHomeScreen({
               <View style={{ padding: 22, paddingBottom: 16 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <Text style={{ fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: colors.accent, textTransform: "uppercase" }}>
-                    {isEn ? "FEATURED SELECTION • CMS" : "PRODUITS PHARES • SÉLECTION DU SITE"}
+                    {isEn ? "TRENDING NOW · VERIFIED STORE" : "TENDANCE DU MOMENT · BOUTIQUE VÉRIFIÉE"}
                   </Text>
                   <View style={{ backgroundColor: "rgba(212, 180, 131, 0.2)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: "rgba(212, 180, 131, 0.4)" }}>
                     <Text style={{ fontSize: 10, fontWeight: "700", color: colors.accent }}>
-                      {heroProducts.length} {isEn ? "pieces" : "pièces"}
+                      {heroProducts.length} {isEn ? "items" : "produits"}
                     </Text>
                   </View>
                 </View>
 
                 <Text style={{ fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontSize: 24, color: "#FFFFFF", fontWeight: "700", marginBottom: 4 }}>
-                  {isEn ? "Curated Flagships" : "Pièces d'Exception"}
+                  {isEn ? "Trending Products" : "Produits en Vedette"}
                 </Text>
                 <Text style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.8)", lineHeight: 17 }}>
-                  {isEn ? "Exclusive creations highlighted by the platform administrator." : "Sélection exclusive mise en avant par l'administrateur de la plateforme."}
+                  {isEn ? "Verified stores and direct ordering." : "Boutiques certifiées et commandes directes."}
                 </Text>
               </View>
 

@@ -100,29 +100,41 @@ export function PwaInstallBanner() {
   return (
     <aside
       aria-label="Application Banner"
-      style={{
-        position: "fixed",
-        bottom: "16px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 9999,
-        width: "calc(100% - 24px)",
-        maxWidth: "440px",
-        backgroundColor: "rgba(10, 18, 16, 0.94)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        border: "1px solid rgba(212, 180, 131, 0.35)",
-        borderRadius: "999px",
-        padding: "7px 12px 7px 8px",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 10px rgba(212, 180, 131, 0.12)",
-        animation: "capsuleSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        boxSizing: "border-box",
-      }}
+      className="oj-pwa-banner-aside"
     >
       <style>{`
+        .oj-pwa-banner-aside {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 100000;
+          width: calc(100% - 24px);
+          max-width: 440px;
+          background-color: rgba(10, 18, 16, 0.96);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(212, 180, 131, 0.42);
+          border-radius: 999px;
+          padding: 7px 12px 7px 8px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(212, 180, 131, 0.15);
+          animation: capsuleSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          box-sizing: border-box;
+        }
+
+        /* Sur mobile, flotter au-dessus de la barre de navigation du bas (.oj-bottom-nav) */
+        @media (max-width: 768px) {
+          .oj-pwa-banner-aside {
+            bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+            width: calc(100% - 20px) !important;
+            max-width: 420px !important;
+            z-index: 100000 !important;
+          }
+        }
+
         @keyframes capsuleSlideUp {
           from { transform: translate(-50%, 28px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }

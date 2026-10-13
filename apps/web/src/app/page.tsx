@@ -1058,8 +1058,8 @@ function MainMarketplaceView() {
                   color: "var(--oj-color-accent)",
                 }}>
                   {isEn
-                    ? "HAUTE CREATION · WEST AFRICA · OFFICIAL CURATION BY KINGSTON BIO"
-                    : "MAISON DE CRÉATION · AFRIQUE DE L'OUEST · SÉLECTION OFFICIELLE KINGSTON BIO"}
+                    ? "ONLINE MARKETPLACE · VERIFIED STORES · SECURE SHOPPING"
+                    : "MARKETPLACE EN LIGNE · BOUTIQUES VÉRIFIÉES · COMMANDES SÉCURISÉES"}
                 </span>
                 <span style={{ color: "var(--oj-color-accent)", display: "flex", alignItems: "center" }}><IconDiamondSparkle /></span>
               </div>
@@ -1068,12 +1068,12 @@ function MainMarketplaceView() {
               <section className="oj-editorial-lead-section">
                 <div className="oj-section" style={{ paddingBottom: 0 }}>
                   <h1 className="oj-editorial-lead-title">
-                    {isEn ? "Discover the Exceptional" : "Découvrez l'exceptionnel"}
+                    {isEn ? "Buy & Sell" : "Achetez & Vendez"}
                   </h1>
                   <p className="oj-editorial-lead-sub">
                     {isEn
-                      ? "Unique handcrafted pieces for unique individuals."
-                      : "Des produits uniques pour des personnes uniques."}
+                      ? "Verified stores and direct ordering."
+                      : "Boutiques certifiées et commandes directes."}
                   </p>
                   <div className="oj-mobile-search-wrap">
                     <span className="oj-search-icon">
@@ -1154,9 +1154,9 @@ function MainMarketplaceView() {
                             <IconDiamondSparkle /> {activeHeroProd.badgeText.toUpperCase()}
                           </span>
                         ) : isEn ? (
-                          "FEATURED PIECE • CURATED SELECTION"
+                          "TRENDING NOW · VERIFIED STORE"
                         ) : (
-                          "PIÈCE D'EXCEPTION • SÉLECTION DU SITE"
+                          "TENDANCE DU MOMENT · BOUTIQUE VÉRIFIÉE"
                         )}
                       </span>
                       <h1 className="oj-hero-title">
@@ -1197,7 +1197,7 @@ function MainMarketplaceView() {
                             setSelectedProduct(activeHeroProd);
                           }}
                         >
-                          {isEn ? "Discover the creation →" : "Découvrir la création →"}
+                          {isEn ? "Order now →" : "Commander →"}
                         </button>
                       </div>
                     </div>
@@ -1434,20 +1434,17 @@ function MainMarketplaceView() {
             </div>
           </section>
 
-          {/* Section: Ateliers d'Art & Maîtres Artisans */}
+          {/* Section: Les 3 Piliers de la Marketplace */}
           <section className="oj-section" style={{ marginTop: "16px" }}>
             <div className="oj-section-header">
               <div>
                 <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)", fontSize: "10.5px" }}>
-                  {isEn ? "HERITAGE & CRAFTSMANSHIP" : "SAVOIR-FAIRE MAÎTRE · ATELIERS D'EXCEPTION"}
+                  {isEn ? "MARKETPLACE ADVANTAGES" : "LES AVANTAGES OJARKET"}
                 </span>
                 <h2 className="oj-section-title" style={{ marginTop: "2px" }}>
-                  {isEn ? "Master Art Studios" : "Les Ateliers d'Art Certifiés"}
+                  {isEn ? "Why Choose Ojarket" : "Pourquoi Choisir Ojarket"}
                 </h2>
               </div>
-              <span style={{ fontSize: "11px", color: "var(--oj-color-muted)", fontStyle: "italic" }}>
-                {isEn ? "Handcrafted in Benin & West Africa" : "Façonné à la main au Bénin"}
-              </span>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
@@ -1465,23 +1462,23 @@ function MainMarketplaceView() {
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                     <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--oj-color-accent)", letterSpacing: "1px", textTransform: "uppercase" }}>
-                      FONDERIE D'ART ROYALE
+                      {isEn ? "FOR BUYERS" : "POUR LES ACHETEURS"}
                     </span>
                     <span style={{ fontSize: "10px", color: "var(--oj-color-muted)", padding: "2px 6px", borderRadius: "4px", backgroundColor: "var(--oj-color-subtle)" }}>
-                      Ouidah
+                      {isEn ? "Security" : "Sécurité"}
                     </span>
                   </div>
                   <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "16px", margin: "0 0 6px 0", color: "var(--oj-color-text)" }}>
-                    {isEn ? "Lost-Wax Bronze Sculpture" : "Ciselure & Fonte au Bronze"}
+                    {isEn ? "Verified Stores" : "Boutiques Vérifiées"}
                   </h3>
                   <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", lineHeight: 1.5, margin: 0 }}>
-                    {isEn ? "Over 48 hours of meticulous manual sculpting per bust, using ancient Kingdom traditions." : "Plus de 48 heures de travail manuel minutieux par œuvre, selon les traditions royales séculaires."}
+                    {isEn ? "Authentic articles and direct ordering from identified sellers." : "Articles authentiques et commandes directes auprès de vendeurs identifiés."}
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", borderTop: "1px solid var(--oj-color-border)", paddingTop: "10px" }}>
                   <span style={{ color: "var(--oj-color-accent)", display: "flex" }}><IconDiamondSparkle /></span>
                   <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--oj-color-accent)", letterSpacing: "0.5px" }}>
-                    {isEn ? "MASTER PIECE SEAL · VERIFIED" : "SCEAU DE MAÎTRE · PIÈCE UNIQUE"}
+                    {isEn ? "CERTIFIED COMMERCE · SECURE" : "COMMERCE CERTIFIÉ · SÉCURISÉ"}
                   </span>
                 </div>
               </div>
@@ -1500,23 +1497,23 @@ function MainMarketplaceView() {
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                     <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--oj-color-accent)", letterSpacing: "1px", textTransform: "uppercase" }}>
-                      ATELIER MAROQUINERIE GANHI
+                      {isEn ? "FOR SELLERS" : "POUR LES VENDEURS"}
                     </span>
                     <span style={{ fontSize: "10px", color: "var(--oj-color-muted)", padding: "2px 6px", borderRadius: "4px", backgroundColor: "var(--oj-color-subtle)" }}>
-                      Cotonou
+                      {isEn ? "2 min" : "En 2 min"}
                     </span>
                   </div>
                   <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "16px", margin: "0 0 6px 0", color: "var(--oj-color-text)" }}>
-                    {isEn ? "Full-Grain Saddle Stitching" : "Maroquinerie & Piqûre Sellier"}
+                    {isEn ? "Sell Online" : "Vendez en Ligne"}
                   </h3>
                   <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", lineHeight: 1.5, margin: 0 }}>
-                    {isEn ? "Vegetable-tanned full-grain leather, hand-stitched with waxed linen thread for lifetime durability." : "Cuirs pleine fleur à tannage végétal, cousus à la main au fil de lin ciré pour une longévité d'exception."}
+                    {isEn ? "Open your store, share your personal links on WhatsApp & socials, and get paid." : "Ouvrez votre boutique, partagez vos liens sur WhatsApp et encaissez vos ventes."}
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", borderTop: "1px solid var(--oj-color-border)", paddingTop: "10px" }}>
                   <span style={{ color: "var(--oj-color-accent)", display: "flex" }}><IconDiamondSparkle /></span>
                   <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--oj-color-accent)", letterSpacing: "0.5px" }}>
-                    {isEn ? "CERTIFIED SADDLER · HANDMADE" : "ARTISAN SELLIER · 100% MAIN"}
+                    {isEn ? "PERSONAL SHOP LINK · POCKET CASHBOOK" : "LIEN BOUTIQUE DÉDIÉ · GESTION DE CAISSE"}
                   </span>
                 </div>
               </div>
@@ -1535,23 +1532,23 @@ function MainMarketplaceView() {
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                     <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--oj-color-accent)", letterSpacing: "1px", textTransform: "uppercase" }}>
-                      HAUTE HORLOGERIE KINGSTON
+                      {isEn ? "CUSTOM & BULK" : "SUR-MESURE & VOLUME"}
                     </span>
                     <span style={{ fontSize: "10px", color: "var(--oj-color-muted)", padding: "2px 6px", borderRadius: "4px", backgroundColor: "var(--oj-color-subtle)" }}>
-                      Cotonou & Paris
+                      {isEn ? "Quotes" : "Devis"}
                     </span>
                   </div>
                   <h3 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "16px", margin: "0 0 6px 0", color: "var(--oj-color-text)" }}>
-                    {isEn ? "Chronometry & Fine Gems" : "Haute Joaillerie & Garde-Temps"}
+                    {isEn ? "Custom Quotes" : "Devis Spécifiques"}
                   </h3>
                   <p style={{ fontSize: "12px", color: "var(--oj-color-muted)", lineHeight: 1.5, margin: 0 }}>
-                    {isEn ? "Gem-setting under microscope and mechanical precision calibration certified by master watchmakers." : "Sertissage haute joaillerie sous loupe binoculaire et calibres horlogers d'exception certifiés."}
+                    {isEn ? "Post special requirements and receive tailored quotes from partner stores." : "Commandes sur-mesure et gros volumes : recevez des offres adaptées à votre budget."}
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", borderTop: "1px solid var(--oj-color-border)", paddingTop: "10px" }}>
                   <span style={{ color: "var(--oj-color-accent)", display: "flex" }}><IconDiamondSparkle /></span>
                   <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--oj-color-accent)", letterSpacing: "0.5px" }}>
-                    {isEn ? "CERTIFIED CHRONOMETER · 18K GOLD" : "CALIBRE CERTIFIÉ · OR 18K"}
+                    {isEn ? "FAST RESPONSE · NETWORK" : "RÉPONSE RAPIDE · RÉSEAU DÉDIÉ"}
                   </span>
                 </div>
               </div>
@@ -1576,17 +1573,17 @@ function MainMarketplaceView() {
                 <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 12px", borderRadius: "20px", backgroundColor: "rgba(212, 180, 131, 0.15)", border: "1px solid rgba(212, 180, 131, 0.35)", marginBottom: "14px" }}>
                   <IconDiamondSparkle />
                   <span style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "1.2px", color: "var(--oj-color-accent)", textTransform: "uppercase" }}>
-                    {isEn ? "BESPOKE LOUNGE · D02 PRIVATE SERVICE" : "SALON PRIVÉ & CRÉATIONS SUR-MESURE · SERVICE D02"}
+                    {isEn ? "CUSTOM ORDERS & BULK QUOTES" : "COMMANDES SPÉCIFIQUES & DEVIS EN GROS"}
                   </span>
                   <IconDiamondSparkle />
                 </div>
                 <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "28px", color: "#FFFFFF", margin: "0 0 12px 0", lineHeight: 1.25 }}>
-                  {isEn ? "Dreaming of a creation that exists nowhere else?" : "Vous rêvez d'une création qui n'existe nulle part ailleurs ?"}
+                  {isEn ? "Need a custom order or bulk purchase?" : "Un besoin spécifique ou une commande en gros ?"}
                 </h2>
                 <p style={{ fontSize: "14px", color: "rgba(255, 255, 255, 0.85)", lineHeight: 1.6, margin: "0 auto 22px auto", maxWidth: "600px" }}>
                   {isEn
-                    ? "Commission a bespoke piece from master artisans. Tell us your vision: receive tailored quotes, material recommendations, and clear workshop timelines."
-                    : "Confiez votre vision à nos maîtres d'art. Joaillerie sur-mesure, maroquinerie monogrammée ou mobilier d'exception : recevez des devis certifiés et des calendriers d'atelier précis."}
+                    ? "Submit your requirements and receive competitive quotes directly from verified partner stores."
+                    : "Décrivez précisément votre projet et recevez des offres directes de boutiques vérifiées sous 48h."}
                 </p>
                 <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                   <button 
@@ -1606,7 +1603,7 @@ function MainMarketplaceView() {
                       boxShadow: "0 4px 16px rgba(212, 180, 131, 0.3)",
                     }}
                   >
-                    {isEn ? "Open a Bespoke Request →" : "Ouvrir un projet sur-mesure →"}
+                    {isEn ? "Request a Quote →" : "Demander un devis →"}
                   </button>
                 </div>
               </div>
@@ -1632,10 +1629,10 @@ function MainMarketplaceView() {
                 </span>
                 <div>
                   <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
-                    {isEn ? "Numbered Certificate" : "Certificat d'Authenticité"}
+                    {isEn ? "Verified Merchants" : "Commerçants Vérifiés"}
                   </h4>
                   <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
-                    {isEn ? "Every piece includes an official physical certificate of origin." : "Chaque création est livrée avec son certificat d'origine officiel scellé."}
+                    {isEn ? "Identified partner stores with quality and authenticity guarantee." : "Boutiques partenaires certifiées avec garantie d'authenticité."}
                   </p>
                 </div>
               </div>
@@ -1646,10 +1643,10 @@ function MainMarketplaceView() {
                 </span>
                 <div>
                   <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
-                    {isEn ? "Protected Settlement" : "Caisse Sécurisée & MoMo"}
+                    {isEn ? "Secure Payment" : "Paiements Sécurisés"}
                   </h4>
                   <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
-                    {isEn ? "Funds held in escrow balance until physical handover inspection." : "Règlement Mobile Money sécurisé en livre de caisse certifié."}
+                    {isEn ? "Protected transactions via Mobile Money and bank cards." : "Transactions sécurisées par Mobile Money et cartes bancaires."}
                   </p>
                 </div>
               </div>
@@ -1660,10 +1657,10 @@ function MainMarketplaceView() {
                 </span>
                 <div>
                   <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
-                    {isEn ? "Prestige Case Handover" : "Livraison en Écrin Scellé"}
+                    {isEn ? "Fast & Tracked Delivery" : "Livraison Rapide & Suivie"}
                   </h4>
                   <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
-                    {isEn ? "White-glove presentation packaging in Cotonou and main cities." : "Écrin d'art soigné et remise en mains propres sécurisée à Cotonou."}
+                    {isEn ? "Careful packaging and direct delivery with order tracking." : "Emballage soigné et remise en mains propres avec suivi en direct."}
                   </p>
                 </div>
               </div>
@@ -1674,10 +1671,10 @@ function MainMarketplaceView() {
                 </span>
                 <div>
                   <h4 style={{ margin: "0 0 3px 0", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-text)" }}>
-                    {isEn ? "Private Concierge 7d/7" : "Conciergerie Privée 7j/7"}
+                    {isEn ? "Customer Support 7d/7" : "Service Client 7j/7"}
                   </h4>
                   <p style={{ margin: 0, fontSize: "11px", color: "var(--oj-color-muted)", lineHeight: 1.45 }}>
-                    {isEn ? "Direct dedicated WhatsApp advisory for inquiries and orders." : "Ligne directe d'assistance et accompagnement personnalisé."}
+                    {isEn ? "Direct assistance for questions, orders, and merchant support." : "Assistance directe pour vos commandes et votre espace boutique."}
                   </p>
                 </div>
               </div>
