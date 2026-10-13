@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getStoredToken } from "@/lib/api";
-import { sellerTranslations, SellerLocale } from "@/lib/seller-i18n";
+import { sellerTranslations, SellerLocale, getInitialSellerLocale } from "@/lib/seller-i18n";
 
 export default function CreateProductPage() {
   const router = useRouter();
@@ -25,8 +25,8 @@ export default function CreateProductPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("ojarket_seller_locale") as SellerLocale;
-      if (saved === "en" || saved === "fr") setLocale(saved);
+      const initial = getInitialSellerLocale();
+      setLocale(initial);
     } catch {}
   }, []);
 

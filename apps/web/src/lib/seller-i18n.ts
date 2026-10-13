@@ -2,6 +2,27 @@
 
 export type SellerLocale = 'fr' | 'en';
 
+export function getInitialSellerLocale(): SellerLocale {
+  if (typeof window === "undefined") return "fr";
+  try {
+    const saved = localStorage.getItem("ojarket_seller_locale") as SellerLocale | null;
+    if (saved === "en" || saved === "fr") return saved;
+    const mainPrefs = localStorage.getItem("aifoundry.ui-gallery");
+    if (mainPrefs) {
+      const parsed = JSON.parse(mainPrefs);
+      if (parsed?.locale === "en" || parsed?.locale === "fr") return parsed.locale;
+    }
+    const navLangs = navigator.languages || [navigator.language];
+    for (const lang of navLangs) {
+      if (!lang) continue;
+      const clean = lang.toLowerCase();
+      if (clean.startsWith("en")) return "en";
+      if (clean.startsWith("fr")) return "fr";
+    }
+  } catch {}
+  return "fr";
+}
+
 export const sellerTranslations = {
   fr: {
     nav: {

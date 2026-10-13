@@ -29,6 +29,11 @@ export default function RootLayout({
     <html lang="fr" style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       <head>
         <link rel="icon" href="/brand/Ojarket_04_Favicon_512_Transparent.png" type="image/png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=localStorage.getItem('aifoundry.ui-gallery'),l='fr';if(s){var p=JSON.parse(s);if(p&&(p.locale==='en'||p.locale==='fr'))l=p.locale}else{var n=(navigator.languages&&navigator.languages[0])||navigator.language||'';if(n.toLowerCase().startsWith('en'))l='en'}document.documentElement.lang=l}catch(e){}`,
+          }}
+        />
       </head>
       <body style={{ margin: 0, padding: 0, width: '100%', maxWidth: '100%', overflowX: 'hidden', backgroundColor: '#081018' }}>
         {children}

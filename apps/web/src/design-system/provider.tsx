@@ -22,6 +22,18 @@ import {
   type Theme,
 } from "@aifoundry/design-system";
 
+export function detectBrowserLocale(): Locale {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return "fr";
+  const navLangs = navigator.languages || [navigator.language];
+  for (const lang of navLangs) {
+    if (!lang) continue;
+    const clean = lang.toLowerCase();
+    if (clean.startsWith("en")) return "en";
+    if (clean.startsWith("fr")) return "fr";
+  }
+  return "fr";
+}
+
 const Context = createContext({
   locale: "fr" as Locale,
   mode: "system" as ThemeMode,
@@ -37,12 +49,19 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     try {
-      const p = parsePreferences(localStorage.getItem("aifoundry.ui-gallery"));
-      setLocale(p.locale);
-      if (p.mode === "dark") {
-        setMode("dark");
+      const stored = localStorage.getItem("aifoundry.ui-gallery");
+      if (stored) {
+        const p = parsePreferences(stored);
+        setLocale(p.locale);
+        if (p.mode === "dark") {
+          setMode("dark");
+        } else {
+          setMode("light");
+        }
       } else {
-        setMode("light");
+        // Détection automatique de la langue du navigateur à la 1ère visite
+        const detected = detectBrowserLocale();
+        setLocale(detected);
       }
     } catch {
       /* Storage may be disabled. */

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getStoredToken } from "@/lib/api";
-import { sellerTranslations, SellerLocale } from "@/lib/seller-i18n";
+import { sellerTranslations, SellerLocale, getInitialSellerLocale } from "@/lib/seller-i18n";
 
 interface PurchaseRequest {
   id: string;
@@ -42,8 +42,8 @@ export default function SellerOpportunitiesPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("ojarket_seller_locale") as SellerLocale;
-      if (saved === "en" || saved === "fr") setLocale(saved);
+      const initial = getInitialSellerLocale();
+      setLocale(initial);
     } catch {}
 
     fetchRequests();

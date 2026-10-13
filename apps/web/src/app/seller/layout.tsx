@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { sellerTranslations, SellerLocale } from "@/lib/seller-i18n";
+import { sellerTranslations, SellerLocale, getInitialSellerLocale } from "@/lib/seller-i18n";
 import { getStoredToken, getStoredUser, clearSession, AuthApi, type AuthUser } from "@/lib/api";
 import { WebAuthModal } from "@/components/WebAuthModal";
 import "../landing.css";
@@ -43,10 +43,8 @@ export default function SellerLayout({
   useEffect(() => {
     setMounted(true);
     try {
-      const savedLocale = localStorage.getItem("ojarket_seller_locale") as SellerLocale;
-      if (savedLocale === "en" || savedLocale === "fr") {
-        setLocale(savedLocale);
-      }
+      const initial = getInitialSellerLocale();
+      setLocale(initial);
       const savedCollapsed = localStorage.getItem("ojarket_seller_sidebar_collapsed");
       if (savedCollapsed === "true") {
         setIsCollapsed(true);

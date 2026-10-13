@@ -26,9 +26,18 @@ function usePreferences() {
     AsyncStorage.getItem("aifoundry.ui-gallery.v1")
       .then((value) => {
         if (active) {
-          const p = parsePreferences(value);
-          setMode(p.mode);
-          setLocale(p.locale);
+          if (value) {
+            const p = parsePreferences(value);
+            setMode(p.mode);
+            setLocale(p.locale);
+          } else {
+            try {
+              const deviceLocale = Intl.DateTimeFormat().resolvedOptions().locale || "";
+              if (deviceLocale.toLowerCase().startsWith("en")) {
+                setLocale("en");
+              }
+            } catch {}
+          }
         }
       })
       .catch(() => {})
