@@ -1,25 +1,18 @@
 import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import ProductShareButton from './ProductShareButton';
 import './product.css';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
+import { getProductById } from '@/lib/server/catalog';
+
 async function getProductData(idOrSlug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
   try {
-    const res = await fetch(`${baseUrl}/api/v1/catalog/${idOrSlug}`, {
-      next: { revalidate: 60 }
-    });
-    
-    if (!res.ok) {
-      return null;
-    }
-    
-    return res.json();
+    return await getProductById(idOrSlug);
   } catch (error) {
     console.error('Error fetching product data:', error);
     return null;
@@ -48,7 +41,10 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     ? `${product.description.slice(0, 150)}... Garanti par ${shopName}${shopLocation} sur Ojarket.`
     : `Découvrez "${product.title}" au prix de ${formattedPrice} ${product.currency}, disponible auprès de ${shopName} sur Ojarket.`;
 
-  const image = product.image || 'https://ojarket.com/reference-assets/market-tote.png';
+  let image = product.image || 'https://ojarket.com/reference-assets/market-tote.png';
+  if (image.startsWith('/')) {
+    image = `https://ojarket.com${image}`;
+  }
   const canonicalUrl = `https://ojarket.com/p/${slug}`;
 
   return {
@@ -61,12 +57,14 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       title,
       description,
       url: canonicalUrl,
-      siteName: 'Ojarket · Haute Maison Ouest-Africaine',
+      siteName: 'Ojarket',
       images: [
         {
           url: image,
-          width: 1200,
-          height: 1200,
+          secureUrl: image,
+          width: 800,
+          height: 800,
+          type: image.endsWith('.png') ? 'image/png' : image.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
           alt: product.title,
         },
       ],
@@ -290,6 +288,15 @@ export default async function ProductLandingPage({ params }: ProductPageProps) {
                   <span>Commander dans l'Application Mobile</span>
                   <span>→</span>
                 </a>
+
+                {/* Direct Share Component (Native Share & WhatsApp) */}
+                <ProductShareButton
+                  productTitle={product.title}
+                  formattedPrice={formattedPrice}
+                  currency={product.currency}
+                  shopName={shopName}
+                  productUrl={`https://ojarket.com/p/${slug}`}
+                />
 
                 {shopSlug && (
                   <Link

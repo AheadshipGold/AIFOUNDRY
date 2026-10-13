@@ -37,8 +37,9 @@ export default function SellerLayout({
   const [quickLoginLoading, setQuickLoginLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Initialize locale from storage
+  // Initialize locale and sidebar collapse state from storage
   useEffect(() => {
     setMounted(true);
     try {
@@ -46,8 +47,22 @@ export default function SellerLayout({
       if (savedLocale === "en" || savedLocale === "fr") {
         setLocale(savedLocale);
       }
+      const savedCollapsed = localStorage.getItem("ojarket_seller_sidebar_collapsed");
+      if (savedCollapsed === "true") {
+        setIsCollapsed(true);
+      }
     } catch {}
   }, []);
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("ojarket_seller_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const changeLocale = (newLocale: SellerLocale) => {
     setLocale(newLocale);
@@ -251,32 +266,84 @@ export default function SellerLayout({
   return (
     <div className="seller-shell" data-theme="dark">
       {/* ==================== LEFT SIDEBAR ==================== */}
-      <aside className="seller-sidebar">
+      <aside className={`seller-sidebar ${isCollapsed ? "collapsed" : ""}`}>
         {/* Brand & Store Header */}
-        <div style={{ padding: "16px 14px 14px", borderBottom: "1px solid #1C2E2A" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
-              <img
-                src="/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Dark_Transparent.png"
-                alt="Ojarket"
-                style={{ height: "22px", width: "auto", objectFit: "contain" }}
-              />
+        <div style={{ padding: isCollapsed ? "16px 8px 14px" : "16px 14px 14px", borderBottom: "1px solid #1C2E2A" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between", marginBottom: "12px", gap: "6px" }}>
+            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }} title="Accueil Ojarket">
+              {isCollapsed ? (
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    backgroundColor: "#075D49",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#D4B483",
+                    fontWeight: 800,
+                    fontSize: "14px",
+                    fontFamily: "var(--oj-font-editorial, serif)",
+                  }}
+                >
+                  O
+                </div>
+              ) : (
+                <img
+                  src="/brand/Ojarket_02_Wordmark_Centered_UltraPremium_Dark_Transparent.png"
+                  alt="Ojarket"
+                  style={{ height: "22px", width: "auto", objectFit: "contain" }}
+                />
+              )}
             </Link>
-            <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "1px", padding: "2px 5px", borderRadius: "4px", backgroundColor: "rgba(212, 180, 131, 0.15)", color: "#D4B483", border: "1px solid rgba(212, 180, 131, 0.35)", fontWeight: 700 }}>
-              OS
-            </span>
+            
+            {/* Toggle Button Directly Inside Sidebar */}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="seller-sidebar-toggle-btn"
+              title={isCollapsed ? "Déployer la barre latérale" : "Rétracter la barre latérale"}
+              aria-label={isCollapsed ? "Déployer la barre latérale" : "Rétracter la barre latérale"}
+              style={{
+                background: "rgba(212, 180, 131, 0.08)",
+                border: "1px solid rgba(212, 180, 131, 0.3)",
+                borderRadius: "6px",
+                width: isCollapsed ? "28px" : "26px",
+                height: isCollapsed ? "28px" : "26px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#D4B483",
+                cursor: "pointer",
+                padding: 0,
+                transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                marginTop: isCollapsed ? "8px" : 0,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                {isCollapsed ? (
+                  <path d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                ) : (
+                  <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+                )}
+              </svg>
+            </button>
           </div>
 
           {/* Boutique Profile Box */}
           <div
             style={{
-              padding: "8px 10px",
+              padding: isCollapsed ? "6px" : "8px 10px",
               borderRadius: "6px",
               backgroundColor: "rgba(0, 0, 0, 0.25)",
               border: "1px solid rgba(255, 255, 255, 0.05)",
+              display: "flex",
+              justifyContent: isCollapsed ? "center" : "flex-start",
             }}
+            title={shop?.name || "Boutique"}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", justifyContent: isCollapsed ? "center" : "flex-start" }}>
               <div
                 style={{
                   width: "30px",
@@ -295,24 +362,26 @@ export default function SellerLayout({
               >
                 {shop?.name ? shop.name.charAt(0).toUpperCase() : "M"}
               </div>
-              <div style={{ overflow: "hidden", flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: "12px", color: "#F8F6F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {shop?.name || (authRequired ? "Compte Artisan" : "Boutique")}
+              {!isCollapsed && (
+                <div style={{ overflow: "hidden", flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: "12px", color: "#F8F6F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {shop?.name || (authRequired ? "Compte Artisan" : "Boutique")}
+                  </div>
+                  <div style={{ fontSize: "10.5px", color: "rgba(248, 246, 240, 0.55)", display: "flex", alignItems: "center", gap: "3px" }}>
+                    <span>{shop?.city || "Cotonou"}</span>
+                    <span>•</span>
+                    <span style={{ color: shop?.isVerified ? "#10B981" : "#D4B483", fontWeight: 600 }}>
+                      {shop?.isVerified ? "Vérifiée" : "KYC Attente"}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ fontSize: "10.5px", color: "rgba(248, 246, 240, 0.55)", display: "flex", alignItems: "center", gap: "3px" }}>
-                  <span>{shop?.city || "Cotonou"}</span>
-                  <span>•</span>
-                  <span style={{ color: shop?.isVerified ? "#10B981" : "#D4B483", fontWeight: 600 }}>
-                    {shop?.isVerified ? "Vérifiée" : "KYC Attente"}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Navigation Items */}
-        <nav style={{ padding: "10px 8px", flex: 1, overflowY: "auto" }}>
+        <nav style={{ padding: isCollapsed ? "10px 4px" : "10px 8px", flex: 1, overflowY: "auto" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             {navItems.map((item) => {
               const active = item.exact
@@ -324,6 +393,7 @@ export default function SellerLayout({
                   key={item.href}
                   href={item.href}
                   className={`seller-nav-link ${active ? "active" : ""}`}
+                  title={item.label}
                 >
                   <span style={{ display: "flex", alignItems: "center" }}>{item.icon}</span>
                   <span style={{ fontSize: "12.5px", fontWeight: active ? 600 : 500 }}>{item.label}</span>
@@ -334,7 +404,7 @@ export default function SellerLayout({
         </nav>
 
         {/* Sidebar Footer with Live Store link & Logout/Login */}
-        <div style={{ padding: "10px 12px 14px", borderTop: "1px solid #1C2E2A", display: "flex", flexDirection: "column", gap: "8px", flexShrink: 0 }}>
+        <div style={{ padding: isCollapsed ? "10px 6px 14px" : "10px 12px 14px", borderTop: "1px solid #1C2E2A", display: "flex", flexDirection: "column", gap: "8px", flexShrink: 0 }}>
           {shop?.id && shop.id !== "new" && (
             <Link
               href={`/shop/${shop.slug || shop.id}`}
@@ -343,7 +413,7 @@ export default function SellerLayout({
               title="Ouvrir la vitrine publique dans un nouvel onglet"
             >
               <span>{t.nav.viewStorefront}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -351,15 +421,17 @@ export default function SellerLayout({
             </Link>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "4px" }} suppressHydrationWarning>
-            <Link
-              href="/"
-              style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.55)", textDecoration: "none", transition: "color 0.15s ease" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#F8F6F0")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(248, 246, 240, 0.55)")}
-            >
-              {t.nav.backToMarketplace}
-            </Link>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between", paddingTop: "4px" }} suppressHydrationWarning>
+            {!isCollapsed && (
+              <Link
+                href="/"
+                style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.55)", textDecoration: "none", transition: "color 0.15s ease" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#F8F6F0")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(248, 246, 240, 0.55)")}
+              >
+                {t.nav.backToMarketplace}
+              </Link>
+            )}
             {!mounted ? (
               <span style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.3)" }}>—</span>
             ) : user ? (
@@ -367,8 +439,17 @@ export default function SellerLayout({
                 onClick={handleLogout}
                 className="seller-footer-logout"
                 title="Se déconnecter de la session marchand"
+                style={isCollapsed ? { padding: "4px 8px", fontSize: "10px" } : {}}
               >
-                {t.nav.logout}
+                {isCollapsed ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                ) : (
+                  t.nav.logout
+                )}
               </button>
             ) : (
               <button
@@ -376,7 +457,7 @@ export default function SellerLayout({
                 className="seller-footer-login"
                 title="Se connecter au compte marchand"
               >
-                Se Connecter
+                {isCollapsed ? "Entrer" : "Se Connecter"}
               </button>
             )}
           </div>
@@ -387,7 +468,7 @@ export default function SellerLayout({
       <div className="seller-main">
         {/* Top Header */}
         <header className="seller-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "14px", fontWeight: 600, color: "#D4B483", letterSpacing: "0.5px" }}>
               Merchant Commerce OS
             </span>
@@ -396,6 +477,7 @@ export default function SellerLayout({
               {shop?.name || "Boutique"}
             </span>
           </div>
+
 
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             {/* Quick Action */}

@@ -7,24 +7,53 @@ export async function POST(req: Request) {
   try {
     await requireSellerContext(req);
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
+    const contentType = req.headers.get('content-type') || '';
+    let buffer: Buffer;
+    let mimeType = 'image/jpeg';
+    let originalName = 'upload.jpg';
 
-    if (!file) {
-      return NextResponse.json({ message: 'Aucun fichier transmis' }, { status: 400 });
+    if (contentType.includes('application/json')) {
+      const body = await req.json().catch(() => ({}));
+      const base64Data = body.base64 || body.image || '';
+      if (!base64Data) {
+        return NextResponse.json({ message: 'Aucune donnée d’image transmise' }, { status: 400 });
+      }
+      originalName = body.filename || body.name || 'upload.jpg';
+      mimeType = body.mimeType || body.type || 'image/jpeg';
+      const cleanBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+      buffer = Buffer.from(cleanBase64, 'base64');
+    } else {
+      const formData = await req.formData();
+      const file = formData.get('file') as File | null;
+
+      if (!file) {
+        return NextResponse.json({ message: 'Aucun fichier transmis' }, { status: 400 });
+      }
+
+      originalName = file.name || 'upload.jpg';
+      mimeType = file.type || '';
+      const bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
     }
 
-    // Validate mime type
+    // Validate and auto-normalize mime type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
+    if (!validTypes.includes(mimeType) || mimeType === 'application/octet-stream') {
+      const ext = originalName.split('.').pop()?.toLowerCase();
+      if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+      else if (ext === 'png') mimeType = 'image/png';
+      else if (ext === 'webp') mimeType = 'image/webp';
+      else if (ext === 'avif') mimeType = 'image/avif';
+      else if (ext === 'gif') mimeType = 'image/gif';
+      else mimeType = 'image/jpeg';
+    }
+
+    if (!validTypes.includes(mimeType)) {
       return NextResponse.json(
         { message: 'Format d’image non supporté. Utilisez JPEG, PNG ou WebP.' },
         { status: 400 }
       );
     }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
 
     // If R2 credentials are fully configured in environment
     const r2Account = process.env.R2_ACCOUNT_ID;
@@ -44,7 +73,7 @@ export async function POST(req: Request) {
           },
         });
 
-        const extension = file.type.split('/')[1] || 'jpg';
+        const extension = mimeType.split('/')[1] || 'jpg';
         const key = `products/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${extension}`;
 
         await s3.send(
@@ -52,7 +81,7 @@ export async function POST(req: Request) {
             Bucket: r2Bucket,
             Key: key,
             Body: buffer,
-            ContentType: file.type,
+            ContentType: mimeType,
           })
         );
 
@@ -75,7 +104,7 @@ export async function POST(req: Request) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    const ext = file.name.split('.').pop() || 'jpg';
+    const ext = originalName.split('.').pop() || 'jpg';
     const filename = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const filePath = path.join(uploadDir, filename);
 

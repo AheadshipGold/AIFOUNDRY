@@ -564,8 +564,8 @@ export const SellerApi = {
     return request(`/v1/products/${id}`, { method: 'DELETE' });
   },
 
-  /** Uploads a local image (file:// URI) and returns its public URL */
-  async uploadImage(localUri: string, mimeType?: string | null): Promise<string> {
+  /** Uploads a local image (file:// URI or base64) and returns its public URL */
+  async uploadImage(localUri: string, mimeType?: string | null, base64Data?: string | null): Promise<string> {
     const token = await getValidAuthToken();
     let explicitUserId: string | undefined;
     try {
@@ -577,39 +577,152 @@ export const SellerApi = {
     } catch {}
 
     const ext = (localUri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
-    const type = mimeType || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
-    const form = new FormData();
-    form.append('file', { uri: localUri, name: `product.${ext === 'jpeg' ? 'jpg' : ext}`, type } as any);
+    const resolvedMime = mimeType || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+    const filename = `photo-${Date.now()}.${ext === 'jpeg' ? 'jpg' : ext}`;
 
-    const uploadHeaders: Record<string, string> = {
+    const baseHeaders: Record<string, string> = {
       'Bypass-Tunnel-Reminder': 'true',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(explicitUserId ? { 'x-user-id': explicitUserId } : {}),
     };
 
-    const doUpload = async (base: string) => {
-      const res = await fetch(`${base}/v1/seller/uploads`, {
-        method: 'POST',
-        headers: uploadHeaders,
-        body: form,
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.url) {
-        throw new Error(json?.message || `Erreur de téléversement (${res.status})`);
-      }
-      return resolveMediaUrl(json.url) || json.url;
-    };
+    // Strategy 1: Direct JSON upload if base64 data was already provided (100% immune to multipart/FormData engine bugs)
+    if (base64Data) {
+      const doUploadJson = async (base: string) => {
+        const res = await fetch(`${base}/v1/seller/uploads`, {
+          method: 'POST',
+          headers: {
+            ...baseHeaders,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            base64: base64Data,
+            filename,
+            mimeType: resolvedMime,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.url) {
+          throw new Error(json?.message || `Erreur de téléversement (${res.status})`);
+        }
+        return resolveMediaUrl(json.url) || json.url;
+      };
 
-    try {
-      return await doUpload(_activeBaseUrl);
-    } catch (primaryErr) {
-      const alt = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
-      if (alt !== _activeBaseUrl) {
-        try {
-          return await doUpload(alt);
-        } catch {}
+      try {
+        return await doUploadJson(_activeBaseUrl);
+      } catch (primaryErr) {
+        const alt = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
+        if (alt !== _activeBaseUrl) {
+          try {
+            return await doUploadJson(alt);
+          } catch {}
+        }
+        throw primaryErr;
       }
-      throw primaryErr;
+    }
+
+    // Strategy 2: Read blob from local URI and upload via FormData or Base64
+    let blob: Blob | null = null;
+    try {
+      const localFileRes = await fetch(localUri);
+      blob = await localFileRes.blob();
+    } catch (e) {
+      console.warn('Could not read local URI as blob directly:', e);
+    }
+
+    // Try standard FormData with real Blob (WinterCG compliant)
+    if (blob) {
+      try {
+        const form = new FormData();
+        form.append('file', blob, filename);
+
+        const doUploadFormData = async (base: string) => {
+          const res = await fetch(`${base}/v1/seller/uploads`, {
+            method: 'POST',
+            headers: baseHeaders,
+            body: form,
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json?.url) {
+            throw new Error(json?.message || `Erreur de téléversement (${res.status})`);
+          }
+          return resolveMediaUrl(json.url) || json.url;
+        };
+
+        try {
+          return await doUploadFormData(_activeBaseUrl);
+        } catch (err) {
+          const alt = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
+          if (alt !== _activeBaseUrl) {
+            try {
+              return await doUploadFormData(alt);
+            } catch {}
+          }
+          throw err;
+        }
+      } catch (formErr: any) {
+        console.warn('FormData upload failed, trying Base64 JSON fallback:', formErr?.message);
+      }
+    }
+
+    // Strategy 3: Universal Base64 JSON fallback via FileReader
+    try {
+      let b64 = '';
+      if (blob) {
+        b64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string) || '');
+          reader.onerror = reject;
+          reader.readAsDataURL(blob!);
+        });
+      } else {
+        const fileRes = await fetch(localUri);
+        const arrayBuf = await fileRes.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuf);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        b64 = `data:${resolvedMime};base64,${(globalThis as any).btoa ? (globalThis as any).btoa(binary) : ''}`;
+      }
+
+      if (!b64) {
+        throw new Error('Impossible de lire les données binaires de l’image sélectionnée.');
+      }
+
+      const doUploadJson = async (base: string) => {
+        const res = await fetch(`${base}/v1/seller/uploads`, {
+          method: 'POST',
+          headers: {
+            ...baseHeaders,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            base64: b64,
+            filename,
+            mimeType: resolvedMime,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.url) {
+          throw new Error(json?.message || `Erreur de téléversement (${res.status})`);
+        }
+        return resolveMediaUrl(json.url) || json.url;
+      };
+
+      try {
+        return await doUploadJson(_activeBaseUrl);
+      } catch (primaryErr) {
+        const alt = _activeBaseUrl === API_BASE_URL ? LAN_BASE_URL : API_BASE_URL;
+        if (alt !== _activeBaseUrl) {
+          try {
+            return await doUploadJson(alt);
+          } catch {}
+        }
+        throw primaryErr;
+      }
+    } catch (finalErr: any) {
+      throw new Error(finalErr?.message || 'Erreur lors du transfert de l’image.');
     }
   },
 

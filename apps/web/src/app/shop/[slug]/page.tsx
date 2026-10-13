@@ -76,7 +76,11 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
     ? `${shop.description.slice(0, 150)}... — Découvrez les créations certifiées de ${shop.name} (${location}) sur Ojarket.`
     : `Découvrez la boutique officielle ${shop.name} (${location}) sur Ojarket. Produits de luxe et créations sur-mesure garantis.`;
 
-  const bannerImage = shop.bannerUrl || 'https://ojarket.com/reference-assets/market-tote.png';
+  const firstProductImage = shop.products && shop.products.length > 0 ? (shop.products[0].images?.[0] || shop.products[0].image) : null;
+  let bannerImage = shop.bannerUrl || firstProductImage || 'https://ojarket.com/reference-assets/market-tote.png';
+  if (bannerImage.startsWith('/')) {
+    bannerImage = `https://ojarket.com${bannerImage}`;
+  }
   const canonicalUrl = `https://ojarket.com/shop/${shop.slug || slug}`;
 
   return {
@@ -89,12 +93,14 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
       title,
       description,
       url: canonicalUrl,
-      siteName: 'Ojarket · Haute Maison Ouest-Africaine',
+      siteName: 'Ojarket',
       images: [
         {
           url: bannerImage,
-          width: 1200,
-          height: 630,
+          secureUrl: bannerImage,
+          width: 800,
+          height: 800,
+          type: bannerImage.endsWith('.png') ? 'image/png' : bannerImage.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
           alt: `${shop.name} sur Ojarket`,
         },
       ],
@@ -150,13 +156,18 @@ export default async function ShopPage({ params }: ShopPageProps) {
     );
   }
 
-  const { name, description, craftType, city, country, bannerUrl, rating, reviewsCount, products, reviews, storefrontTheme } = shop;
+  const { name, description, craftType, city, country, bannerUrl, rating, reviewsCount, products, reviews, storefrontTheme, phone } = shop;
   const currentTheme = storefrontTheme === 'dark' ? 'dark' : 'light';
   const displayLocation = `${city}${country ? `, ${country}` : ''}`;
   const initialLetter = name ? name.charAt(0).toUpperCase() : 'M';
   const formattedCraft = formatCraftType(craftType);
   const shareUrl = `https://ojarket.com/shop/${shop.slug || slug}`;
-  const whatsappUrl = `https://wa.me/22900000000?text=${encodeURIComponent(`Bonjour ${name}, je découvre votre boutique sur Ojarket et souhaite échanger au sujet de vos créations.`)}`;
+
+  // Nettoyage et formatage international du numéro pour WhatsApp direct (aucun numéro factice en dur)
+  const cleanPhone = phone ? phone.replace(/[^\d]/g, '') : null;
+  const whatsappUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Bonjour ${name}, je découvre votre boutique sur Ojarket et souhaite échanger au sujet de vos créations.`)}`
+    : null;
 
   return (
     <div className="luxury-storefront" data-theme={currentTheme}>
@@ -199,18 +210,20 @@ export default async function ShopPage({ params }: ShopPageProps) {
           </div>
 
           <div className="storefront-header-actions">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="storefront-whatsapp-btn"
-              title="Discuter directement avec l'artisan sur WhatsApp"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
-              </svg>
-              <span>Conciergerie WhatsApp</span>
-            </a>
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="storefront-whatsapp-btn"
+                title="Discuter directement avec l'artisan sur WhatsApp"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
+                </svg>
+                <span>Conciergerie WhatsApp</span>
+              </a>
+            )}
             <a
               href={`ojarket://shop/${shop.slug || slug}`}
               className="storefront-app-btn"
@@ -245,6 +258,11 @@ export default async function ShopPage({ params }: ShopPageProps) {
           <p className="atelier-location">
             {displayLocation}
           </p>
+          {description && (
+            <p style={{ maxWidth: '640px', fontSize: '14px', lineHeight: '1.6', color: 'rgba(248, 246, 240, 0.8)', margin: '0 auto 18px', textAlign: 'center' }}>
+              {description}
+            </p>
+          )}
 
           <div className="atelier-trust-strip">
             <div className="trust-item">
@@ -263,52 +281,30 @@ export default async function ShopPage({ params }: ShopPageProps) {
 
           <div className="atelier-hero-ctas">
             <a href="#catalogue" className="btn-atelier-primary">
-              Explorer les Créations ({products ? products.length : 0})
+              Voir les Créations ({products ? products.length : 0})
             </a>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-atelier-secondary"
-            >
-              Contacter l'Atelier
-            </a>
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-atelier-secondary"
+              >
+                Contacter l'Atelier
+              </a>
+            ) : (
+              <a
+                href="#catalogue"
+                className="btn-atelier-secondary"
+              >
+                Découvrir la Galerie
+              </a>
+            )}
           </div>
         </div>
       </section>
 
-      {/* 4. Atelier Manifesto & Editorial Split */}
-      <section className="atelier-manifesto-section">
-        <div className="manifesto-inner">
-          <div className="manifesto-text">
-            <span className="manifesto-eyebrow">Manifeste de la Maison</span>
-            <h2 className="manifesto-heading">L'Excellence du Terroir &amp; du Savoir-Faire Ouest-Africain</h2>
-            <p className="manifesto-body">
-              {description || "Chaque pièce est façonnée avec une exigence sans compromis, alliant matières nobles et traditions d'exception pour sublimer votre quotidien. Notre maison perpétue une vision contemporaine de l'artisanat d'art, certifiée et protégée par la garantie Ojarket."}
-            </p>
-          </div>
-          <div className="manifesto-metrics-grid">
-            <div className="metric-box">
-              <span className="metric-value">{products ? products.length : 0}</span>
-              <span className="metric-label">Créations Uniques</span>
-            </div>
-            <div className="metric-box">
-              <span className="metric-value">100%</span>
-              <span className="metric-label">Matières Nobles</span>
-            </div>
-            <div className="metric-box">
-              <span className="metric-value">{city}</span>
-              <span className="metric-label">Atelier d'Origine</span>
-            </div>
-            <div className="metric-box">
-              <span className="metric-value">A+</span>
-              <span className="metric-label">Grade de Contrôle</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Catalog & Products Grid (Shopify Plus Standard) */}
+      {/* 4. Catalog & Products Grid (Instant Shopify Plus Showcase - Direct Focus on Creations) */}
       <section id="catalogue" className="storefront-catalog-section">
         <div className="catalog-header-bar">
           <div>
@@ -316,16 +312,17 @@ export default async function ShopPage({ params }: ShopPageProps) {
               Créations &amp; Sélection Officielle
             </h2>
             <p className="catalog-sub">
-              Pièces exclusives disponibles à la commande et livrées avec certificat d'authenticité.
+              Pièces exclusives disponibles à la commande et expédiées sous garantie d'authenticité Ojarket.
             </p>
           </div>
           <div className="catalog-badge-verified">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#AD8455" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
-            <span>Catalogue Vérifié par Ojarket</span>
+            <span>Catalogue Officiel ({products ? products.length : 0} pièces)</span>
           </div>
         </div>
+
 
         <div className="products-grid">
           {products && products.length > 0 ? (
@@ -415,9 +412,9 @@ export default async function ShopPage({ params }: ShopPageProps) {
                 Le maître d'atelier finalise l'inventaire de ses nouvelles pièces. Contactez la conciergerie pour une commande privée exclusive.
               </p>
               <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={whatsappUrl || '#'}
+                target={whatsappUrl ? "_blank" : undefined}
+                rel={whatsappUrl ? "noopener noreferrer" : undefined}
                 className="btn-atelier-primary"
                 style={{ display: 'inline-block' }}
               >
@@ -539,33 +536,35 @@ export default async function ShopPage({ params }: ShopPageProps) {
       </section>
 
       {/* 8. WhatsApp Direct Banner */}
-      <section className="storefront-whatsapp-banner">
-        <div className="whatsapp-banner-inner">
-          <div className="whatsapp-banner-badge">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
-            </svg>
-            <span>Service Conciergerie Dédié</span>
+      {whatsappUrl && (
+        <section className="storefront-whatsapp-banner">
+          <div className="whatsapp-banner-inner">
+            <div className="whatsapp-banner-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
+              </svg>
+              <span>Service Conciergerie Dédié</span>
+            </div>
+            <h2 className="whatsapp-banner-title">
+              Une création sur-mesure ou une question pour {name} ?
+            </h2>
+            <p className="whatsapp-banner-desc">
+              Échangez directement avec le maître d'atelier et notre conciergerie Ojarket pour vos personnalisations, formats spécifiques et commandes institutionnelles.
+            </p>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whatsapp-banner-btn"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
+              </svg>
+              <span>Échanger sur WhatsApp avec l'Atelier</span>
+            </a>
           </div>
-          <h2 className="whatsapp-banner-title">
-            Une création sur-mesure ou une question pour {name} ?
-          </h2>
-          <p className="whatsapp-banner-desc">
-            Échangez directement avec le maître d'atelier et notre conciergerie Ojarket pour vos personnalisations, formats spécifiques et commandes institutionnelles.
-          </p>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="whatsapp-banner-btn"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.316 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.818-.981zm10.741-7.258c-.078-.13-.288-.208-.606-.366s-1.874-.925-2.164-1.031c-.29-.105-.502-.158-.713.158-.212.316-.819 1.031-.1.004 1.242-.185.211-.37.237-.687.079s-1.344-.495-2.56-1.579c-.947-.844-1.587-1.888-1.772-2.205-.185-.317-.02-.489.139-.646.143-.142.317-.37.476-.554.159-.185.212-.317.318-.528.106-.211.053-.396-.026-.554s-.713-1.717-.978-2.355c-.258-.62-.52-.536-.713-.546l-.608-.01c-.211 0-.555.079-.846.396s-1.111 1.085-1.111 2.645 1.137 3.067 1.296 3.278c.159.211 2.238 3.418 5.422 4.793.757.327 1.348.522 1.808.669.76.241 1.452.207 1.999.125.61-.092 1.874-.766 2.138-1.506.264-.74.264-1.374.185-1.506z"/>
-            </svg>
-            <span>Échanger sur WhatsApp avec l'Atelier</span>
-          </a>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 9. Storefront Footer */}
       <footer className="storefront-master-footer">

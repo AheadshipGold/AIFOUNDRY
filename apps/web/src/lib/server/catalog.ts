@@ -231,6 +231,20 @@ export async function getShopBySlug(identifier: string) {
       ],
     },
     include: {
+      owner: {
+        select: {
+          phone: true,
+          phoneNumber: true,
+        },
+      },
+      paymentConnections: {
+        where: { isActive: true },
+        select: {
+          merchantPhone: true,
+          merchantNumber: true,
+          channel: true,
+        },
+      },
       products: {
         where: { isPublished: true },
         include: {
@@ -261,6 +275,13 @@ export async function getShopBySlug(identifier: string) {
       ? Number((shop.reviews.reduce((acc, r) => acc + r.rating, 0) / reviewsCount).toFixed(1))
       : null;
 
+  // Resolve official dynamic contact phone for WhatsApp / Direct inquiry
+  const directPhone =
+    shop.paymentConnections.find((p) => p.merchantPhone?.trim())?.merchantPhone?.trim() ||
+    shop.owner?.phone?.trim() ||
+    shop.owner?.phoneNumber?.trim() ||
+    null;
+
   return {
     id: shop.id,
     slug: shop.slug,
@@ -270,6 +291,7 @@ export async function getShopBySlug(identifier: string) {
     city: shop.city,
     country: shop.country,
     currency: shop.currency,
+    phone: directPhone,
     isVerified: shop.isVerified,
     kycStatus: shop.kycStatus,
     storefrontTheme: shop.storefrontTheme,

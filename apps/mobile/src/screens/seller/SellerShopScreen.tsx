@@ -84,12 +84,19 @@ export default function SellerShopScreen({
   const [newDescription, setNewDescription] = useState('');
   const [newCategory, setNewCategory] = useState('artisanat');
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [selectedImageBase64, setSelectedImageBase64] = useState<string | null>(null);
+  const [selectedImageMime, setSelectedImageMime] = useState<string | null>(null);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
 
-  // Storefront customization
+  // Storefront & Brand Profile customization
   const [storefrontTheme, setStorefrontTheme] = useState('LIGHT');
   const [bannerUrl, setBannerUrl] = useState('');
+  const [shopNameInput, setShopNameInput] = useState('');
+  const [shopDescInput, setShopDescInput] = useState('');
+  const [shopCityInput, setShopCityInput] = useState('Cotonou');
   const [isUpdatingStorefront, setIsUpdatingStorefront] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [showManualUrl, setShowManualUrl] = useState(false);
 
   useEffect(() => {
     loadAllShopData();
@@ -117,6 +124,9 @@ export default function SellerShopScreen({
       const shop = await SellerApi.getShop();
       if (shop) {
         setShopDetails(shop);
+        if (shop.name) setShopNameInput(shop.name);
+        if (shop.description) setShopDescInput(shop.description);
+        if (shop.city) setShopCityInput(shop.city);
         if (shop.storefrontTheme) setStorefrontTheme(shop.storefrontTheme);
         if (shop.bannerUrl) setBannerUrl(shop.bannerUrl);
       }
@@ -182,10 +192,14 @@ export default function SellerShopScreen({
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedImageUri(result.assets[0].uri);
+        const asset = result.assets[0];
+        setSelectedImageUri(asset.uri);
+        setSelectedImageBase64(asset.base64 || null);
+        setSelectedImageMime(asset.mimeType || null);
       }
     } catch (err) {
       console.warn('Error picking product image', err);
@@ -210,7 +224,7 @@ export default function SellerShopScreen({
       let uploadedUrl: string | undefined = undefined;
       if (selectedImageUri) {
         try {
-          uploadedUrl = await SellerApi.uploadImage(selectedImageUri);
+          uploadedUrl = await SellerApi.uploadImage(selectedImageUri, selectedImageMime, selectedImageBase64);
         } catch (uploadErr: any) {
           console.warn('Image upload error:', uploadErr);
           Alert.alert(
@@ -240,6 +254,8 @@ export default function SellerShopScreen({
       setNewStock('5');
       setNewDescription('');
       setSelectedImageUri(null);
+      setSelectedImageBase64(null);
+      setSelectedImageMime(null);
 
       await fetchProducts();
     } catch (err: any) {
@@ -341,16 +357,82 @@ export default function SellerShopScreen({
     }
   };
 
+  const handlePickBannerImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          isEn ? 'Permission Required' : 'Autorisation requise',
+          isEn ? 'Please grant photo library access to upload a shop banner.' : 'Veuillez autoriser l’accès aux photos pour choisir la couverture de votre boutique.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.85,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const localUri = asset.uri;
+        setIsUploadingBanner(true);
+        try {
+          const uploadedUrl = await SellerApi.uploadImage(localUri, asset.mimeType, asset.base64);
+          if (uploadedUrl) {
+            setBannerUrl(uploadedUrl);
+            Alert.alert(
+              isEn ? 'Photo Ready' : 'Bannière Prête',
+              isEn ? 'Photo uploaded. Click "Save Customization" to apply.' : 'Photo chargée avec succès. Cliquez sur "Enregistrer les modifications" pour appliquer.'
+            );
+          }
+        } catch (uploadErr: any) {
+          Alert.alert(isEn ? 'Upload Failed' : 'Échec téléversement', uploadErr?.message || 'Erreur lors du transfert de la photo.');
+        } finally {
+          setIsUploadingBanner(false);
+        }
+      }
+    } catch (err) {
+      console.warn('Error picking banner image', err);
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const handleRemoveBanner = () => {
+    Alert.alert(
+      isEn ? 'Remove Banner' : 'Retirer la couverture',
+      isEn
+        ? 'Do you want to remove the custom banner and revert to the default workshop pattern?'
+        : 'Voulez-vous retirer l’image de couverture personnalisée et revenir au motif d’atelier par défaut ?',
+      [
+        { text: isEn ? 'Cancel' : 'Annuler', style: 'cancel' },
+        {
+          text: isEn ? 'Remove' : 'Retirer',
+          style: 'destructive',
+          onPress: () => {
+            setBannerUrl('');
+          },
+        },
+      ]
+    );
+  };
+
   const handleUpdateStorefront = async () => {
     try {
       setIsUpdatingStorefront(true);
       await SellerApi.updateShop({
+        name: shopNameInput.trim() || undefined,
+        description: shopDescInput.trim() || undefined,
+        city: shopCityInput.trim() || undefined,
         storefrontTheme,
         bannerUrl: bannerUrl.trim() || null,
       });
       Alert.alert(
-        isEn ? 'Storefront Saved' : 'Vitrine Mise à Jour',
-        isEn ? 'Your storefront customization has been saved.' : 'La personnalisation de votre vitrine a été enregistrée.'
+        isEn ? 'Storefront Saved' : 'Boutique Mise à Jour',
+        isEn ? 'Your shop profile and storefront customization have been saved.' : 'Les informations et la vitrine de votre boutique ont été enregistrées avec succès.'
       );
       await fetchShopDetails();
     } catch (err: any) {
@@ -370,6 +452,23 @@ export default function SellerShopScreen({
         message: isEn
           ? `Discover "${shopName}" on Ojarket — Luxury Creations & Certified Merchant Storefront: ${url}`
           : `Découvrez "${shopName}" sur Ojarket — Pièces d'exception & Boutique certifiée : ${url}`,
+        url: url,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleShareProduct = async (product: any) => {
+    try {
+      const url = `https://ojarket.com/p/${product.id}`;
+      const priceFormatted = Math.round(product.priceMinor / 100).toLocaleString('fr-FR');
+      const shopName = shopDetails?.name || activeShop?.name || 'Ma Boutique';
+      await Share.share({
+        title: product.title,
+        message: isEn
+          ? `Discover "${product.title}" (${priceFormatted} ${product.currency || 'FCFA'}) by ${shopName} on Ojarket: ${url}`
+          : `Découvrez "${product.title}" (${priceFormatted} ${product.currency || 'FCFA'}) chez ${shopName} sur Ojarket : ${url}`,
         url: url,
       });
     } catch (error) {
@@ -697,16 +796,31 @@ export default function SellerShopScreen({
                     </Text>
                   </Pressable>
 
-                  {/* Delete button */}
-                  <Pressable
-                    onPress={() => handleDeleteProduct(item.id, item.title)}
-                    style={({ pressed }) => [{
-                      padding: 4,
-                      opacity: pressed ? 0.6 : 1,
-                    }]}
-                  >
-                    <Icon name="trash" size={14} color="#EF4444" />
-                  </Pressable>
+                  {/* Action row: Share product + Delete */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Pressable
+                      onPress={() => handleShareProduct(item)}
+                      style={({ pressed }) => [{
+                        padding: 4,
+                        opacity: pressed ? 0.6 : 1,
+                      }]}
+                      hitSlop={8}
+                    >
+                      <Icon name="share" size={14} color={colors.accent} weight="bold" />
+                    </Pressable>
+
+                    {/* Delete button */}
+                    <Pressable
+                      onPress={() => handleDeleteProduct(item.id, item.title)}
+                      style={({ pressed }) => [{
+                        padding: 4,
+                        opacity: pressed ? 0.6 : 1,
+                      }]}
+                      hitSlop={8}
+                    >
+                      <Icon name="trash" size={14} color="#EF4444" />
+                    </Pressable>
+                  </View>
                 </View>
               </View>
             );
@@ -877,12 +991,79 @@ export default function SellerShopScreen({
         {/* ==================== STOREFRONT CUSTOMIZATION ==================== */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {isEn ? 'Storefront Customization' : 'Personnalisation de la Vitrine'}
+            {isEn ? 'Storefront Customization & Brand Profile' : 'Identité & Personnalisation de la Vitrine'}
           </Text>
         </View>
 
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 }}>
+          {/* 1. Nom de l'enseigne / Boutique */}
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 6 }}>
+            {isEn ? 'Store / Brand Name' : 'Nom Officiel de la Boutique'}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 10,
+              fontSize: 13,
+              color: colors.text,
+              backgroundColor: colors.canvas,
+              marginBottom: 14,
+            }}
+            value={shopNameInput}
+            onChangeText={setShopNameInput}
+            placeholder={isEn ? 'e.g. Kingston Bio' : 'ex. Kingston Bio'}
+            placeholderTextColor={colors.muted}
+          />
+
+          {/* 2. Description / Bio de la boutique */}
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 6 }}>
+            {isEn ? 'Store Presentation & Bio' : 'Présentation & Description de la Boutique'}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 10,
+              fontSize: 13,
+              color: colors.text,
+              backgroundColor: colors.canvas,
+              marginBottom: 14,
+              minHeight: 64,
+            }}
+            value={shopDescInput}
+            onChangeText={setShopDescInput}
+            multiline
+            numberOfLines={3}
+            placeholder={isEn ? 'Describe your brand, craftsmanship and values...' : 'Décrivez votre savoir-faire, vos créations et l’histoire de votre atelier...'}
+            placeholderTextColor={colors.muted}
+          />
+
+          {/* 3. Ville d'atelier */}
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 6 }}>
+            {isEn ? 'City / Location' : 'Ville de l’Atelier / Boutique'}
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 10,
+              fontSize: 13,
+              color: colors.text,
+              backgroundColor: colors.canvas,
+              marginBottom: 16,
+            }}
+            value={shopCityInput}
+            onChangeText={setShopCityInput}
+            placeholder="Cotonou"
+            placeholderTextColor={colors.muted}
+          />
+
+          {/* 4. Thème de la vitrine */}
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8 }}>
             {isEn ? 'Storefront Theme' : 'Thème de la Vitrine'}
           </Text>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
@@ -917,43 +1098,255 @@ export default function SellerShopScreen({
             })}
           </View>
 
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 }}>
-            {isEn ? 'Cover Banner URL' : 'Image de couverture (URL)'}
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 8,
-              padding: 10,
-              fontSize: 13,
-              color: colors.text,
-              backgroundColor: colors.canvas,
-              marginBottom: 16,
-            }}
-            value={bannerUrl}
-            onChangeText={setBannerUrl}
-            placeholder="https://..."
-            placeholderTextColor={colors.muted}
-          />
+          {/* 5. Image de couverture avec sélection photo directe & aperçu d'élite */}
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>
+                {isEn ? 'Store Banner Image (Hero Header)' : 'Image de Couverture de la Vitrine'}
+              </Text>
+              {bannerUrl && resolveMediaUrl(bannerUrl) ? (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 12,
+                    backgroundColor: isDark ? 'rgba(212, 180, 131, 0.15)' : '#F5EFE6',
+                    borderWidth: 1,
+                    borderColor: 'rgba(212, 180, 131, 0.4)',
+                  }}
+                >
+                  <Icon name="sparkle" size={11} color={colors.accent} />
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                    {isEn ? 'Custom' : 'Active'}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
 
+            <Text style={{ fontSize: 11.5, color: colors.muted, marginBottom: 12, lineHeight: 16 }}>
+              {isEn
+                ? 'Illuminates the top of your public merchant storefront (Shopify Plus & luxury standards). Recommended format: 16:9.'
+                : 'Illumine le sommet de votre vitrine marchande publique. Recommandé : ratio 16:9 (paysage).'}
+            </Text>
+
+            {bannerUrl && resolveMediaUrl(bannerUrl) ? (
+              <View
+                style={{
+                  marginBottom: 12,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(212, 180, 131, 0.5)',
+                  backgroundColor: colors.surface,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <Image
+                  source={{ uri: resolveMediaUrl(bannerUrl) || undefined }}
+                  style={{ width: '100%', height: 130, resizeMode: 'cover' }}
+                />
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 8,
+                    padding: 10,
+                    backgroundColor: isDark ? '#141E1C' : '#FAF8F5',
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                  }}
+                >
+                  <Pressable
+                    onPress={handlePickBannerImage}
+                    disabled={isUploadingBanner}
+                    style={({ pressed }) => [{
+                      flex: 1,
+                      backgroundColor: colors.action,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      gap: 6,
+                      opacity: pressed || isUploadingBanner ? 0.75 : 1,
+                    }]}
+                  >
+                    {isUploadingBanner ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Icon name="camera" size={14} color="#FFFFFF" />
+                        <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>
+                          {isEn ? 'Change Photo' : 'Changer la photo'}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handleRemoveBanner}
+                    disabled={isUploadingBanner}
+                    style={({ pressed }) => [{
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: 'rgba(229, 115, 115, 0.5)',
+                      backgroundColor: isDark ? 'rgba(229, 115, 115, 0.1)' : '#FFF5F5',
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      gap: 6,
+                      opacity: pressed ? 0.7 : 1,
+                    }]}
+                  >
+                    <Icon name="trash" size={14} color="#E57373" />
+                    <Text style={{ color: '#E57373', fontWeight: '600', fontSize: 12 }}>
+                      {isEn ? 'Remove' : 'Retirer'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handlePickBannerImage}
+                disabled={isUploadingBanner}
+                style={({ pressed }) => [{
+                  backgroundColor: isDark ? 'rgba(212, 180, 131, 0.05)' : '#FAF8F5',
+                  borderWidth: 1.5,
+                  borderColor: colors.accent,
+                  borderStyle: 'dashed',
+                  borderRadius: 12,
+                  paddingVertical: 22,
+                  paddingHorizontal: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                  gap: 8,
+                  opacity: pressed || isUploadingBanner ? 0.75 : 1,
+                }]}
+              >
+                {isUploadingBanner ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <>
+                    <View
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        backgroundColor: isDark ? 'rgba(212, 180, 131, 0.15)' : '#F5EFE6',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <Icon name="camera" size={22} color={colors.accent} />
+                    </View>
+                    <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13, textAlign: 'center' }}>
+                      {isEn ? 'Select Banner Photo (Gallery)' : 'Choisir une photo de couverture (Galerie)'}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, textAlign: 'center' }}>
+                      {isEn ? 'Format JPG, PNG or WebP from your device' : 'Format JPG, PNG ou WebP depuis votre galerie'}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            )}
+
+            {/* Saisie Manuelle d'URL (Avancé / Optionnel) clairement explicité */}
+            <Pressable
+              onPress={() => setShowManualUrl(!showManualUrl)}
+              style={({ pressed }) => [{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingVertical: 6,
+                marginBottom: showManualUrl ? 8 : 14,
+                opacity: pressed ? 0.7 : 1,
+              }]}
+            >
+              <Icon name="link" size={13} color={colors.muted} />
+              <Text style={{ fontSize: 11.5, color: colors.muted, fontWeight: '600' }}>
+                {isEn
+                  ? (showManualUrl ? 'Hide manual image URL option' : 'Or paste direct image URL (Advanced)')
+                  : (showManualUrl ? 'Masquer la saisie manuelle d’URL' : 'Ou coller une URL d’image directe (Avancé)')}
+              </Text>
+              <Icon name={showManualUrl ? 'caret-up' : 'caret-down'} size={12} color={colors.muted} />
+            </Pressable>
+
+            {showManualUrl && (
+              <View
+                style={{
+                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#F8F6F0',
+                  padding: 12,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  marginBottom: 16,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.text, marginBottom: 4 }}>
+                  {isEn ? 'Direct Web Image URL (HTTPS)' : 'URL directe d’image (HTTPS)'}
+                </Text>
+                <Text style={{ fontSize: 10.5, color: colors.muted, marginBottom: 8, lineHeight: 14 }}>
+                  {isEn
+                    ? 'Allows using an image already hosted on your website or external CDN.'
+                    : 'Permet d’utiliser une photo déjà hébergée sur votre serveur web ou service tiers.'}
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    padding: 8,
+                    fontSize: 12,
+                    color: colors.text,
+                    backgroundColor: colors.surface,
+                  }}
+                  value={bannerUrl}
+                  onChangeText={setBannerUrl}
+                  placeholder="https://exemple.com/images/banniere.jpg"
+                  placeholderTextColor={colors.muted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
+          </View>
+
+          {/* Bouton d'enregistrement global */}
           <Pressable
             onPress={handleUpdateStorefront}
             disabled={isUpdatingStorefront}
             style={({ pressed }) => [{
-              backgroundColor: colors.text,
-              paddingVertical: 12,
-              borderRadius: 8,
+              backgroundColor: colors.action,
+              paddingVertical: 14,
+              borderRadius: 10,
               alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: 8,
               opacity: pressed || isUpdatingStorefront ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
             }]}
           >
             {isUpdatingStorefront ? (
-              <ActivityIndicator size="small" color={colors.surface} />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={{ color: colors.surface, fontWeight: '700', fontSize: 13 }}>
-                {isEn ? 'Save Customization' : 'Enregistrer la personnalisation'}
-              </Text>
+              <>
+                <Icon name="check" size={16} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13.5 }}>
+                  {isEn ? 'Save Store Changes' : 'Enregistrer les Modifications de la Boutique'}
+                </Text>
+              </>
             )}
           </Pressable>
         </View>

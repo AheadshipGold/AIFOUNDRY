@@ -43,6 +43,32 @@
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 40;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seller-sidebar.collapsed {
+  width: 68px;
+  min-width: 68px;
+  max-width: 68px;
+}
+
+.seller-sidebar.collapsed .seller-nav-link {
+  justify-content: center;
+  padding: 10px 0;
+  gap: 0;
+}
+
+.seller-sidebar.collapsed .seller-nav-link span:not(:first-child) {
+  display: none;
+}
+
+.seller-sidebar.collapsed .seller-storefront-btn span:first-child {
+  display: none;
+}
+
+.seller-sidebar.collapsed .seller-storefront-btn {
+  justify-content: center;
+  padding: 8px 0;
 }
 
 .seller-sidebar::-webkit-scrollbar {
@@ -61,6 +87,7 @@
 .seller-sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 180, 131, 0.35);
 }
+
 
 /* --------------------------------------------------------------------------
    Main Content Area

@@ -49,6 +49,7 @@ const ICON_MAP: Record<string, keyof typeof Phosphor> = {
   help: "Question",
   lock: "LockKey",
   globe: "Globe",
+  link: "Link",
   sun: "Sun",
   moon: "Moon",
   eye: "Eye",
