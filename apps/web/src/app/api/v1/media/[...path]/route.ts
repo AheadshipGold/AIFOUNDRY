@@ -69,6 +69,7 @@ export async function GET(
       svg: 'image/svg+xml',
       avif: 'image/avif',
       mp4: 'video/mp4',
+      apk: 'application/vnd.android.package-archive',
     };
     const contentType = mimeMap[ext] || 'application/octet-stream';
 

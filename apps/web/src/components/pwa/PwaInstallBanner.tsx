@@ -2,21 +2,51 @@
 
 import React, { useEffect, useState } from "react";
 
-
 export function PwaInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showBanner, setShowBanner] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [locale, setLocale] = useState<"fr" | "en">("fr");
 
   useEffect(() => {
-    // Check if dismissed previously
-    const dismissed = localStorage.getItem("ojarket-pwa-dismissed");
-    
+    // 1. Détecter la langue active (depuis document, storage ou navigateur)
+    try {
+      const docLang = document.documentElement.lang;
+      if (docLang === "en" || docLang === "fr") {
+        setLocale(docLang as "fr" | "en");
+      } else {
+        const storedPref = localStorage.getItem("aifoundry.ui-gallery");
+        if (storedPref) {
+          const parsed = JSON.parse(storedPref);
+          if (parsed.locale === "en" || parsed.locale === "fr") {
+            setLocale(parsed.locale);
+          }
+        } else if (navigator.language && navigator.language.startsWith("en")) {
+          setLocale("en");
+        }
+      }
+    } catch {}
+
+    // 2. Détection de plateforme
+    const ua = navigator.userAgent || "";
+    const android = /android/i.test(ua);
+    const ios = /iphone|ipad|ipod/i.test(ua);
+    setIsAndroid(android);
+    setIsIos(ios);
+
+    // 3. Gestion de l'affichage (session-based pour ne pas bloquer les tests)
+    // Si l'utilisateur l'a masquée pendant cette session précise, on respecte, sinon on l'affiche
+    const dismissedSession = sessionStorage.getItem("ojarket-banner-dismissed-session");
+
+    if (!dismissedSession) {
+      setShowBanner(true);
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      
-      // We show immediately if not dismissed, as requested in Option 1
-      if (!dismissed) {
+      if (!dismissedSession) {
         setShowBanner(true);
       }
     };
@@ -28,12 +58,10 @@ export function PwaInstallBanner() {
     };
   }, []);
 
-  const handleInstall = async () => {
+  const handleInstallPwa = async () => {
     if (!deferredPrompt) return;
-    
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
     if (outcome === "accepted") {
       setShowBanner(false);
       setDeferredPrompt(null);
@@ -42,115 +70,209 @@ export function PwaInstallBanner() {
 
   const handleDismiss = () => {
     setShowBanner(false);
-    // Dismiss for 7 days
-    localStorage.setItem("ojarket-pwa-dismissed", "true");
+    // Masqué pour la durée de la session courante du navigateur
+    sessionStorage.setItem("ojarket-banner-dismissed-session", "true");
   };
 
   if (!showBanner) return null;
 
+  const isEn = locale === "en";
+
+  // Textes bilingues
+  const title = isAndroid
+    ? (isEn ? "Native Android App" : "App Android Native")
+    : isIos
+    ? (isEn ? "Ojarket on iPhone" : "Ojarket sur iPhone")
+    : (isEn ? "Official Ojarket App" : "Application Officielle");
+
+  const subtitle = isAndroid
+    ? (isEn ? "POS register & offline sync" : "Caisse POS & mode hors-ligne")
+    : isIos
+    ? (isEn ? "Add to Home Screen via Share menu" : "Ajouter à l'écran d'accueil (Partager)")
+    : (isEn ? "Available for Android & Desktop" : "Disponible sur Android & Bureau");
+
+  const ctaText = isAndroid
+    ? (isEn ? "Get APK" : "Obtenir l'APK")
+    : deferredPrompt
+    ? (isEn ? "Install" : "Installer")
+    : (isEn ? "Get App" : "Obtenir l'App");
+
   return (
-    <div style={{
-      position: "fixed",
-      bottom: "24px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      zIndex: 9999,
-      backgroundColor: "var(--oj-color-surface, #FFFFFF)",
-      boxShadow: "0 12px 32px rgba(21, 30, 28, 0.12)",
-      borderRadius: "16px",
-      padding: "12px 16px",
-      display: "flex",
-      alignItems: "center",
-      gap: "16px",
-      width: "calc(100% - 32px)",
-      maxWidth: "400px",
-      border: "1px solid var(--oj-color-border, #E7E1D9)",
-      animation: "slideUpPwa 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
-    }}>
-      <style>{`
-        @keyframes slideUpPwa {
-          from { transform: translate(-50%, 40px); opacity: 0; }
-          to { transform: translate(-50%, 0); opacity: 1; }
-        }
-      `}</style>
-      
-      <div style={{
-        width: "40px",
-        height: "40px",
-        borderRadius: "10px",
-        backgroundColor: "var(--oj-color-subtle, #F4F0EA)",
+    <aside
+      aria-label="Application Banner"
+      style={{
+        position: "fixed",
+        bottom: "16px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 9999,
+        width: "calc(100% - 24px)",
+        maxWidth: "440px",
+        backgroundColor: "rgba(10, 18, 16, 0.94)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(212, 180, 131, 0.35)",
+        borderRadius: "999px",
+        padding: "7px 12px 7px 8px",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0
-      }}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--oj-color-action, #0D4A38)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        gap: "10px",
+        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 10px rgba(212, 180, 131, 0.12)",
+        animation: "capsuleSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        boxSizing: "border-box",
+      }}
+    >
+      <style>{`
+        @keyframes capsuleSlideUp {
+          from { transform: translate(-50%, 28px); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .oj-capsule-btn {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .oj-capsule-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+        .oj-capsule-btn:active {
+          transform: scale(0.96);
+        }
+        .oj-capsule-close {
+          transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .oj-capsule-close:hover {
+          opacity: 1 !important;
+          transform: scale(1.1);
+        }
+      `}</style>
+
+      {/* Icône Mobile / App compacte dorée */}
+      <div
+        style={{
+          width: "36px",
+          height: "36px",
+          borderRadius: "50%",
+          backgroundColor: "#06241D",
+          border: "1px solid rgba(212, 180, 131, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4B483" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+          <line x1="12" y1="18" x2="12.01" y2="18" />
         </svg>
       </div>
 
-      <div style={{ flex: 1 }}>
-        <h4 style={{ 
-          margin: 0, 
-          fontSize: "14px", 
-          fontWeight: 600, 
-          color: "var(--oj-color-text, #151E1C)",
-          fontFamily: "var(--oj-font-ui, sans-serif)"
-        }}>
-          Installer Ojarket
-        </h4>
-        <p style={{ 
-          margin: "4px 0 0 0", 
-          fontSize: "12px", 
-          color: "var(--oj-color-muted, #5B6661)",
-          fontFamily: "var(--oj-font-ui, sans-serif)"
-        }}>
-          L'expérience premium sur votre écran d'accueil.
+      {/* Contenu textuel slim bilingue */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.8px",
+              textTransform: "uppercase",
+              color: "#D4B483",
+              fontFamily: "var(--oj-font-ui, system-ui, sans-serif)",
+              lineHeight: 1.2,
+            }}
+          >
+            {title}
+          </span>
+        </div>
+        <p
+          style={{
+            margin: "1px 0 0",
+            fontSize: "11px",
+            color: "#E2E8F0",
+            fontFamily: "var(--oj-font-ui, system-ui, sans-serif)",
+            lineHeight: 1.3,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {subtitle}
         </p>
       </div>
 
-      <button 
-        onClick={handleInstall}
-        style={{
-          backgroundColor: "var(--oj-color-action, #0D4A38)",
-          color: "var(--oj-color-onAction, #FFFFFF)",
-          border: "none",
-          padding: "8px 16px",
-          borderRadius: "999px",
-          fontSize: "12px",
-          fontWeight: 600,
-          cursor: "pointer",
-          fontFamily: "var(--oj-font-ui, sans-serif)",
-          transition: "transform 0.2s ease"
-        }}
-        onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-        onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-        onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.95)"}
-        onMouseUp={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-      >
-        Ajouter
-      </button>
+      {/* Bouton d'action tactile */}
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+        {isAndroid || !deferredPrompt ? (
+          <a
+            href="/download/android"
+            className="oj-capsule-btn"
+            style={{
+              backgroundColor: "#0D4A38",
+              color: "#FFFFFF",
+              textDecoration: "none",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.3px",
+              fontFamily: "var(--oj-font-ui, system-ui, sans-serif)",
+              border: "1px solid #10B981",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {ctaText}
+          </a>
+        ) : (
+          <button
+            onClick={handleInstallPwa}
+            className="oj-capsule-btn"
+            style={{
+              backgroundColor: "#0D4A38",
+              color: "#FFFFFF",
+              border: "1px solid #10B981",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "var(--oj-font-ui, system-ui, sans-serif)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {ctaText}
+          </button>
+        )}
 
-      <button 
-        onClick={handleDismiss}
-        style={{
-          background: "none",
-          border: "none",
-          padding: "4px",
-          cursor: "pointer",
-          color: "var(--oj-color-muted, #5B6661)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}
-        aria-label="Fermer"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
+        {/* Bouton Fermer discret */}
+        <button
+          onClick={handleDismiss}
+          className="oj-capsule-close"
+          style={{
+            background: "none",
+            border: "none",
+            padding: "4px",
+            cursor: "pointer",
+            color: "#94A3B8",
+            opacity: 0.65,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          aria-label={isEn ? "Close" : "Fermer"}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </aside>
   );
 }

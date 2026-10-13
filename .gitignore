@@ -145,3 +145,6 @@ mycredentials.json
 
 # Public satellite demo repo
 AIFOUNDRY-demo/
+
+# Scratch & temporary scripts
+scratch/
