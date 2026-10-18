@@ -1207,8 +1207,16 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   Modals
+   Modals & Scroll Lock
    -------------------------------------------------------------------------- */
+html.oj-lock-scroll,
+body.oj-lock-scroll {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
 .oj-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1221,6 +1229,40 @@ body {
   justify-content: center;
   padding: var(--oj-space-4);
   overscroll-behavior: contain;
+  touch-action: none;
+}
+
+/* Cart Drawer Architecture */
+.oj-cart-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  background-color: var(--oj-color-surface);
+  border-left: 1px solid var(--oj-color-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 200001 !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.6);
+  animation: ojCartDrawerSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ojCartDrawerSlide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 768px) {
+  .oj-cart-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-left: none !important;
+  }
 }
 
 .oj-modal {

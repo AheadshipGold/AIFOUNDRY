@@ -171,7 +171,7 @@ export default function SellerCatalogPage() {
       )}
 
       {/* Header with Title and Add Button */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px" }}>
+      <div className="seller-page-header">
         <div>
           <h1 style={{ fontFamily: "var(--oj-font-editorial, serif)", fontSize: "28px", color: "#F8F6F0", margin: "0 0 8px 0" }}>
             {t.catalog.title}
@@ -181,17 +181,19 @@ export default function SellerCatalogPage() {
           </p>
         </div>
 
-        <Link
-          href="/seller/catalog/new"
-          className="seller-action-btn"
-          style={{ padding: "10px 20px", fontSize: "13px" }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>{t.catalog.addNewButton}</span>
-        </Link>
+        <div className="seller-header-btn-group">
+          <Link
+            href="/seller/catalog/new"
+            className="seller-action-btn"
+            style={{ padding: "10px 20px", fontSize: "13px" }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>{t.catalog.addNewButton}</span>
+          </Link>
+        </div>
       </div>
 
       {/* Controls Bar: Search & Filters */}
@@ -242,7 +244,7 @@ export default function SellerCatalogPage() {
         </div>
 
         {/* Filter Pills */}
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="seller-filter-bar">
           {[
             { id: "all", label: t.catalog.filterAll },
             { id: "published", label: t.catalog.filterPublished },
@@ -311,9 +313,11 @@ export default function SellerCatalogPage() {
           className="seller-card"
           style={{
             overflow: "hidden",
+            padding: 0,
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
+          <div className="seller-table-container">
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", color: "rgba(248, 246, 240, 0.6)", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px" }}>
                 <th style={{ padding: "16px 20px" }}>{t.catalog.tableImage}</th>
@@ -463,6 +467,7 @@ export default function SellerCatalogPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

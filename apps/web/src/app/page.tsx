@@ -625,9 +625,13 @@ function MainMarketplaceView() {
       dailyCloseModalOpen
     );
     if (isAnyModalOpen) {
+      document.documentElement.classList.add("oj-lock-scroll");
+      document.body.classList.add("oj-lock-scroll");
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
+        document.documentElement.classList.remove("oj-lock-scroll");
+        document.body.classList.remove("oj-lock-scroll");
         document.body.style.overflow = originalOverflow;
       };
     }
@@ -3453,15 +3457,8 @@ function MainMarketplaceView() {
       {/* ==================== CART DRAWER ==================== */}
       {cartOpen && (
         <div className="oj-modal-overlay" onClick={() => setCartOpen(false)}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "fixed", top: 0, right: 0, bottom: 0, width: "min(420px, 90vw)",
-              backgroundColor: "var(--oj-color-surface)", borderLeft: "1px solid var(--oj-color-border)",
-              display: "flex", flexDirection: "column", zIndex: 1001
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid var(--oj-color-border)" }}>
+          <div className="oj-cart-drawer" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid var(--oj-color-border)", flexShrink: 0 }}>
               <h2 style={{ margin: 0, fontFamily: "var(--oj-font-editorial)", fontSize: "20px" }}>
                 {isEn ? `Your Cart (${cartCount})` : `Votre Panier (${cartCount})`}
               </h2>
@@ -3479,7 +3476,7 @@ function MainMarketplaceView() {
             </div>
 
             {cart.length === 0 ? (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", color: "var(--oj-color-muted)" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", color: "var(--oj-color-muted)", overscrollBehavior: "contain", touchAction: "none" }}>
                 <p>{isEn ? "Your cart is empty." : "Votre panier est vide."}</p>
                 <button className="oj-btn-primary" onClick={() => setCartOpen(false)}>
                   {isEn ? "Discover products" : "Découvrir les produits"}
@@ -3487,22 +3484,44 @@ function MainMarketplaceView() {
               </div>
             ) : (
               <>
-                <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+                <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}>
                   {cart.map((item) => (
-                    <div key={item.product.id} style={{ display: "flex", gap: "16px", paddingBottom: "16px", marginBottom: "16px", borderBottom: "1px solid var(--oj-color-border)" }}>
-                      <img src={item.product.image} alt={item.product.title} style={{ width: "64px", height: "64px", borderRadius: "var(--oj-radius-field)", objectFit: "cover" }} />
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ fontSize: "14px" }}>{item.product.title}</strong>
-                        <small style={{ display: "block", color: "var(--oj-color-muted)", fontSize: "12px" }}>{item.product.seller.name}</small>
-                        <div style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", marginTop: "4px" }}>
+                    <div key={item.product.id} style={{ display: "flex", gap: "14px", paddingBottom: "16px", marginBottom: "16px", borderBottom: "1px solid var(--oj-color-border)", alignItems: "center" }}>
+                      <img src={item.product.image} alt={item.product.title} style={{ width: "64px", height: "64px", borderRadius: "var(--oj-radius-field)", objectFit: "cover", flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ fontSize: "14px", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.product.title}</strong>
+                        <small style={{ display: "block", color: "var(--oj-color-muted)", fontSize: "12px" }}>
+                          {typeof item.product.seller === "object" ? item.product.seller.name : (item.product.seller || "Kingston Bio")}
+                        </small>
+                        <div style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", marginTop: "4px", color: "var(--oj-color-text)" }}>
                           {formatPrice(item.product.price)} × {item.quantity}
                         </div>
                       </div>
-                      <button onClick={() => removeFromCart(item.product.id)} style={{ background: "none", border: "none", color: "var(--oj-color-muted)", cursor: "pointer", fontSize: "16px" }}>✕</button>
+                      <button
+                        onClick={() => removeFromCart(item.product.id)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--oj-color-muted)",
+                          cursor: "pointer",
+                          padding: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: "6px",
+                          transition: "color 0.15s ease",
+                        }}
+                        aria-label={isEn ? "Remove item" : "Retirer l'article"}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
                     </div>
                   ))}
                 </div>
-                <div style={{ padding: "20px 24px", borderTop: "1px solid var(--oj-color-border)" }}>
+                <div style={{ padding: "20px 24px", borderTop: "1px solid var(--oj-color-border)", flexShrink: 0, overscrollBehavior: "contain", touchAction: "none" }}>
                   {cart.some((i) => i.product.category === "digital") && (
                     <div
                       style={{

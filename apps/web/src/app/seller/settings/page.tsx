@@ -219,13 +219,15 @@ export default function SellerSettingsPage() {
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto" }}>
       {/* Title */}
-      <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ fontFamily: "var(--oj-font-editorial, serif)", fontSize: "28px", color: "#F8F6F0", margin: "0 0 6px 0" }}>
-          {t.settings.title}
-        </h1>
-        <p style={{ color: "rgba(248, 246, 240, 0.65)", fontSize: "14px", margin: 0 }}>
-          {t.settings.subtitle}
-        </p>
+      <div className="seller-page-header">
+        <div>
+          <h1 style={{ fontFamily: "var(--oj-font-editorial, serif)", fontSize: "28px", color: "#F8F6F0", margin: "0 0 6px 0" }}>
+            {t.settings.title}
+          </h1>
+          <p style={{ color: "rgba(248, 246, 240, 0.65)", fontSize: "14px", margin: 0 }}>
+            {t.settings.subtitle}
+          </p>
+        </div>
       </div>
 
       {successMsg && (
@@ -292,7 +294,7 @@ export default function SellerSettingsPage() {
               </span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            <div className="seller-form-row-2">
               <div>
                 <label style={{ display: "block", fontSize: "13px", color: "#F8F6F0", marginBottom: "6px", fontWeight: 500 }}>
                   {t.settings.shopName} *
@@ -415,7 +417,7 @@ export default function SellerSettingsPage() {
               Personnalisation de la Vitrine Publique
             </h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "20px" }}>
+            <div className="seller-form-row-2">
               <div>
                 <label style={{ display: "block", fontSize: "13px", color: "#F8F6F0", marginBottom: "6px", fontWeight: 500 }}>
                   Bannière d'en-tête (URL)

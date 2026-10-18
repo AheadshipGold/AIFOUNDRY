@@ -466,26 +466,49 @@ export default function SellerLayout({
       <div className="seller-main">
         {/* Top Header */}
         <header className="seller-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: "#D4B483", letterSpacing: "0.5px" }}>
-              Merchant Commerce OS
-            </span>
-            <span style={{ color: "rgba(248, 246, 240, 0.4)", fontSize: "12px" }}>/</span>
-            <span style={{ fontSize: "13px", color: "rgba(248, 246, 240, 0.8)" }}>
-              {shop?.name || "Boutique"}
-            </span>
+          <div className="seller-header-brand" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
+            <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }} title="Retour Marketplace">
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  backgroundColor: "#075D49",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#D4B483",
+                  fontWeight: 800,
+                  fontSize: "14px",
+                  fontFamily: "var(--oj-font-editorial, serif)",
+                  flexShrink: 0,
+                }}
+              >
+                O
+              </div>
+            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" }}>
+              <span className="seller-header-title-full" style={{ fontSize: "14px", fontWeight: 600, color: "#D4B483", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
+                Merchant OS
+              </span>
+              <span style={{ color: "rgba(248, 246, 240, 0.4)", fontSize: "12px" }}>/</span>
+              <span className="seller-header-shop-name" style={{ fontSize: "13px", color: "rgba(248, 246, 240, 0.9)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={shop?.name || "Boutique"}>
+                {shop?.name || "Boutique"}
+              </span>
+              <span className="oj-verified-pill" style={{ fontSize: "9px", padding: "2px 6px", flexShrink: 0 }}>Pro</span>
+            </div>
           </div>
 
-
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div className="seller-header-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             {/* Quick Action */}
             <Link
               href="/seller/catalog/new"
               className="seller-action-btn"
-              style={{ fontSize: "12px", padding: "6px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+              style={{ fontSize: "12px", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px" }}
+              title={t.header.quickNewProduct}
             >
               <span>+</span>
-              <span>{t.header.quickNewProduct}</span>
+              <span className="seller-header-action-label">{t.header.quickNewProduct}</span>
             </Link>
 
             {/* Language Switcher */}
@@ -503,6 +526,34 @@ export default function SellerLayout({
                 EN
               </button>
             </div>
+
+            {/* Storefront Link Icon */}
+            {shop?.id && shop.id !== "new" && (
+              <Link
+                href={`/shop/${shop.slug || shop.id}`}
+                target="_blank"
+                className="seller-header-store-btn"
+                title="Voir la vitrine publique"
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(212, 180, 131, 0.1)",
+                  border: "1px solid rgba(212, 180, 131, 0.3)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#D4B483",
+                  textDecoration: "none",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </Link>
+            )}
           </div>
         </header>
 
@@ -614,6 +665,49 @@ export default function SellerLayout({
           )}
         </main>
       </div>
+
+      {/* ==================== MOBILE BOTTOM NAVIGATION (Fixed on < 768px) ==================== */}
+      <nav className="seller-bottom-nav">
+        <Link href="/seller" className={`seller-bottom-nav-item ${pathname === "/seller" ? "active" : ""}`}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>{t.nav.today}</span>
+        </Link>
+        <Link href="/seller/catalog" className={`seller-bottom-nav-item ${pathname.startsWith("/seller/catalog") ? "active" : ""}`}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          <span>{t.nav.catalog}</span>
+        </Link>
+        <Link href="/seller/orders" className={`seller-bottom-nav-item ${pathname.startsWith("/seller/orders") ? "active" : ""}`}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span>{t.nav.orders}</span>
+        </Link>
+        <Link href="/seller/cashbook" className={`seller-bottom-nav-item ${pathname.startsWith("/seller/cashbook") ? "active" : ""}`}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+          <span>{t.nav.cashbook}</span>
+        </Link>
+        <Link href="/seller/settings" className={`seller-bottom-nav-item ${pathname.startsWith("/seller/settings") || pathname.startsWith("/seller/opportunities") || pathname.startsWith("/seller/subscription") ? "active" : ""}`}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>{t.nav.settings}</span>
+        </Link>
+      </nav>
 
       {/* Official Luxury Auth Modal */}
       <WebAuthModal

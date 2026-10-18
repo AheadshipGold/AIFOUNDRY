@@ -136,7 +136,7 @@ export default function SellerTodayPage() {
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       {/* Top Banner & Welcome */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "32px" }}>
+      <div className="seller-page-header">
         <div>
           <h1 style={{ fontFamily: "var(--oj-font-editorial, serif)", fontSize: "28px", color: "#F8F6F0", margin: "0 0 8px 0" }}>
             {t.today.title}
@@ -146,7 +146,7 @@ export default function SellerTodayPage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="seller-header-btn-group">
           <Link
             href="/seller/catalog/new"
             className="seller-action-btn"
@@ -168,14 +168,14 @@ export default function SellerTodayPage() {
 
       {/* ==================== S20: PRIORITIES FIRST ==================== */}
       <div style={{ marginBottom: "32px" }}>
-        <h2 style={{ fontSize: "15px", textTransform: "uppercase", letterSpacing: "1px", color: "#D4B483", marginBottom: "16px", fontWeight: 600 }}>
+        <h2 style={{ fontSize: "13.5px", textTransform: "uppercase", letterSpacing: "1px", color: "#D4B483", marginBottom: "14px", fontWeight: 700 }}>
           {t.today.tasksTitle}
         </h2>
 
         {priorities.length === 0 ? (
           <div
             style={{
-              padding: "24px",
+              padding: "20px",
               borderRadius: "8px",
               backgroundColor: "rgba(16, 185, 129, 0.08)",
               border: "1px solid rgba(16, 185, 129, 0.2)",
@@ -190,31 +190,28 @@ export default function SellerTodayPage() {
             {priorities.map((item, idx) => (
               <div
                 key={idx}
-                className="seller-card"
+                className="seller-card seller-priority-card"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "16px 20px",
                   borderColor: item.type === "urgent" ? "rgba(229, 115, 115, 0.4)" : undefined,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
                   <div
                     style={{
                       width: "8px",
                       height: "8px",
                       borderRadius: "50%",
                       backgroundColor: item.type === "urgent" ? "#E57373" : "#D4B483",
+                      flexShrink: 0,
                     }}
                   />
-                  <span style={{ fontSize: "14px", color: "#F8F6F0" }}>{item.text}</span>
+                  <span style={{ fontSize: "14px", color: "#F8F6F0", lineHeight: "1.45" }}>{item.text}</span>
                 </div>
 
                 <Link
                   href={item.link}
                   className="seller-secondary-btn"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
+                  style={{ padding: "8px 14px", fontSize: "12.5px", flexShrink: 0 }}
                 >
                   {item.action} →
                 </Link>
@@ -226,71 +223,59 @@ export default function SellerTodayPage() {
 
       {/* ==================== S20: CERTIFIED KPIS ==================== */}
       <div style={{ marginBottom: "32px" }}>
-        <h2 style={{ fontSize: "15px", textTransform: "uppercase", letterSpacing: "1px", color: "#D4B483", marginBottom: "16px", fontWeight: 600 }}>
+        <h2 style={{ fontSize: "13.5px", textTransform: "uppercase", letterSpacing: "1px", color: "#D4B483", marginBottom: "14px", fontWeight: 700 }}>
           {t.today.kpisTitle}
         </h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
+        <div className="seller-kpi-grid">
           {/* Card 1: Total Sales */}
-          <div
-            className="seller-card"
-            style={{ padding: "24px" }}
-          >
-            <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
+          <div className="seller-card" style={{ padding: "20px" }}>
+            <div className="kpi-label" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
               {t.today.salesToday}
             </div>
-            <div style={{ fontSize: "24px", fontWeight: 700, color: "#F8F6F0", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
+            <div className="kpi-value" style={{ fontSize: "22px", fontWeight: 700, color: "#F8F6F0", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
               {formatPrice(metrics.salesTodayMinor)}
             </div>
-            <div style={{ fontSize: "11px", color: "#10B981", marginTop: "8px" }}>
+            <div className="kpi-note" style={{ fontSize: "11px", color: "#10B981", marginTop: "8px" }}>
               Écritures certifiées en caisse
             </div>
           </div>
 
           {/* Card 2: Orders Count */}
-          <div
-            className="seller-card"
-            style={{ padding: "24px" }}
-          >
-            <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
+          <div className="seller-card" style={{ padding: "20px" }}>
+            <div className="kpi-label" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
               {t.today.ordersCount}
             </div>
-            <div style={{ fontSize: "24px", fontWeight: 700, color: "#F8F6F0", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
+            <div className="kpi-value" style={{ fontSize: "22px", fontWeight: 700, color: "#F8F6F0", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
               {metrics.ordersCount}
             </div>
-            <div style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.5)", marginTop: "8px" }}>
+            <div className="kpi-note" style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.5)", marginTop: "8px" }}>
               Commandes enregistrées en base
             </div>
           </div>
 
           {/* Card 3: Collected */}
-          <div
-            className="seller-card"
-            style={{ padding: "24px" }}
-          >
-            <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
+          <div className="seller-card" style={{ padding: "20px" }}>
+            <div className="kpi-label" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
               {t.today.collectedAmount}
             </div>
-            <div style={{ fontSize: "24px", fontWeight: 700, color: "#10B981", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
+            <div className="kpi-value" style={{ fontSize: "22px", fontWeight: 700, color: "#10B981", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
               {formatPrice(metrics.collectedMinor)}
             </div>
-            <div style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.5)", marginTop: "8px" }}>
-              Liquidités en caisse & virements
+            <div className="kpi-note" style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.5)", marginTop: "8px" }}>
+              Liquidités en caisse &amp; virements
             </div>
           </div>
 
           {/* Card 4: Outstanding */}
-          <div
-            className="seller-card"
-            style={{ padding: "24px" }}
-          >
-            <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
+          <div className="seller-card" style={{ padding: "20px" }}>
+            <div className="kpi-label" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(248, 246, 240, 0.6)", marginBottom: "8px" }}>
               {t.today.pendingAmount}
             </div>
-            <div style={{ fontSize: "24px", fontWeight: 700, color: metrics.outstandingMinor > 0 ? "#E57373" : "#D4B483", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
+            <div className="kpi-value" style={{ fontSize: "22px", fontWeight: 700, color: metrics.outstandingMinor > 0 ? "#E57373" : "#D4B483", fontFamily: "var(--oj-font-editorial, serif)", fontVariantNumeric: "tabular-nums" }}>
               {formatPrice(metrics.outstandingMinor)}
             </div>
-            <div style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.5)", marginTop: "8px" }}>
+            <div className="kpi-note" style={{ fontSize: "11px", color: "rgba(248, 246, 240, 0.5)", marginTop: "8px" }}>
               Ventes à crédit en attente
             </div>
           </div>
@@ -299,24 +284,21 @@ export default function SellerTodayPage() {
 
       {/* Quick Launchpad to Modules */}
       <div
-        className="seller-card"
+        className="seller-card seller-priority-card"
         style={{
-          padding: "28px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          padding: "24px 20px",
         }}
       >
         <div>
-          <h3 style={{ fontSize: "18px", color: "#F8F6F0", margin: "0 0 6px 0", fontFamily: "var(--oj-font-editorial, serif)" }}>
+          <h3 style={{ fontSize: "17px", color: "#F8F6F0", margin: "0 0 6px 0", fontFamily: "var(--oj-font-editorial, serif)" }}>
             Gestion Intégrale du Commerce Marchand
           </h3>
-          <p style={{ fontSize: "13.5px", color: "rgba(248, 246, 240, 0.65)", margin: 0 }}>
+          <p style={{ fontSize: "13px", color: "rgba(248, 246, 240, 0.65)", margin: 0, lineHeight: "1.5" }}>
             Consultez votre catalogue d'artisan, configurez vos politiques ou auditez vos mouvements de stocks.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="seller-header-btn-group" style={{ marginTop: "4px" }}>
           <Link
             href="/seller/catalog"
             className="seller-secondary-btn"

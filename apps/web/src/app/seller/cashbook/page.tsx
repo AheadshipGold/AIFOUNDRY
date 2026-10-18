@@ -287,7 +287,7 @@ export default function StandaloneCashbookPage() {
       )}
 
       {/* Header & Main Actions */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
+      <div className="seller-page-header">
         <div>
           <div style={{ fontSize: "11px", fontWeight: 700, color: "#D4B483", letterSpacing: "0.15em", textTransform: "uppercase" }}>
             Audit &amp; Finances Marchandes
@@ -297,7 +297,7 @@ export default function StandaloneCashbookPage() {
           </h1>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+        <div className="seller-header-btn-group">
           {/* New Entry Button */}
           <button
             type="button"
@@ -355,7 +355,7 @@ export default function StandaloneCashbookPage() {
       </div>
 
       {/* The 3 Golden FinOps Pillars (Harmonized Luxury Cards) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginBottom: "36px" }}>
+      <div className="seller-finops-pillars">
         {/* Card 1: Total Vendu */}
         <div
           className="seller-card"
@@ -440,7 +440,7 @@ export default function StandaloneCashbookPage() {
         </div>
 
         {entries.length > 0 ? (
-          <div style={{ overflowX: "auto" }}>
+          <div className="seller-table-container">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", color: "#D4B483", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
@@ -558,7 +558,7 @@ export default function StandaloneCashbookPage() {
           Historique des Clôtures Certifiées ({closures.length})
         </h2>
         {closures.length > 0 ? (
-          <div style={{ overflowX: "auto" }}>
+          <div className="seller-table-container">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", color: "#D4B483", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase" }}>

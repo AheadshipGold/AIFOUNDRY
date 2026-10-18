@@ -165,7 +165,7 @@ export default function SellerOrdersPage() {
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px", flexWrap: "wrap", gap: "16px" }}>
+      <div className="seller-page-header">
         <div>
           <h1 style={{ fontFamily: "var(--oj-font-editorial, serif)", fontSize: "28px", color: "#F8F6F0", margin: "0 0 6px 0" }}>
             {t.nav.orders}
@@ -176,7 +176,7 @@ export default function SellerOrdersPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div className="seller-filter-bar">
           {[
             { id: "ALL", label: `Toutes (${orders.length})` },
             { id: "DECLARED", label: `Preuves reçues (${declaredCount})` },
@@ -203,6 +203,8 @@ export default function SellerOrdersPage() {
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               {tab.label}
@@ -258,19 +260,11 @@ export default function SellerOrdersPage() {
             return (
               <div
                 key={ord.id}
-                className="seller-card"
-                style={{
-                  padding: "20px 24px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "16px",
-                }}
+                className="seller-card seller-order-card"
               >
                 {/* Left: Order Info */}
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                <div style={{ flex: 1, minWidth: "260px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px", flexWrap: "wrap" }}>
                     <span style={{ fontFamily: "monospace", fontSize: "14px", fontWeight: 700, color: "#D4B483" }}>
                       {ord.orderNumber}
                     </span>
@@ -293,11 +287,19 @@ export default function SellerOrdersPage() {
                         border: ord.paymentStatus === "DECLARED" ? "1px solid rgba(212, 180, 131, 0.5)" : "none",
                       }}
                     >
-                      {isSettled
-                        ? "✓ Payé & Encaissé"
-                        : ord.paymentStatus === "DECLARED"
-                        ? "⚡ Preuve déclarée (À encaisser)"
-                        : "Paiement en attente"}
+                      {isSettled ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          <span>Payé &amp; Encaissé</span>
+                        </span>
+                      ) : ord.paymentStatus === "DECLARED" ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                          <span>Preuve déclarée (À encaisser)</span>
+                        </span>
+                      ) : (
+                        <span>Paiement en attente</span>
+                      )}
                     </span>
                     <span
                       style={{
@@ -345,7 +347,7 @@ export default function SellerOrdersPage() {
                 </div>
 
                 {/* Right: Amount & Action Controls */}
-                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
+                <div className="seller-order-card-right">
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "#F8F6F0", fontVariantNumeric: "tabular-nums" }}>
                     {formatPrice(ord.totalAmountMinor)}
                   </div>
@@ -364,9 +366,15 @@ export default function SellerOrdersPage() {
                           background: "linear-gradient(135deg, #075D49 0%, #10B981 100%)",
                           borderColor: "rgba(16, 185, 129, 0.5)",
                           color: "#FFFFFF",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
                         }}
                       >
-                        ✓ Valider l'encaissement
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Valider l'encaissement</span>
                       </button>
                     )}
 
@@ -380,9 +388,15 @@ export default function SellerOrdersPage() {
                           background: "rgba(37, 211, 102, 0.15)",
                           borderColor: "rgba(37, 211, 102, 0.4)",
                           color: "#25D366",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
                         }}
                       >
-                        💬 Relancer client
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        <span>Relancer client</span>
                       </button>
                     )}
                   </div>
