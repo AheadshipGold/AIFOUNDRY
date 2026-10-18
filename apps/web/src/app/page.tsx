@@ -40,6 +40,7 @@ interface Product {
   currency: string;
   rating?: number | null;
   reviewsCount?: number;
+  originCity?: string;
   seller: {
     name: string;
     city?: string;
@@ -609,6 +610,38 @@ function MainMarketplaceView() {
     restant: 0,
   });
   const [sellerLoading, setSellerLoading] = useState(false);
+
+  // Prevent background page scrolling when any modal, sheet or drawer is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(
+      selectedProduct ||
+      needModalOpen ||
+      cartOpen ||
+      authModalOpen ||
+      sellerGateModalOpen ||
+      buyerRequestsModalOpen ||
+      quoteModalOpen ||
+      collectModalOpen ||
+      dailyCloseModalOpen
+    );
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [
+    selectedProduct,
+    needModalOpen,
+    cartOpen,
+    authModalOpen,
+    sellerGateModalOpen,
+    buyerRequestsModalOpen,
+    quoteModalOpen,
+    collectModalOpen,
+    dailyCloseModalOpen,
+  ]);
 
   const isDemoAccount = (user: AuthUser | null) => {
     if (!user) return false;
@@ -2580,70 +2613,138 @@ function MainMarketplaceView() {
       {/* ==================== PRODUCT DETAIL MODAL ==================== */}
       {selectedProduct && (
         <div className="oj-modal-overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px", padding: "32px" }}>
+          <div className="oj-modal oj-product-modal" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setSelectedProduct(null)}
-              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+              className="oj-modal-close-btn"
+              aria-label={isEn ? "Close" : "Fermer"}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
-              <div>
+            <div className="oj-product-modal-grid">
+              <div className="oj-product-modal-media">
                 <img
                   src={selectedProduct.image}
                   alt={selectedProduct.title}
-                  style={{ width: "100%", borderRadius: "var(--oj-radius-card)", objectFit: "cover", aspectRatio: "4/5" }}
+                  className="oj-product-modal-img"
                 />
-                <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-                  <span className="oj-status-pill success">
-                    {isEn ? `In stock (${selectedProduct.stock ?? 1})` : `En stock (${selectedProduct.stock ?? 1})`}
+                <div style={{ display: "flex", gap: "8px", marginTop: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                  <span className={`oj-status-pill ${selectedProduct.stock === 0 ? "error" : "success"}`}>
+                    {selectedProduct.stock === 0
+                      ? (isEn ? "Out of stock" : "Rupture de stock")
+                      : (isEn ? `In stock (${selectedProduct.stock ?? 1})` : `En stock (${selectedProduct.stock ?? 1})`)}
                   </span>
+                  {selectedProduct.category === "digital" && (
+                    <span className="oj-status-pill" style={{ backgroundColor: "rgba(212, 180, 131, 0.2)", color: "#D4B483" }}>
+                      {isEn ? "Digital" : "Numérique"}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+
+              <div className="oj-product-modal-info">
+                {/* Seller identity row */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
                   <div className="oj-shop-avatar" style={{ width: "36px", height: "36px", fontSize: "12px" }}>
                     {typeof selectedProduct.seller === "object"
                       ? selectedProduct.seller?.initials || selectedProduct.seller?.name?.slice(0, 2).toUpperCase() || "KB"
                       : (selectedProduct.seller ? String(selectedProduct.seller).slice(0, 2).toUpperCase() : "KB")}
                   </div>
                   <div>
-                    <strong style={{ fontSize: "14px" }}>
+                    <strong style={{ fontSize: "14px", color: "var(--oj-color-text)" }}>
                       {typeof selectedProduct.seller === "object"
                         ? selectedProduct.seller?.name || "Kingston Bio"
                         : selectedProduct.seller || "Kingston Bio"}
                     </strong>
-                    <span className="oj-verified-pill" style={{ marginLeft: "8px" }}>Vendeur Pro</span>
+                    <span className="oj-verified-pill" style={{ marginLeft: "8px" }}>
+                      {isEn ? "Pro Seller" : "Vendeur Pro"}
+                    </span>
                   </div>
                 </div>
-                <h2 style={{ fontFamily: "var(--oj-font-editorial)", fontSize: "24px", margin: "0 0 8px" }}>
+
+                {/* Rating or New Arrival noble badge */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
+                  {selectedProduct.rating != null && (selectedProduct.reviewsCount ?? 0) > 0 ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 700, color: "var(--oj-color-accent)" }}>
+                      <span style={{ display: "flex", color: "#D4B483" }}><IconDiamondSparkle /></span>
+                      <span>{selectedProduct.rating.toFixed(1)} / 5</span>
+                      <span style={{ color: "var(--oj-color-muted)", fontWeight: 500, fontSize: "12px" }}>
+                        ({selectedProduct.reviewsCount} {isEn ? ((selectedProduct.reviewsCount ?? 0) > 1 ? "verified reviews" : "verified review") : ((selectedProduct.reviewsCount ?? 0) > 1 ? "avis vérifiés" : "avis vérifié")})
+                      </span>
+                    </span>
+                  ) : (
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      letterSpacing: "0.8px",
+                      textTransform: "uppercase",
+                      color: "var(--oj-color-accent)",
+                      backgroundColor: isDark ? "rgba(212, 180, 131, 0.12)" : "rgba(212, 180, 131, 0.18)",
+                      border: "1px solid rgba(212, 180, 131, 0.35)",
+                      padding: "3px 8px",
+                      borderRadius: "var(--oj-radius-pill)",
+                    }}>
+                      <IconDiamondSparkle />
+                      <span>{isEn ? "NEW ARRIVAL" : "NOUVEAU"}</span>
+                    </span>
+                  )}
+                  {(selectedProduct.originCity || (typeof selectedProduct.seller === "object" && selectedProduct.seller?.city)) && (
+                    <span style={{ fontSize: "12px", color: "var(--oj-color-muted)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <span>·</span>
+                      <span>{selectedProduct.originCity || (typeof selectedProduct.seller === "object" ? selectedProduct.seller?.city : null)}</span>
+                    </span>
+                  )}
+                </div>
+
+                <h2 className="oj-product-modal-title">
                   {selectedProduct.title}
                 </h2>
-                <p style={{ color: "var(--oj-color-muted)", fontSize: "14px", lineHeight: "1.6", margin: "0 0 24px" }}>
+
+                <p className="oj-product-modal-desc">
                   {selectedProduct.description}
                 </p>
-                <div style={{ fontSize: "28px", fontWeight: 700, fontVariantNumeric: "tabular-nums", marginBottom: "24px" }}>
+
+                <div className="oj-product-modal-price">
                   {formatPrice(selectedProduct.price, selectedProduct.currency)}
                 </div>
+
                 {selectedProduct.variants && selectedProduct.variants.length > 0 && (
-                  <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap" }}>
                     {selectedProduct.variants.map((v, idx) => (
                       <span key={idx} style={{
                         display: "inline-flex", alignItems: "center", gap: "6px",
                         padding: "8px 14px", border: "1px solid var(--oj-color-border)",
-                        borderRadius: "var(--oj-radius-pill)", fontSize: "13px"
+                        borderRadius: "var(--oj-radius-pill)", fontSize: "13px",
+                        backgroundColor: "var(--oj-color-subtle)"
                       }}>
-                        {v.color && <i style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: v.color, display: "inline-block" }} />}
+                        {v.color && <i style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: v.color, display: "inline-block", border: "1px solid rgba(0,0,0,0.15)" }} />}
                         {v.name}
                       </span>
                     ))}
                   </div>
                 )}
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <button className="oj-btn-primary" onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); setCartOpen(true); }}>
-                    {isEn ? "Add to cart" : "Ajouter au panier"}
+
+                <div className="oj-product-modal-actions">
+                  <button
+                    className="oj-btn-primary"
+                    disabled={selectedProduct.stock === 0}
+                    onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); setCartOpen(true); }}
+                    style={{ opacity: selectedProduct.stock === 0 ? 0.5 : 1, cursor: selectedProduct.stock === 0 ? "not-allowed" : "pointer" }}
+                  >
+                    {selectedProduct.stock === 0
+                      ? (isEn ? "Out of stock" : "Rupture de stock")
+                      : (isEn ? "Add to cart" : "Ajouter au panier")}
                   </button>
-                  <button className="oj-btn-secondary" onClick={() => { setSelectedProduct(null); setNeedModalOpen(true); }}>
+                  <button
+                    className="oj-btn-secondary"
+                    onClick={() => { setSelectedProduct(null); setNeedModalOpen(true); }}
+                  >
                     {isEn ? "Request customization" : "Demander une personnalisation"}
                   </button>
                 </div>
@@ -2659,9 +2760,13 @@ function MainMarketplaceView() {
           <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ padding: "32px" }}>
             <button
               onClick={() => setNeedModalOpen(false)}
-              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+              className="oj-modal-close-btn"
+              aria-label={isEn ? "Close" : "Fermer"}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
               {isEn ? "BESPOKE REQUEST" : "DEMANDE SUR-MESURE"}
@@ -2817,9 +2922,13 @@ function MainMarketplaceView() {
           <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "860px", padding: "32px", maxHeight: "90vh", overflowY: "auto" }}>
             <button
               onClick={() => setBuyerRequestsModalOpen(false)}
-              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+              className="oj-modal-close-btn"
+              aria-label={isEn ? "Close" : "Fermer"}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
               {isEn ? "QUOTES & PROPOSALS — COMPARISON & ACCEPTANCE" : "DEVIS & OFFRES — COMPARATEUR DE PROPOSITIONS"}
@@ -2960,9 +3069,13 @@ function MainMarketplaceView() {
           <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", padding: "32px" }}>
             <button
               onClick={() => setQuoteModalOpen(false)}
-              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+              className="oj-modal-close-btn"
+              aria-label={isEn ? "Close" : "Fermer"}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
               {isEn ? "STORE PROPOSAL (S27)" : "DEVIS & OFFRE COMMERÇANTE (S27)"}
@@ -3103,9 +3216,13 @@ function MainMarketplaceView() {
           <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "560px", padding: "32px" }}>
             <button
               onClick={() => setCollectModalOpen(false)}
-              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+              className="oj-modal-close-btn"
+              aria-label={isEn ? "Close" : "Fermer"}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
               {isEn ? "FINOPS S46 — MANUAL COLLECTION" : "FINOPS S46 — ENCAISSEMENT MANUEL"}
@@ -3231,9 +3348,13 @@ function MainMarketplaceView() {
           <div className="oj-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "620px", padding: "32px", maxHeight: "90vh", overflowY: "auto" }}>
             <button
               onClick={() => setDailyCloseModalOpen(false)}
-              style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}
+              className="oj-modal-close-btn"
+              aria-label={isEn ? "Close" : "Fermer"}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
             <span className="oj-eyebrow" style={{ color: "var(--oj-color-accent)" }}>
               {isEn ? "FINOPS S44 — DAILY CLOSURE" : "FINOPS S44 — CLÔTURE DE JOURNÉE"}
@@ -3344,7 +3465,17 @@ function MainMarketplaceView() {
               <h2 style={{ margin: 0, fontFamily: "var(--oj-font-editorial)", fontSize: "20px" }}>
                 {isEn ? `Your Cart (${cartCount})` : `Votre Panier (${cartCount})`}
               </h2>
-              <button onClick={() => setCartOpen(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--oj-color-text)" }}>✕</button>
+              <button
+                onClick={() => setCartOpen(false)}
+                className="oj-modal-close-btn"
+                style={{ position: "static", width: "32px", height: "32px" }}
+                aria-label={isEn ? "Close" : "Fermer"}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
 
             {cart.length === 0 ? (

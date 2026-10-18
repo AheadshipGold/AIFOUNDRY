@@ -13,15 +13,30 @@ export async function getLandingConfig() {
   if (data.featuredProducts && Array.isArray(data.featuredProducts)) {
     const prodIds = data.featuredProducts.map((p: any) => p.id).filter(Boolean);
     if (prodIds.length > 0) {
-      const reviews = await prisma.review.findMany({
-        where: { productId: { in: prodIds } },
-      });
+      const [reviews, variants] = await Promise.all([
+        prisma.review.findMany({
+          where: { productId: { in: prodIds } },
+        }),
+        prisma.offerVariant.findMany({
+          where: { productId: { in: prodIds } },
+          select: { productId: true, stockOnHand: true, stockReserved: true, isAvailable: true },
+        }),
+      ]);
+
       const reviewMap: Record<string, { total: number; count: number }> = {};
       reviews.forEach((r) => {
         if (r.productId) {
           if (!reviewMap[r.productId]) reviewMap[r.productId] = { total: 0, count: 0 };
           reviewMap[r.productId].total += r.rating;
           reviewMap[r.productId].count += 1;
+        }
+      });
+
+      const stockMap: Record<string, number> = {};
+      variants.forEach((v) => {
+        if (v.productId) {
+          const available = v.isAvailable ? Math.max(0, v.stockOnHand - v.stockReserved) : 0;
+          stockMap[v.productId] = (stockMap[v.productId] || 0) + available;
         }
       });
 
@@ -29,7 +44,8 @@ export async function getLandingConfig() {
         const stats = reviewMap[p.id];
         const reviewsCount = stats ? stats.count : 0;
         const rating = stats && stats.count > 0 ? Number((stats.total / stats.count).toFixed(1)) : null;
-        return { ...p, rating, reviewsCount };
+        const realStock = stockMap[p.id] !== undefined ? stockMap[p.id] : (typeof p.stock === 'number' ? p.stock : 1);
+        return { ...p, rating, reviewsCount, stock: realStock };
       });
     }
   }
@@ -37,9 +53,16 @@ export async function getLandingConfig() {
   if (data.intemporelIcons && Array.isArray(data.intemporelIcons)) {
     const prodIds = data.intemporelIcons.map((p: any) => p.id).filter(Boolean);
     if (prodIds.length > 0) {
-      const reviews = await prisma.review.findMany({
-        where: { productId: { in: prodIds } },
-      });
+      const [reviews, variants] = await Promise.all([
+        prisma.review.findMany({
+          where: { productId: { in: prodIds } },
+        }),
+        prisma.offerVariant.findMany({
+          where: { productId: { in: prodIds } },
+          select: { productId: true, stockOnHand: true, stockReserved: true, isAvailable: true },
+        }),
+      ]);
+
       const reviewMap: Record<string, { total: number; count: number }> = {};
       reviews.forEach((r) => {
         if (r.productId) {
@@ -49,11 +72,20 @@ export async function getLandingConfig() {
         }
       });
 
+      const stockMap: Record<string, number> = {};
+      variants.forEach((v) => {
+        if (v.productId) {
+          const available = v.isAvailable ? Math.max(0, v.stockOnHand - v.stockReserved) : 0;
+          stockMap[v.productId] = (stockMap[v.productId] || 0) + available;
+        }
+      });
+
       data.intemporelIcons = data.intemporelIcons.map((p: any) => {
         const stats = reviewMap[p.id];
         const reviewsCount = stats ? stats.count : 0;
         const rating = stats && stats.count > 0 ? Number((stats.total / stats.count).toFixed(1)) : null;
-        return { ...p, rating, reviewsCount };
+        const realStock = stockMap[p.id] !== undefined ? stockMap[p.id] : (typeof p.stock === 'number' ? p.stock : 1);
+        return { ...p, rating, reviewsCount, stock: realStock };
       });
     }
   }

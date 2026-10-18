@@ -1212,25 +1212,203 @@ body {
 .oj-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 1000;
+  background-color: rgba(6, 36, 29, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 200000 !important;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--oj-space-4);
+  overscroll-behavior: contain;
 }
 
 .oj-modal {
+  position: relative;
   background-color: var(--oj-color-surface);
   border-radius: var(--oj-radius-section);
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: var(--oj-shadow-lg);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
   border: 1px solid var(--oj-color-border);
+}
+
+/* Product Detail Modal Luxury Architecture */
+.oj-product-modal {
+  max-width: 840px !important;
+  padding: 32px !important;
+  border: 1px solid rgba(212, 180, 131, 0.25) !important;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(212, 180, 131, 0.15) !important;
+  animation: ojModalAppear 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ojModalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.oj-product-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.oj-product-modal-media {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.oj-product-modal-img {
+  width: 100%;
+  border-radius: var(--oj-radius-card);
+  object-fit: cover;
+  aspect-ratio: 4/5;
+  border: 1px solid var(--oj-color-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: block;
+  background-color: var(--oj-color-subtle);
+}
+
+.oj-product-modal-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.oj-product-modal-title {
+  font-family: var(--oj-font-editorial);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px 0;
+  color: var(--oj-color-text);
+  word-break: break-word;
+}
+
+.oj-product-modal-desc {
+  color: var(--oj-color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.oj-product-modal-price {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--oj-color-text);
+  margin-bottom: 22px;
+}
+
+.oj-product-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.oj-product-modal-actions .oj-btn-primary,
+.oj-product-modal-actions .oj-btn-secondary {
+  width: 100%;
+  min-height: 48px;
+  height: auto;
+  padding: 13px 20px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 14px;
+}
+
+.oj-modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--oj-color-subtle);
+  border: 1px solid var(--oj-color-border);
+  color: var(--oj-color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.oj-modal-close-btn:hover {
+  background: var(--oj-color-surface);
+  border-color: var(--oj-color-action);
+  color: var(--oj-color-action);
+  transform: scale(1.08);
+}
+
+.oj-modal-close-btn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .oj-modal-overlay {
+    padding: 12px !important;
+  }
+
+  .oj-modal {
+    max-height: calc(100vh - 24px) !important;
+    border-radius: 20px !important;
+  }
+
+  .oj-product-modal {
+    padding: 18px 16px 22px 16px !important;
+  }
+
+  .oj-product-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .oj-product-modal-img {
+    aspect-ratio: 16/10;
+    max-height: 230px;
+  }
+
+  .oj-product-modal-title {
+    font-size: 21px;
+    margin-bottom: 8px;
+  }
+
+  .oj-product-modal-desc {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .oj-product-modal-price {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .oj-modal-close-btn {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+  }
 }
 
 /* --------------------------------------------------------------------------
